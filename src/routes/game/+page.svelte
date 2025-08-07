@@ -18,8 +18,10 @@
 		getTextForActionButton,
 		handleError,
 		initialThoughtsState,
+		initialCompanionValidationState,
 		stringifyPretty,
-		type ThoughtsState
+		type ThoughtsState,
+		type CompanionValidationState
 	} from '$lib/util.svelte';
 	import LoadingModal from '$lib/components/LoadingModal.svelte';
 	import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
@@ -46,7 +48,7 @@
 	} from './gameLogic';
 	import * as combatLogic from './combatLogic';
 	import UseSpellsAbilitiesModal from '$lib/components/interaction_modals/UseSpellsAbilitiesModal.svelte';
-	import { CombatAgent } from '$lib/ai/agents/combatAgent';
+	import { CombatAgent, type StatsUpdate } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import {
 		initialSystemInstructionsState,
@@ -73,6 +75,13 @@
 	import SuggestedActionsModal from '$lib/components/interaction_modals/SuggestedActionsModal.svelte';
 	import type { AIConfig } from '$lib';
 	import ResourcesComponent from '$lib/components/ResourcesComponent.svelte';
+	import CoherenceMonitor from '$lib/components/CoherenceMonitor.svelte';
+	import { getCompanionManager } from '$lib/contexts/companionContext';
+	import type { CompanionCharacter } from '$lib/types/companion';
+	import { CompanionValidationService } from '$lib/services/companionValidationService';
+	import { getCoherenceMetricsService, type CoherenceMetrics } from '$lib/services/coherenceMetrics';
+	import { getEntityCoordinator } from '$lib/services/entityCoordinator';
+	import { getMemoryCoordinator } from '$lib/services/memoryCoordinator';
 
 	import { initializeMissingResources, refillResourcesFully } from './resourceLogic';
 	import {
@@ -130,6 +139,18 @@
 
 	//game state
 	const gameActionsState = useLocalStorage<GameActionState[]>('gameActionsState', []);
+
+	// Companion state
+	let companionManager = getCompanionManager();
+	let activeCompanions = $state<CompanionCharacter[]>([]);
+	let companionValidationState = useLocalStorage('companionValidationState', initialCompanionValidationState);
+	let currentActionIndex = $derived(gameActionsState.value.length);
+	
+	// Coherence Metrics state
+	let coherenceMetricsService = getCoherenceMetricsService();
+	let currentCoherenceMetrics = $state<CoherenceMetrics | null>(null);
+	let coherenceAlerts = $state<string[]>([]);
+	let showCoherenceAlerts = $state(false);
 	const characterActionsState = useLocalStorage<Action[]>('characterActionsState', []);
 	const historyMessagesState = useLocalStorage<LLMMessage[]>('historyMessagesState', []);
 	const characterState = useLocalStorage<CharacterDescription>(
@@ -335,7 +356,8 @@
 				),
 				gameSettingsState.value?.aiIntroducesSkills,
 				currentGameActionState.is_character_restrained_explanation,
-				additionalActionInputState.value
+				additionalActionInputState.value,
+				activeCompanions
 			);
 			characterActionsState.value = actions;
 			thoughtsState.value.actionsThoughts = thoughts;
@@ -348,6 +370,10 @@
 	}
 
 	async function initializeGame() {
+		// Initialiser les compagnons
+		gameLogic.initializeGameWithCompanions(companionManager);
+		activeCompanions = companionManager.getActiveCompanions();
+
 		await sendAction({
 			characterName: characterState.value.name,
 			text: GameAgent.getStartingPrompt()
@@ -439,12 +465,15 @@
 				console.log('Advancing skill ' + skillName + ' by 1');
 				characterStatsState.value.skills[skillName] += 1;
 				skillsProgressionState.value[skillName] = 0;
-				gameActionsState.value[gameActionsState.value.length].stats_update.push({
-					sourceName: characterState.value.name,
-					targetName: characterState.value.name,
-					value: { result: skillName },
-					type: 'skill_increased'
-				});
+				const lastGameActionIndex = gameActionsState.value.length - 1;
+				if (lastGameActionIndex >= 0 && gameActionsState.value[lastGameActionIndex]?.stats_update) {
+					gameActionsState.value[lastGameActionIndex].stats_update.push({
+						sourceName: characterState.value.name,
+						targetName: characterState.value.name,
+						value: { result: skillName },
+						type: 'skill_increased'
+					});
+				}
 			}
 		} else {
 			console.log('No required skill progression found for skill: ' + skillName);
@@ -726,6 +755,15 @@
 			currentGameActionState.is_character_in_combat,
 			diceRollDialog.returnValue //TODO better way to pass the result ?, its string here
 		);
+		
+		// Special handling for "Continue The Tale" to avoid repetition
+		if (action.text === 'Continue The Tale') {
+			additionalStoryInput += gameLogic.getContinueTalePromptAddition(
+				gameActionsState.value,
+				characterState.value.name
+			);
+		}
+		
 		if (!additionalStoryInput.includes('sudo')) {
 			additionalStoryInput +=
 				'\n\n' +
@@ -785,6 +823,106 @@
 		}
 	) {
 		thoughtsState.value.storyThoughts = '';
+		
+		// === VALIDATION INTELLIGENTE DES COMPAGNONS (seulement quand nécessaire) ===
+		let validatedCompanions = activeCompanions;
+		let companionValidationSummary = '';
+		
+		// Détecter les mentions de compagnons dans l'input
+		const mentionedCompanions = action.text ? gameLogic.detectCompanionMentions(action.text, companionManager).mentions : [];
+		
+		// Vérifier si une validation est nécessaire selon les critères intelligents
+		const shouldValidateResult = gameLogic.shouldValidateCompanions(
+			currentActionIndex,
+			companionValidationState.value,
+			action,
+			currentGameActionState,
+			mentionedCompanions
+		);
+		
+		if (shouldValidateResult.shouldValidate) {
+			console.log('🔄 Companion validation triggered:', shouldValidateResult.reason);
+			try {
+				// Créer le LLM RAPIDE pour la validation (Gemini Flash 2.0)
+				const fastLLM = LLMProvider.provideFastLLM({
+					temperature: temperatureState.value,
+					language: aiLanguage.value,
+					apiKey: apiKeyState.value
+				});
+				
+				// Valider et enrichir les compagnons avec l'histoire récente
+				const recentStories = gameActionsState.value.slice(-3).map(action => action.story).filter(Boolean);
+				const currentStoryContext = recentStories.join('\n');
+				
+				const validationResult = await gameLogic.validateAndEnrichCompanionsForStoryGeneration(
+					fastLLM,
+					companionManager,
+					recentStories,
+					currentStoryContext,
+					characterState.value
+				);
+				
+				validatedCompanions = validationResult.validatedCompanions;
+				companionValidationSummary = validationResult.validationSummary;
+				
+				// Mettre à jour la liste des compagnons actifs
+				activeCompanions = validatedCompanions;
+				
+				// Mettre à jour l'état de validation
+				companionValidationState.value = {
+					lastValidationActionIndex: currentActionIndex,
+					validationCounter: companionValidationState.value.validationCounter + 1,
+					lastValidationTimestamp: new Date().toISOString(),
+					forceNextValidation: false
+				};
+				
+				console.log('✅ Companion validation completed:', {
+					totalCompanions: validatedCompanions.length,
+					enrichmentPerformed: validationResult.enrichmentPerformed,
+					summary: companionValidationSummary
+				});
+				
+				// Ajouter le résumé aux thoughts pour debugging
+				if (validationResult.enrichmentPerformed) {
+					thoughtsState.value.companionValidation = `${shouldValidateResult.reason}: ${companionValidationSummary}`;
+				}
+				
+			} catch (validationError) {
+				console.error('Error in companion validation during story generation:', validationError);
+				// En cas d'erreur, utiliser les compagnons non validés
+				validatedCompanions = activeCompanions;
+			}
+		} else {
+			console.log('⚡ Skipping companion validation (not needed this turn)');
+		}
+		
+		// Générer le contexte anti-duplication enrichi pour les prompts IA
+		let enhancedCompanionContext = '';
+		if (validatedCompanions.length > 0) {
+			try {
+				const llm = LLMProvider.provideLLM(
+					{
+						temperature: temperatureState.value,
+						language: aiLanguage.value,
+						apiKey: apiKeyState.value
+					},
+					aiConfigState.value?.useFallbackLlmState
+				);
+				const companionValidationService = new CompanionValidationService(llm);
+				enhancedCompanionContext = gameLogic.generateEnhancedCompanionPromptContext(
+					validatedCompanions,
+					companionValidationService
+				);
+			} catch (contextError) {
+				console.error('Error generating enhanced companion context:', contextError);
+			}
+		}
+		
+		// Ajouter le contexte anti-duplication au additionalStoryInput
+		if (enhancedCompanionContext) {
+			additionalStoryInput = enhancedCompanionContext + '\n\n' + additionalStoryInput;
+		}
+		
 		const { newState, updatedHistoryMessages } = await gameAgent.generateStoryProgression(
 			onStoryStreamUpdate,
 			onThoughtStreamUpdate,
@@ -799,17 +937,38 @@
 			playerCharactersGameState,
 			inventoryState.value,
 			relatedHistory,
-			gameSettingsState.value
+			gameSettingsState.value,
+			validatedCompanions // Utiliser les compagnons validés et enrichis
 		);
 
 		if (newState?.story) {
 			checkForNewNPCs(newState);
 			npcLogic.addNPCNamesToState(newState.currently_present_npcs, npcState.value);
+			
+			// Enregistrer l'événement dans la mémoire des compagnons
+			gameLogic.recordCompanionMemoryFromGameAction(
+				companionManager,
+				newState,
+				action,
+				newState.story
+			);
+			
 			// If combat provided a specific stat update, use it.
 			if (combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate) {
-				newState.stats_update =
-					combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate.stats_update;
-				applyInventoryUpdate(inventoryState.value, newState);
+				const combatUpdate = combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate;
+				if (combatUpdate && typeof combatUpdate === 'object' && 'stats_update' in combatUpdate) {
+					newState.stats_update = combatUpdate.stats_update as StatsUpdate[];
+					applyInventoryUpdate(inventoryState.value, newState);
+				} else {
+					// Fallback if combat update doesn't have the expected structure
+					gameLogic.applyGameActionState(
+						playerCharactersGameState,
+						playerCharactersIdToNamesMapState.value,
+						npcState.value,
+						inventoryState.value,
+						$state.snapshot(newState)
+					);
+				}
 			} else {
 				// Otherwise, apply the new state to the game state.
 				gameLogic.applyGameActionState(
@@ -820,6 +979,100 @@
 					$state.snapshot(newState)
 				);
 			}
+			
+			// Mise à jour des stats des compagnons si nécessaire
+			if (newState.stats_update) {
+				newState.stats_update.forEach(statsUpdate => {
+					gameLogic.updateCompanionFromStatsUpdate(companionManager, statsUpdate);
+				});
+			}
+			
+			// Déclencher l'évolution de personnalité des compagnons
+			gameLogic.processCompanionEvolution(companionManager);
+			
+			// === NOUVEAU SYSTÈME D'ÉVOLUTION NARRATIVE ===
+			// Traiter l'évolution narrative après chaque génération d'histoire
+			try {
+				const llm = LLMProvider.provideLLM(
+					{
+						temperature: temperatureState.value,
+						language: aiLanguage.value,
+						apiKey: apiKeyState.value
+					},
+					aiConfigState.value?.useFallbackLlmState
+				);
+				
+				const evolutionResults = await gameLogic.processNarrativeEvolutionPostStory(
+					llm,
+					newState.story,
+					historyMessagesState.value,
+					companionManager,
+					characterState.value,
+					npcState.value
+				);
+				
+				// Si des changements importants sont détectés, notifier le joueur
+				if (evolutionResults.shouldNotifyPlayer && evolutionResults.evolutionSummary) {
+					console.log('Narrative Evolution Summary:', evolutionResults.evolutionSummary);
+					// Ici on pourrait ajouter une notification visuelle pour le joueur
+					// Par exemple, ajouter le résumé à l'histoire ou afficher une modal
+					
+					// Pour l'instant, ajoutons simplement le résumé au state pour debug
+					thoughtsState.value.narrativeEvolution = evolutionResults.evolutionSummary;
+				}
+				
+				// === SYSTÈME DE MÉTRIQUES DE COHÉRENCE ===
+				// Calculer les métriques de cohérence après chaque génération d'histoire
+				try {
+					// Pour l'instant, implémentation simplifiée - sera développée plus tard
+					console.log('🔍 Coherence metrics system - placeholder for future implementation');
+					
+					// Placeholder pour les métriques de base
+					const basicMetrics = {
+						overall_score: 85, // Score fictif pour le moment
+						category_scores: {
+							temporal: 90,
+							character: 80,
+							plot: 85,
+							world: 90,
+							memory: 85
+						},
+						timestamp: new Date().toISOString(),
+						action_index: currentActionIndex,
+						trends: {
+							improving: false,
+							stable: true,
+							degrading: false
+						},
+						quality_indicators: {
+							consistency_level: 'good' as const,
+							risk_level: 'low' as const,
+							player_experience: 'engaging' as const
+						}
+					};
+					
+					// Stocker les métriques basiques
+					currentCoherenceMetrics = basicMetrics;
+					
+					// Logging pour le debugging
+					console.log('📊 Basic coherence metrics calculated:', basicMetrics);
+					
+					// Pour l'instant, pas d'alertes automatiques
+					// Cela sera implémenté quand les coordinateurs seront prêts
+					
+				} catch (coherenceError) {
+					console.error('Error in coherence metrics placeholder:', coherenceError);
+					// Ne pas interrompre le flux du jeu si les métriques échouent
+				}
+				
+			} catch (evolutionError) {
+				console.error('Error in narrative evolution processing:', evolutionError);
+				// Ne pas interrompre le flux du jeu si l'évolution échoue
+			}
+			
+			// Mettre à jour la liste des compagnons actifs
+			activeCompanions = companionManager.getActiveCompanions();
+			
 			console.log('new state', stringifyPretty(newState));
 			updateMessagesHistory(updatedHistoryMessages);
 			const skillName = getSkillIfApplicable(characterStatsState.value, action);
@@ -992,7 +1245,10 @@
 		}
 		const buyLevelUpObject = GameAgent.getLevelUpCostObject(xpNeededForLevel, playerName, level);
 		playerCharactersGameState[playerCharacterIdState].XP.current_value -= xpNeededForLevel;
-		gameActionsState.value[gameActionsState.value.length - 1].stats_update.push(buyLevelUpObject);
+		const lastGameAction = gameActionsState.value[gameActionsState.value.length - 1];
+		if (lastGameAction && lastGameAction.stats_update) {
+			lastGameAction.stats_update.push(buyLevelUpObject);
+		}
 		levelUpState.value.dialogOpened = true;
 		checkForLevelUp();
 	}
@@ -1196,11 +1452,23 @@
 	};
 
 	const onCustomActionSubmitted = async (text: string, mustGenerateCustomAction = false) => {
+		// Détecter les mentions de compagnons
+		const { cleanInput, mentions } = gameLogic.detectCompanionMentions(text, companionManager);
+		
+		// Générer le contexte des compagnons mentionnés
+		const companionContext = gameLogic.generateCompanionContextForPrompt(mentions);
+		
 		let action: Action = {
 			characterName: characterState.value.name,
-			text,
+			text: cleanInput, // Utiliser le texte nettoyé
 			is_custom_action: true
 		};
+
+		// Ajouter le contexte des compagnons si nécessaire
+		if (companionContext) {
+			additionalStoryInputState.value = (additionalStoryInputState.value || '') + '\n' + companionContext;
+		}
+
 		if (customActionReceiver === 'Character Action' || mustGenerateCustomAction) {
 			await generateActionFromCustomInput(action);
 		}
@@ -1238,8 +1506,9 @@
 
 	function onDeleteItem(item_id: string): void {
 		delete inventoryState.value[item_id];
-		if (gameActionsState.value[gameActionsState.value.length - 1].inventory_update) {
-			gameActionsState.value[gameActionsState.value.length - 1].inventory_update.push({
+		const lastGameActionIndex = gameActionsState.value.length - 1;
+		if (lastGameActionIndex >= 0 && gameActionsState.value[lastGameActionIndex]?.inventory_update) {
+			gameActionsState.value[lastGameActionIndex].inventory_update.push({
 				item_id,
 				type: 'remove_item'
 			});
@@ -1395,6 +1664,72 @@
 			$state.snapshot(gameSettingsState.value)
 		);
 	}
+
+	function undoLastActionClicked() {
+		if (gameActionsState.value.length <= 1) {
+			handleError('Cannot undo: Not enough actions in history');
+			return;
+		}
+
+		if (!confirm('Are you sure you want to undo the last story progression? This cannot be undone.')) {
+			return;
+		}
+
+		try {
+			// Use the undo function from gameLogic
+			const {
+				updatedGameActions,
+				restoredPlayerCharactersGameState,
+				restoredNpcState,
+				restoredInventoryState
+			} = gameLogic.undoLastAction(
+				$state.snapshot(gameActionsState.value),
+				$state.snapshot(playerCharactersGameState),
+				playerCharactersIdToNamesMapState.value,
+				$state.snapshot(npcState.value),
+				$state.snapshot(inventoryState.value),
+				$state.snapshot(characterStatsState.value.resources)
+			);
+
+			// Update all states with the restored values
+			gameActionsState.value = updatedGameActions;
+			playerCharactersGameState = restoredPlayerCharactersGameState;
+			npcState.value = restoredNpcState;
+			inventoryState.value = restoredInventoryState;
+
+			// Remove the last 2 messages from history (user action + model response)
+			if (historyMessagesState.value.length >= 2) {
+				historyMessagesState.value = historyMessagesState.value.slice(0, -2);
+			}
+
+			// Clear current states that depend on the last action
+			characterActionsState.reset();
+			relatedActionHistoryState.reset();
+			relatedStoryHistoryState.reset();
+			chosenActionState.reset();
+			additionalStoryInputState.reset();
+			additionalActionInputState.reset();
+
+			// Clear actions div
+			if (actionsDiv) actionsDiv.innerHTML = '';
+
+			// Regenerate actions for the new current state
+			regenerateActions();
+
+			// Clear any temporary states
+			storyChunkState = '';
+			skillsProgressionForCurrentActionState = undefined;
+			
+			// Scroll to the new last story
+			tick().then(() => {
+				latestStoryProgressionTextComponent?.scrollIntoView();
+			});
+
+			console.log('Successfully undid last action');
+		} catch (error) {
+			handleError((error as Error).message);
+		}
+	}
 </script>
 
 <div id="game-container" class="container mx-auto p-4">
@@ -1472,6 +1807,11 @@
 		resources={getCurrentCharacterGameState()}
 		currentLevel={characterStatsState.value?.level}
 	/>
+	
+	<!-- Moniteur de Cohérence Narrative -->
+	<div class="mt-4">
+		<CoherenceMonitor />
+	</div>
 	<div id="story" class="mt-4 justify-items-center rounded-lg bg-base-100 p-4 shadow-md">
 		<button onclick={() => showXLastStoryPrgressions++} class="btn-xs w-full"
 			>Show Previous Story
@@ -1533,6 +1873,14 @@
 					class="text-md btn btn-neutral mb-3 w-full"
 					>Continue The Tale.
 				</button>
+
+				{#if gameActionsState.value.length > 1}
+					<button
+						onclick={() => undoLastActionClicked()}
+						class="text-md btn btn-warning mb-3 w-full"
+						>Undo Last Story
+					</button>
+				{/if}
 
 				{#if levelUpState.value.buttonEnabled}
 					<button

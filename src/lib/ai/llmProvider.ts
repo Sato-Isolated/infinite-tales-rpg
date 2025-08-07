@@ -27,4 +27,29 @@ export class LLMProvider {
 			);
 		}
 	}
+
+	/**
+	 * Provides a fast LLM optimized for validation tasks (companion validation, deduplication, etc.)
+	 * Uses Gemini Flash 2.0 which is much faster than Thinking models for simple tasks
+	 */
+	static provideFastLLM(llmConfig: LLMconfig): LLM {
+		const fastConfig: LLMconfig = {
+			...defaultLLMConfig,
+			...llmConfig,
+			// Override model to use Flash 2.0 regardless of config
+			model: GEMINI_MODELS.FLASH_2_0,
+			// Lower temperature for more consistent validation results
+			temperature: Math.min(llmConfig.temperature || 0.7, 0.7),
+			config: {
+				...defaultLLMConfig.config,
+				...llmConfig.config,
+				// Optimize for faster responses
+				temperature: Math.min(llmConfig.temperature || 0.7, 0.7)
+			}
+		};
+
+		// Always use Gemini Flash 2.0 for fast validation tasks
+		// No fallback needed for simple validation operations
+		return new GeminiProvider(fastConfig);
+	}
 }

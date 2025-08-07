@@ -1,11 +1,15 @@
 <script>
 	import '../../app.css';
 	import { page } from '$app/stores';
-	import { errorState } from '$lib/state/errorState.svelte.ts';
+	import { errorState } from '$lib/state/errorState.svelte';
 	import ErrorModal from '$lib/components/interaction_modals/ErrorModal.svelte';
-	import { handleError } from '$lib/util.svelte.ts';
+	import { handleError } from '$lib/util.svelte';
 	import { onMount } from 'svelte';
 	import { stringifyPretty } from '$lib/util.svelte';
+	import { setCompanionManager } from '$lib/contexts/companionContext';
+
+	// Initialiser le CompanionManager dans le contexte immédiatement
+	setCompanionManager();
 
 	let { children } = $props();
 	let activeUrl = $state('');
@@ -18,10 +22,10 @@
 	onMount(() => {
 		window.onerror = (event, source, lineno, colno, error) => {
 			let text = '';
-			if (error.message) {
+			if (error?.message) {
 				text += error.message;
 			}
-			if (error.stack) {
+			if (error?.stack) {
 				text += '\n' + error.stack;
 			} else {
 				text += '\n' + stringifyPretty({ event, source, lineno, colno, error });
@@ -46,7 +50,7 @@
 </script>
 
 {#if errorState.userMessage && activeUrl !== '/game'}
-	<ErrorModal />
+	<ErrorModal onclose={() => {}} />
 {/if}
 
 <nav class="btm-nav ml-auto mr-auto h-[7vh] max-w-7xl overflow-auto bg-base-300">
@@ -59,6 +63,9 @@
 		</li>
 		<li>
 			<a href="/game/character" class:active={activeUrl === '/game/character'}>Character</a>
+		</li>
+		<li>
+			<a href="/game/companions" class:active={activeUrl === '/game/companions'}>Companions</a>
 		</li>
 		<li>
 			<a href="/game/settings/ai" class:active={activeUrl.includes('/game/settings')}>Menu</a>

@@ -213,7 +213,7 @@
 		if (isEqual(characterStatsState.value, initialCharacterStatsState)) {
 			await onRandomize();
 		}
-		navigate('/');
+		navigate('/new/companions');
 	};
 
 	function addLevelOverwrite(value: number): void {
@@ -283,7 +283,10 @@
 	<li class="step step-primary cursor-pointer">Stats</li>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
-	<li class="step cursor-pointer" onclick={nextStepClicked}>Start</li>
+	<li class="step cursor-pointer" onclick={() => navigate('/new/companions')}>Companions</li>
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<!-- svelte-ignore a11y_click_events_have_key_events  -->
+	<li class="step cursor-pointer" onclick={() => navigate('/')}>Start</li>
 </ul>
 {#if isGeneratingState}
 	<LoadingModal />
@@ -304,7 +307,7 @@
 			id="level"
 			class="input input-bordered m-auto w-full max-w-md"
 			bind:value={characterStatsState.value.level}
-			oninput={(e) => addLevelOverwrite(parseInt(e.target.value))}
+			oninput={(e) => addLevelOverwrite(parseInt((e.target as HTMLInputElement)?.value || '0'))}
 		/>
 	</div>
 
@@ -346,7 +349,7 @@
 									id={`${resourceName}-max`}
 									class="input input-bordered w-full"
 									oninput={(e) =>
-										addResourceOverwrite(resourceName, { max_value: parseInt(e.target.value) })}
+										addResourceOverwrite(resourceName, { max_value: parseInt((e.target as HTMLInputElement)?.value || '0') })}
 									bind:value={characterStatsState.value.resources[resourceName].max_value}
 								/>
 							</div>
@@ -360,7 +363,7 @@
 									id={`${resourceName}-start`}
 									class="input input-bordered w-full"
 									oninput={(e) =>
-										addResourceOverwrite(resourceName, { start_value: parseInt(e.target.value) })}
+										addResourceOverwrite(resourceName, { start_value: parseInt((e.target as HTMLInputElement)?.value || '0') })}
 									bind:value={characterStatsState.value.resources[resourceName].start_value}
 								/>
 							</div>
@@ -372,7 +375,7 @@
 								type="checkbox"
 								class="toggle"
 								oninput={(e) =>
-									addResourceOverwrite(resourceName, { game_ends_when_zero: e.target.checked })}
+									addResourceOverwrite(resourceName, { game_ends_when_zero: (e.target as HTMLInputElement)?.checked || false })}
 								bind:checked={characterStatsState.value.resources[resourceName].game_ends_when_zero}
 							/>
 						</label>
@@ -452,7 +455,7 @@
 							id={`attributes-${statName}`}
 							class="input input-bordered w-full"
 							bind:value={characterStatsState.value.attributes[statName]}
-							oninput={(e) => addAttributeOverwrite(statName, parseInt(e.target.value))}
+							oninput={(e) => addAttributeOverwrite(statName, parseInt((e.target as HTMLInputElement)?.value || '0'))}
 						/>
 					</div>
 				{/each}
@@ -533,7 +536,7 @@
 							id={`skills-${statName}`}
 							class="input input-bordered w-full"
 							bind:value={characterStatsState.value.skills[statName]}
-							oninput={(e) => addSkillOverwrite(statName, parseInt(e.target.value))}
+							oninput={(e) => addSkillOverwrite(statName, parseInt((e.target as HTMLInputElement)?.value || '0'))}
 						/>
 					</div>
 				{/each}
@@ -645,7 +648,7 @@
 			</button>
 		{/if}
 		<button class="btn btn-primary m-auto w-3/4 sm:w-1/2" onclick={onContinue}>
-			Start Your Tale
+			Next Step:<br /> Companions
 		</button>
 	</div>
 {/snippet}

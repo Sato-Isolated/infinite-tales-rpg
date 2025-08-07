@@ -190,7 +190,8 @@ export class ActionAgent {
 		relatedHistory?: string[],
 		newSkillsAllowed: boolean = false,
 		restrainingState?: string,
-		additionalActionInputState?: string
+		additionalActionInputState?: string,
+		activeCompanions?: any[] // Ajout des compagnons actifs
 	): Promise<{ thoughts: string; actions: Array<Action> }> {
 		//remove knowledge of story secrets etc
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -218,6 +219,26 @@ export class ActionAgent {
 				...
   		]`
 		];
+
+		// Ajouter les compagnons actifs au contexte
+		if (activeCompanions && activeCompanions.length > 0) {
+			const companionDescriptions = activeCompanions.map(companion => {
+				return {
+					name: companion.character_description.name,
+					personality: companion.character_description.personality,
+					abilities: companion.character_stats.spells_and_abilities?.map(ability => ability.name) || [],
+					relationship_level: companion.loyalty_level || 50
+				};
+			}).filter(companion => companion);
+
+			if (companionDescriptions.length > 0) {
+				agent.push(
+					'ACTIVE COMPANIONS: The following companions are present and can assist, react, or suggest actions based on their personalities and abilities:\n' +
+					stringifyPretty(companionDescriptions) +
+					'\nConsider including actions that involve coordinating with, asking advice from, or utilizing companions\' abilities.'
+				);
+			}
+		}
 
 		this.addRestrainingStateToAgent(agent, restrainingState);
 		if (relatedHistory && relatedHistory.length > 0) {

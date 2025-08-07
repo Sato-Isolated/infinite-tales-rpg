@@ -117,7 +117,10 @@
 	<li class="step cursor-pointer" onclick={() => goto('characterStats')}>Stats</li>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
-	<li class="step cursor-pointer" onclick={() => goto('characterStats')}>Start</li>
+	<li class="step cursor-pointer" onclick={() => goto('companions')}>Companions</li>
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<!-- svelte-ignore a11y_click_events_have_key_events  -->
+	<li class="step cursor-pointer" onclick={() => navigate('/')}>Start</li>
 </ul>
 <form class="m-6 grid items-center gap-2 text-center">
 	<p>Click on Randomize All to generate a random Character based on the Tale settings</p>
@@ -169,19 +172,20 @@
 	</button>
 
 	{#each Object.keys(characterState.value) as stateValue}
+		{@const typedStateValue = stateValue as keyof CharacterDescription}
 		<label class="form-control mt-3 w-full">
 			<div class="flex-row capitalize">
 				{stateValue.replaceAll('_', ' ')}
-				{#if characterStateOverwrites[stateValue]}
+				{#if characterStateOverwrites[typedStateValue]}
 					<span class="badge badge-accent ml-2">overwritten</span>
 				{/if}
 			</div>
 			<textarea
-				bind:value={characterState.value[stateValue]}
-				rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
+				bind:value={characterState.value[typedStateValue]}
+				rows={textAreaRowsDerived ? textAreaRowsDerived[typedStateValue] : 2}
 				placeholder=""
 				oninput={(evt) => {
-					characterStateOverwrites[stateValue] = evt.currentTarget.value;
+					characterStateOverwrites[typedStateValue] = evt.currentTarget.value;
 				}}
 				class="textarea textarea-bordered textarea-md mt-2 w-full"
 			>
@@ -190,7 +194,7 @@
 		<button
 			class="btn btn-accent m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 			onclick={() => {
-				onRandomizeSingle(stateValue);
+				onRandomizeSingle(typedStateValue);
 			}}
 		>
 			Randomize {stateValue.replaceAll('_', ' ')}
@@ -198,8 +202,8 @@
 		<button
 			class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 			onclick={() => {
-				characterState.resetProperty(stateValue);
-				delete characterStateOverwrites[stateValue];
+				characterState.resetProperty(typedStateValue);
+				delete characterStateOverwrites[typedStateValue];
 				if (stateValue === 'appearance') {
 					resetImageState = true;
 				}

@@ -12,6 +12,8 @@ import {
 	type Resources
 } from '$lib/ai/agents/characterStatsAgent';
 import type { CampaignChapter } from '$lib/ai/agents/campaignAgent';
+import { getEntityCoordinator } from '$lib/services/entityCoordinator';
+import { getMemoryCoordinator } from '$lib/services/memoryCoordinator';
 
 export type InventoryUpdate = {
 	type: 'add_item' | 'remove_item';
@@ -137,8 +139,27 @@ export class GameAgent {
 		playerCharactersGameState: PlayerCharactersGameState,
 		inventoryState: InventoryState,
 		relatedHistory: string[],
-		gameSettings: GameSettings
+		gameSettings: GameSettings,
+		activeCompanions?: any[] // DEPRECATED: Use EntityCoordinator instead
 	): Promise<{ newState: GameActionState; updatedHistoryMessages: Array<LLMMessage> }> {
+		// 🌟 INTEGRATION ENTITYCOORDINATOR & MEMORYCOORDINATOR 🌟
+		const entityCoordinator = getEntityCoordinator();
+		const memoryCoordinator = getMemoryCoordinator();
+
+		// 1. Obtenir les entités depuis EntityCoordinator au lieu du paramètre deprecated
+		const unifiedCompanions = entityCoordinator.getActiveCompanions();
+		const allEntities = entityCoordinator.getEntitiesForGameAgent();
+		
+		// 2. Générer contexte mémoire intelligent
+		const currentStoryId = historyMessages.length;
+		const playerEntityId = entityCoordinator.getPlayerEntity()?.id;
+		const entityIds = playerEntityId ? [playerEntityId] : [];
+		const memoryContext = memoryCoordinator.generateContextForStory(
+			currentStoryId,
+			entityIds,
+			10 // contexte depth
+		);
+
 		let playerActionText = action.characterName + ': ' + action.text;
 		const cost = parseInt(action.resource_cost?.cost as unknown as string) || 0;
 		if (cost > 0) {
@@ -148,9 +169,18 @@ export class GameAgent {
 		let combinedText = playerActionText;
 		if (additionalStoryInput) combinedText += '\n' + additionalStoryInput;
 
-		if (relatedHistory.length > 0) {
+		// 3. Utiliser contexte mémoire intelligent au lieu de relatedHistory basic
+		if (memoryContext.relevant_events.length > 0) {
+			const intelligentHistory = memoryContext.relevant_events
+				.map(event => `${event.title}: ${event.description}`)
+				.join('\n');
+			combinedText += PAST_STORY_PLOT_RULE + intelligentHistory;
+		} else if (relatedHistory.length > 0) {
+			// Fallback vers ancien système
 			combinedText += PAST_STORY_PLOT_RULE + relatedHistory.join('\n');
 		}
+
+		// 4. Instructions système enrichies avec entités unifiées
 		const gameAgent = this.getGameAgentSystemInstructionsFromStates(
 			storyState,
 			characterState,
@@ -159,11 +189,16 @@ export class GameAgent {
 			customSystemInstruction,
 			customStoryAgentInstruction,
 			customCombatAgentInstruction,
-			gameSettings
+			gameSettings,
+			unifiedCompanions, // Utiliser entités unifiées
+			memoryContext
 		);
 		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
 
+		console.log('🧠 Memory Context Events:', memoryContext.relevant_events.length);
+		console.log('🏭 Unified Entities:', allEntities);
 		console.log(combinedText);
+
 		const request: LLMRequest = {
 			userMessage: combinedText,
 			historyMessages: historyMessages,
@@ -171,18 +206,86 @@ export class GameAgent {
 			returnFallbackProperty: true
 		};
 		const time = new Date().toLocaleTimeString();
-		console.log('Starting game agent:', time);
+		console.log('Starting game agent with unified systems:', time);
+		
 		const newState = (await this.llm.generateContentStream(
 			request,
 			storyUpdateCallback,
 			thoughtUpdateCallback
 		)) as GameActionState;
+
+		// 5. Utiliser EntityCoordinator pour currently_present_npcs au lieu de l'ancien système
+		if (newState.currently_present_npcs) {
+			newState.currently_present_npcs = allEntities;
+		}
+
+		// 6. Synchroniser les entités après génération
+		if (newState.stats_update) {
+			newState.stats_update.forEach(statsUpdate => {
+				const entity = entityCoordinator.findEntityByName(statsUpdate.targetName);
+				if (entity) {
+					const resourceKey = statsUpdate.type.replace('_gained', '').replace('_lost', '');
+					const value = parseInt(statsUpdate.value.result) || 0;
+					
+					if (entity.resources[resourceKey]) {
+						if (statsUpdate.type.includes('_gained')) {
+							const newValue = Math.min(
+								entity.resources[resourceKey].current_value + Math.abs(value), 
+								entity.resources[resourceKey].max_value
+							);
+							entityCoordinator.syncEntityStats(entity.id, {
+								[resourceKey]: { ...entity.resources[resourceKey], current_value: newValue }
+							});
+						} else if (statsUpdate.type.includes('_lost')) {
+							const newValue = Math.max(
+								entity.resources[resourceKey].current_value - Math.abs(value),
+								0
+							);
+							entityCoordinator.syncEntityStats(entity.id, {
+								[resourceKey]: { ...entity.resources[resourceKey], current_value: newValue }
+							});
+						}
+					}
+				}
+			});
+		}
+
+		// 7. Enregistrer l'événement dans MemoryCoordinator
+		const playerEntity = entityCoordinator.getPlayerEntity();
+		if (playerEntity && newState.story) {
+			const entitiesInvolved = [playerEntity.id];
+			
+			// Ajouter les compagnons présents
+			if (unifiedCompanions.length > 0) {
+				entitiesInvolved.push(...unifiedCompanions.map(c => c.id));
+			}
+
+			await memoryCoordinator.recordEvent({
+				story_id: currentStoryId,
+				event_type: this.mapActionToEventType(action),
+				title: `${action.characterName}: ${action.text.substring(0, 50)}...`,
+				description: newState.story.substring(0, 200) + '...',
+				entities_involved: entitiesInvolved,
+				emotional_impact: this.calculateEmotionalImpact(action, newState),
+				importance_level: this.determineImportanceLevel(action, newState),
+				tags: this.generateEventTags(action, newState),
+				narrative_metadata: {
+					plot_advancement: !!newState.nextPlotPoint,
+					character_development: newState.stats_update?.some(u => u.type.includes('level')) || false,
+					world_building: action.type?.includes('exploration') || false,
+					mystery_revelation: newState.story.toLowerCase().includes('reveal') || newState.story.toLowerCase().includes('discover')
+				}
+			});
+		}
+
 		const { userMessage, modelMessage } = this.buildHistoryMessages(
 			playerActionTextForHistory,
 			newState
 		);
 		const updatedHistoryMessages = [...historyMessages, userMessage, modelMessage];
 		mapGameState(newState);
+		
+		console.log('✅ Story generation complete with unified systems');
 		return { newState, updatedHistoryMessages };
 	}
 
@@ -270,7 +373,9 @@ export class GameAgent {
 		customSystemInstruction: string,
 		customStoryAgentInstruction: string,
 		customCombatAgentInstruction: string,
-		gameSettings: GameSettings
+		gameSettings: GameSettings,
+		activeCompanions?: any[],
+		memoryContext?: any
 	) {
 		const gameAgent = [
 			systemBehaviour(gameSettings),
@@ -283,6 +388,54 @@ export class GameAgent {
 			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.\n" +
 				stringifyPretty(inventoryState)
 		];
+
+		// Ajouter les compagnons actifs au contexte avec protection contre les doublons
+		if (activeCompanions && activeCompanions.length > 0) {
+			const companionContexts = activeCompanions.map(companion => {
+				return {
+					name: companion.character_description.name,
+					description: companion.character_description.description,
+					personality: companion.character_description.personality,
+					background: companion.character_description.background,
+					appearance: companion.character_description.appearance,
+					abilities: companion.character_stats.spells_and_abilities?.map(ability => ({
+						name: ability.name,
+						effect: ability.effect
+					})) || [],
+					loyalty_level: companion.loyalty_level || 50,
+					trust_level: companion.trust_level || 30,
+					recent_memories: companion.companion_memory.significant_events.slice(-3).map(event => ({
+						event_type: event.event_type,
+						description: event.description,
+						emotional_impact: event.emotional_impact
+					}))
+				};
+			}).filter(companion => companion);
+
+			if (companionContexts.length > 0) {
+				// Créer une blacklist des noms de compagnons
+				const companionNames = activeCompanions.map(c => c.character_description.name).filter(Boolean);
+				const companionNamesLower = companionNames.map(name => name.toLowerCase());
+				
+				gameAgent.push(
+					'ACTIVE COMPANIONS: The following companions are present and part of the story. They should be included in the narrative, react to events based on their personalities and memories, and be added to currently_present_npcs as friendly:\n' +
+					stringifyPretty(companionContexts) +
+					'\nCompanions should:\n' +
+					'- React authentically based on their personality and recent memories\n' +
+					'- Participate in conversations and events\n' +
+					'- Show emotional responses consistent with their loyalty/trust levels\n' +
+					'- Use their abilities when appropriate\n' +
+					'- Be treated as important NPCs, not background elements\n\n' +
+					'CRITICAL ANTI-DUPLICATION RULES:\n' +
+					`- NEVER create new NPCs with these names: ${companionNames.join(', ')}\n` +
+					'- NEVER create NPCs with similar names or variations of companion names\n' +
+					'- These companions already exist and should not be duplicated\n' +
+					'- Always include existing companions in currently_present_npcs when they should be present\n' +
+					'- If a companion is mentioned in the story, use their existing data, do not create a new NPC'
+				);
+			}
+		}
+
 		if (customSystemInstruction) {
 			gameAgent.push('Following instructions overrule all others: ' + customSystemInstruction);
 		}
@@ -313,6 +466,245 @@ export class GameAgent {
 		const modelMessage: LLMMessage = { role: 'model', content: stringifyPretty(modelStateObject) };
 		return { userMessage, modelMessage };
 	};
+
+	// 🌟 MÉTHODES D'INTEGRATION MEMORYCOORDINATOR 🌟
+
+	/**
+	 * Mappe un type d'action vers un type d'événement mémoire
+	 */
+	mapActionToEventType(action: Action): "discovery" | "action" | "dialogue" | "relationship_change" | "story_progression" | "combat" | "other" {
+		const actionType = action.type?.toLowerCase() || '';
+		
+		if (actionType.includes('combat') || actionType.includes('attack') || actionType.includes('fight')) {
+			return 'combat';
+		}
+		if (actionType.includes('travel') || actionType.includes('move') || actionType.includes('journey')) {
+			return 'story_progression';
+		}
+		if (actionType.includes('social') || actionType.includes('dialogue') || actionType.includes('conversation')) {
+			return 'dialogue';
+		}
+		if (actionType.includes('investigation') || actionType.includes('search') || actionType.includes('explore')) {
+			return 'discovery';
+		}
+		if (actionType.includes('moral') || actionType.includes('choice') || actionType.includes('decision')) {
+			return 'relationship_change';
+		}
+		if (actionType.includes('magic') || actionType.includes('spell') || actionType.includes('ritual')) {
+			return 'action';
+		}
+		
+		// Type par défaut basé sur le texte de l'action
+		const actionText = action.text.toLowerCase();
+		if (actionText.includes('help') || actionText.includes('save') || actionText.includes('protect')) {
+			return 'action';
+		}
+		if (actionText.includes('talk') || actionText.includes('speak') || actionText.includes('say')) {
+			return 'dialogue';
+		}
+		if (actionText.includes('discover') || actionText.includes('find') || actionText.includes('reveal')) {
+			return 'discovery';
+		}
+		
+		return 'action';
+	}
+
+	/**
+	 * Calcule l'impact émotionnel d'une action
+	 */
+	calculateEmotionalImpact(action: Action, gameState: GameActionState): number {
+		let impact = 0;
+
+		// Impact basé sur les stats updates
+		if (gameState.stats_update) {
+			for (const statsUpdate of gameState.stats_update) {
+				const value = parseInt(statsUpdate.value.result) || 0;
+				
+				if (statsUpdate.type.includes('hp_lost')) {
+					impact -= Math.min(value * 2, 30); // Impact négatif pour dégâts
+				}
+				if (statsUpdate.type.includes('hp_gained')) {
+					impact += Math.min(value * 3, 20); // Impact positif pour soins
+				}
+				if (statsUpdate.type.includes('xp_gained')) {
+					impact += Math.min(value, 15); // Impact positif pour progression
+				}
+			}
+		}
+
+		// Impact basé sur la difficulté
+		switch (action.action_difficulty) {
+			case 'very_difficult':
+				impact += 25;
+				break;
+			case 'difficult':
+				impact += 15;
+				break;
+			case 'medium':
+				impact += 5;
+				break;
+		}
+
+		// Impact basé sur le type d'action
+		const actionType = action.type?.toLowerCase() || '';
+		if (actionType.includes('heroic') || action.text.toLowerCase().includes('save')) {
+			impact += 20;
+		}
+		if (actionType.includes('betrayal') || action.text.toLowerCase().includes('betray')) {
+			impact -= 30;
+		}
+		if (gameState.is_character_in_combat) {
+			impact += 10; // Combat ajoute du stress
+		}
+
+		// Impact basé sur le contenu narratif
+		const story = gameState.story?.toLowerCase() || '';
+		if (story.includes('success') || story.includes('victory')) {
+			impact += 10;
+		}
+		if (story.includes('failure') || story.includes('defeat')) {
+			impact -= 15;
+		}
+		if (story.includes('discover') || story.includes('reveal')) {
+			impact += 8;
+		}
+
+		return Math.max(-100, Math.min(100, impact));
+	}
+
+	/**
+	 * Détermine le niveau d'importance d'un événement
+	 */
+	determineImportanceLevel(action: Action, gameState: GameActionState): 'low' | 'medium' | 'high' {
+		let importanceScore = 0;
+
+		// Score basé sur l'impact émotionnel
+		const emotionalImpact = Math.abs(this.calculateEmotionalImpact(action, gameState));
+		importanceScore += emotionalImpact / 10;
+
+		// Score basé sur la difficulté
+		switch (action.action_difficulty) {
+			case 'very_difficult':
+				importanceScore += 30;
+				break;
+			case 'difficult':
+				importanceScore += 20;
+				break;
+			case 'medium':
+				importanceScore += 10;
+				break;
+		}
+
+		// Score basé sur la progression de l'intrigue
+		if (gameState.nextPlotPoint !== gameState.currentPlotPoint) {
+			importanceScore += 25; // Avancement d'intrigue significatif
+		}
+
+		// Score basé sur les conséquences
+		if (gameState.stats_update && gameState.stats_update.length > 0) {
+			importanceScore += gameState.stats_update.length * 5;
+		}
+		if (gameState.inventory_update && gameState.inventory_update.length > 0) {
+			importanceScore += gameState.inventory_update.length * 3;
+		}
+
+		// Score basé sur le contenu narratif
+		const storyMemoryExplanation = gameState.story_memory_explanation?.toLowerCase() || '';
+		if (storyMemoryExplanation.includes('high')) {
+			importanceScore += 20;
+		} else if (storyMemoryExplanation.includes('medium')) {
+			importanceScore += 10;
+		}
+
+		// Combat et événements spéciaux
+		if (gameState.is_character_in_combat) {
+			importanceScore += 15;
+		}
+
+		// Classification finale
+		if (importanceScore >= 50) return 'high';
+		if (importanceScore >= 25) return 'medium';
+		return 'low';
+	}
+
+	/**
+	 * Génère des tags pour un événement
+	 */
+	generateEventTags(action: Action, gameState: GameActionState): string[] {
+		const tags: string[] = [];
+
+		// Tags basés sur le type d'action
+		if (action.type) {
+			tags.push(action.type.toLowerCase().replace(' ', '_'));
+		}
+
+		// Tags basés sur la difficulté
+		if (action.action_difficulty) {
+			tags.push(`difficulty_${action.action_difficulty}`);
+		}
+
+		// Tags basés sur l'état du jeu
+		if (gameState.is_character_in_combat) {
+			tags.push('combat');
+		}
+
+		// Tags basés sur les stats updates
+		if (gameState.stats_update) {
+			for (const update of gameState.stats_update) {
+				if (update.type.includes('hp_lost')) {
+					tags.push('damage_taken');
+				}
+				if (update.type.includes('hp_gained')) {
+					tags.push('healing');
+				}
+				if (update.type.includes('xp_gained')) {
+					tags.push('character_growth');
+				}
+				if (update.type.includes('level')) {
+					tags.push('level_up');
+				}
+			}
+		}
+
+		// Tags basés sur l'inventaire
+		if (gameState.inventory_update) {
+			for (const update of gameState.inventory_update) {
+				if (update.type === 'add_item') {
+					tags.push('item_gained');
+				}
+				if (update.type === 'remove_item') {
+					tags.push('item_lost');
+				}
+			}
+		}
+
+		// Tags basés sur le contenu narratif
+		const story = gameState.story?.toLowerCase() || '';
+		const actionText = action.text.toLowerCase();
+
+		if (story.includes('discover') || actionText.includes('discover')) {
+			tags.push('discovery');
+		}
+		if (story.includes('secret') || actionText.includes('secret')) {
+			tags.push('mystery');
+		}
+		if (story.includes('magic') || actionText.includes('magic')) {
+			tags.push('magic');
+		}
+		if (story.includes('travel') || actionText.includes('travel')) {
+			tags.push('travel');
+		}
+		if (story.includes('npc') || story.includes('character')) {
+			tags.push('npc_interaction');
+		}
+
+		// Tags basés sur l'avancement de l'intrigue
+		if (gameState.nextPlotPoint !== gameState.currentPlotPoint) {
+			tags.push('plot_advancement');
+		}
+
+		return [...new Set(tags)]; // Supprimer les doublons
+	}
 
 	static getRefillValue(maxResource: Resources[string]): number {
 		return maxResource.max_value === maxResource.start_value

@@ -15,6 +15,7 @@
 	import ImportExportSaveGame from '$lib/components/ImportExportSaveGame.svelte';
 	import { type CharacterDescription, initialCharacterState } from '$lib/ai/agents/characterAgent';
 	import type { AIConfig } from '$lib';
+	
 	let isGeneratingState = $state(false);
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
 	const aiLanguage = useLocalStorage<string>('aiLanguage');
@@ -115,7 +116,10 @@
 	<li class="step cursor-pointer" onclick={() => goto('characterStats')}>Stats</li>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions  -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
-	<li class="step cursor-pointer" onclick={() => goto('character')}>Start</li>
+	<li class="step cursor-pointer" onclick={() => goto('companions')}>Companions</li>
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions  -->
+	<!-- svelte-ignore a11y_click_events_have_key_events  -->
+	<li class="step cursor-pointer" onclick={() => navigate('/')}>Start</li>
 </ul>
 <form class="m-6 grid items-center gap-2 text-center">
 	<p>Quickstart: Click on Randomize All to generate a random Tale.</p>
@@ -158,6 +162,7 @@
 			<button {onclick} class="btn btn-neutral m-auto w-3/4 sm:w-1/2"> Import Settings </button>
 		{/snippet}
 	</ImportExportSaveGame>
+
 	<button
 		class="btn btn-primary m-auto w-3/4 sm:w-1/2"
 		onclick={() => {
@@ -168,6 +173,7 @@
 	</button>
 	{#if storyState.value}
 		{#each Object.keys(storyStateForPrompt) as stateValue}
+			{@const typedStateValue = stateValue as keyof typeof storyStateForPrompt}
 			<label class="form-control mt-3 w-full">
 				<div class=" flex-row capitalize">
 					{stateValue.replaceAll('_', ' ')}
@@ -177,10 +183,10 @@
 				</div>
 
 				<textarea
-					bind:value={storyState.value[stateValue]}
-					rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
+					bind:value={storyState.value[typedStateValue]}
+					rows={textAreaRowsDerived ? textAreaRowsDerived[typedStateValue] : 2}
 					oninput={(evt) => handleInput(evt, stateValue)}
-					placeholder={storyStateForPrompt[stateValue]}
+					placeholder={storyStateForPrompt[typedStateValue]}
 					class="textarea textarea-bordered textarea-md mt-2 w-full"
 				></textarea>
 			</label>
@@ -195,7 +201,7 @@
 			<button
 				class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 				onclick={() => {
-					storyState.resetProperty(stateValue);
+					storyState.resetProperty(typedStateValue);
 					delete storyStateOverwrites[stateValue];
 				}}
 			>

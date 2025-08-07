@@ -10,12 +10,34 @@ export type ThoughtsState = {
 	storyThoughts: string;
 	actionsThoughts: string;
 	eventThoughts: string;
+	narrativeEvolution?: string;
+	companionValidation?: string;
+	coherenceAlerts?: string;
+	coherenceInsights?: string;
 };
 
 export const initialThoughtsState: ThoughtsState = {
 	storyThoughts: '',
 	actionsThoughts: '',
-	eventThoughts: ''
+	eventThoughts: '',
+	narrativeEvolution: '',
+	companionValidation: '',
+	coherenceAlerts: '',
+	coherenceInsights: ''
+};
+
+export type CompanionValidationState = {
+	lastValidationActionIndex: number;
+	validationCounter: number;
+	lastValidationTimestamp: string;
+	forceNextValidation: boolean;
+};
+
+export const initialCompanionValidationState: CompanionValidationState = {
+	lastValidationActionIndex: -1,
+	validationCounter: 0,
+	lastValidationTimestamp: '',
+	forceNextValidation: false
 };
 
 export function stringifyPretty(object: unknown) {
