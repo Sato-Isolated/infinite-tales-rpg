@@ -1697,7 +1697,17 @@
 				playerCharactersIdToNamesMapState.value,
 				$state.snapshot(npcState.value),
 				$state.snapshot(inventoryState.value),
-				$state.snapshot(characterStatsState.value.resources)
+				// Convert Resources to ResourcesWithCurrentValue
+				Object.fromEntries(
+					Object.entries($state.snapshot(characterStatsState.value.resources)).map(([key, resource]) => [
+						key,
+						{
+							max_value: resource.max_value,
+							current_value: resource.start_value,
+							game_ends_when_zero: resource.game_ends_when_zero
+						}
+					])
+				)
 			);
 
 			// Update all states with the restored values
