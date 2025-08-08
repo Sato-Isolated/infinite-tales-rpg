@@ -58,9 +58,20 @@ export interface PredictiveInsights {
 	};
 }
 
+export interface CoherenceGuardrails {
+	instruction_block: string;
+	summary: string;
+	risks: Array<{ type: string; probability: number; severity: 'low' | 'medium' | 'high' | 'critical'; description: string }>;
+	top_conflicts: string[];
+	suggestions: string[];
+}
+
 export class CoherenceMetricsService {
 	private history: CoherenceHistoryEntry[] = [];
 	private readonly MAX_HISTORY = 100; // Garder les 100 dernières mesures
+	private ema_alpha = 0.4; // Lissage exponentiel
+	private ema_overall: number | null = null;
+	private last_guardrails: CoherenceGuardrails | null = null;
 
 	/**
 	 * Calcule les métriques détaillées de cohérence
@@ -79,13 +90,18 @@ export class CoherenceMetricsService {
 		const memoryScore = this.calculateMemoryScore(memoryValidation);
 
 		// Score global pondéré
-		const overallScore = Math.round(
+		const rawOverall = (
 			(temporalScore * 0.2) +
 			(characterScore * 0.25) +
 			(plotScore * 0.25) +
 			(worldScore * 0.15) +
 			(memoryScore * 0.15)
 		);
+		// Lissage EMA pour éviter les oscillations brutales
+		this.ema_overall = this.ema_overall == null
+			? rawOverall
+			: (this.ema_alpha * rawOverall + (1 - this.ema_alpha) * this.ema_overall);
+		const overallScore = Math.round(this.ema_overall);
 
 		// Analyse des tendances
 		const trends = this.analyzeTrends(overallScore);
@@ -112,6 +128,70 @@ export class CoherenceMetricsService {
 		this.addToHistory(metrics, actionSummary, entityValidation, memoryValidation);
 
 		return metrics;
+	}
+
+	/**
+	 * Détermine si des garde-fous doivent être appliqués au prompt
+	 */
+	shouldApplyGuardrails(metrics: CoherenceMetrics): boolean {
+		const lowScore = metrics.overall_score < 72;
+		const degrading = metrics.trends.degrading;
+		const highRisk = metrics.quality_indicators.risk_level === 'high' || metrics.quality_indicators.risk_level === 'critical';
+		return lowScore || degrading || highRisk;
+	}
+
+	/**
+	 * Construit un bloc d'instructions concis pour guider le LLM à corriger la trajectoire
+	 */
+	buildGuardrailsInstructions(
+		entityValidation: EntityValidationResult,
+		memoryValidation: MemoryValidationResult,
+		metrics: CoherenceMetrics,
+		insights?: PredictiveInsights
+	): CoherenceGuardrails {
+		const topConflicts = [
+			...entityValidation.conflicts.slice(0, 3).map(c => `Entity(${c.severity}): ${c.description}`),
+			...memoryValidation.conflicts_detected.slice(0, 3).map(c => `Memory(${c.severity}): ${c.description}`)
+		];
+
+		const suggestions = [
+			...memoryValidation.recommendations.slice(0, 3),
+			...((insights?.optimal_choices || []).slice(0, 2).map(c => `${c.action_type}: ${c.description}`))
+		];
+
+		const risks = (insights?.potential_conflicts || []).slice(0, 3).map(r => ({
+			type: r.type,
+			probability: r.probability,
+			severity: r.severity,
+			description: r.description
+		}));
+
+		const summary = `Coherence ${metrics.overall_score}% | trend: ${metrics.trends.improving ? '↑' : metrics.trends.degrading ? '↓' : '→'} | risk: ${metrics.quality_indicators.risk_level}`;
+
+		const instruction_block = [
+			'COHERENCE GUARDRAILS:',
+			`- Overall: ${metrics.overall_score}% (${metrics.quality_indicators.consistency_level}), Risk: ${metrics.quality_indicators.risk_level}`,
+			topConflicts.length ? `- Address first: ${topConflicts.join(' | ')}` : undefined,
+			suggestions.length ? `- Improve by: ${suggestions.join(' | ')}` : undefined,
+			'- Rules:',
+			'  1) Do not repeat last scene; continue the next logical beat consistent with Memory Context.',
+			'  2) Prefer continuing active plot threads; avoid spawning new ones unless necessary.',
+			'  3) Resolve contradictions with previously established facts; if conflict, defer to earlier canon.',
+			'  4) On success outcomes, ensure tangible forward progress (new consequence, clue, or status change).'
+		].filter(Boolean).join('\n');
+
+		this.last_guardrails = {
+			instruction_block,
+			summary,
+			risks,
+			top_conflicts: topConflicts,
+			suggestions
+		};
+		return this.last_guardrails;
+	}
+
+	getLastGuardrails(): CoherenceGuardrails | null {
+		return this.last_guardrails;
 	}
 
 	/**
@@ -262,7 +342,7 @@ export class CoherenceMetricsService {
 
 		const recentScores = this.history.slice(-5).map(entry => entry.metrics.overall_score);
 		const avgRecent = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
-		
+
 		const olderScores = this.history.slice(-10, -5).map(entry => entry.metrics.overall_score);
 		const avgOlder = olderScores.length > 0 ? olderScores.reduce((a, b) => a + b, 0) / olderScores.length : avgRecent;
 
@@ -293,9 +373,9 @@ export class CoherenceMetricsService {
 
 		// Niveau de risque
 		const criticalConflicts = entityValidation.conflicts.filter(c => c.severity === 'critical').length +
-								 memoryValidation.conflicts_detected.filter(c => c.severity === 'critical').length;
+			memoryValidation.conflicts_detected.filter(c => c.severity === 'critical').length;
 		const highConflicts = entityValidation.conflicts.filter(c => c.severity === 'high').length +
-							  memoryValidation.conflicts_detected.filter(c => c.severity === 'high').length;
+			memoryValidation.conflicts_detected.filter(c => c.severity === 'high').length;
 
 		let riskLevel: CoherenceMetrics['quality_indicators']['risk_level'];
 		if (criticalConflicts > 0) riskLevel = 'critical';
@@ -394,7 +474,7 @@ export class CoherenceMetricsService {
 		// Tendance générale
 		const recentAvg = this.history.slice(-10).reduce((sum, entry) => sum + entry.metrics.overall_score, 0) / Math.min(10, this.history.length);
 		const olderAvg = this.history.slice(0, -10).reduce((sum, entry) => sum + entry.metrics.overall_score, 0) / Math.max(1, this.history.length - 10);
-		
+
 		let trendDirection: 'improving' | 'stable' | 'degrading';
 		const trendDiff = recentAvg - olderAvg;
 		if (trendDiff > 5) trendDirection = 'improving';
@@ -420,13 +500,13 @@ export class CoherenceMetricsService {
 	): PredictiveInsights {
 		// Analyser les patterns historiques pour prédire les problèmes
 		const recentConflicts = this.history.slice(-10).flatMap(entry => entry.issues_detected);
-		
+
 		// Conflits potentiels basés sur les patterns
 		const potentialConflicts = this.predictConflictsFromPatterns(recentConflicts, currentEntityValidation, currentMemoryValidation);
-		
+
 		// Choix optimaux pour améliorer la cohérence
 		const optimalChoices = this.suggestOptimalChoices(currentEntityValidation, currentMemoryValidation);
-		
+
 		// Évaluation des risques
 		const riskAssessment = this.assessRisks(currentEntityValidation, currentMemoryValidation);
 
@@ -546,22 +626,22 @@ export class CoherenceMetricsService {
 		memoryValidation: MemoryValidationResult
 	): PredictiveInsights['risk_assessment'] {
 		// Risque de plot holes basé sur les conflits détectés
-		const plotHoleRisk = memoryValidation.conflicts_detected.filter(c => 
+		const plotHoleRisk = memoryValidation.conflicts_detected.filter(c =>
 			c.conflict_type === 'plot_hole'
 		).length;
 
 		// Risque d'incohérence des personnages
-		const characterInconsistencyRisk = entityValidation.conflicts.filter(c => 
+		const characterInconsistencyRisk = entityValidation.conflicts.filter(c =>
 			c.type === 'name_duplicate' || c.type === 'relationship_conflict'
 		).length;
 
 		// Risque de paradoxes temporels
-		const temporalParadoxRisk = memoryValidation.conflicts_detected.filter(c => 
+		const temporalParadoxRisk = memoryValidation.conflicts_detected.filter(c =>
 			c.conflict_type === 'temporal_inconsistency'
 		).length;
 
 		// Risque de world building basé sur les erreurs factuelles
-		const worldBuildingRisk = memoryValidation.conflicts_detected.filter(c => 
+		const worldBuildingRisk = memoryValidation.conflicts_detected.filter(c =>
 			c.conflict_type === 'factual_error'
 		).length;
 

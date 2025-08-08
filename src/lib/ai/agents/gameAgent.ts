@@ -14,6 +14,7 @@ import {
 import type { CampaignChapter } from '$lib/ai/agents/campaignAgent';
 import { getEntityCoordinator } from '$lib/services/entityCoordinator';
 import { getMemoryCoordinator } from '$lib/services/memoryCoordinator';
+import { getCoherenceMetricsService } from '$lib/services/coherenceMetrics';
 
 export type InventoryUpdate = {
 	type: 'add_item' | 'remove_item';
@@ -88,6 +89,8 @@ export type GameActionState = {
 	currentPlotPoint: string;
 	nextPlotPoint: string;
 	story: string;
+	// Optional concise bullets describing concrete changes this turn
+	state_change_summary?: string[];
 	image_prompt: string;
 	inventory_update: Array<InventoryUpdate>;
 	stats_update: Array<StatsUpdate>;
@@ -95,6 +98,18 @@ export type GameActionState = {
 	is_character_restrained_explanation?: string;
 	currently_present_npcs: Targets;
 	story_memory_explanation: string;
+	// New: LLM-driven memory capture (optional)
+	memory_capture?: {
+		should_record: boolean;
+		moment_type?: 'action' | 'dialogue' | 'discovery' | 'relationship_change' | 'story_progression' | 'combat' | 'other';
+		title?: string;
+		summary?: string;
+		importance?: 'low' | 'medium' | 'high' | 'critical';
+		entities_involved_names?: string[]; // LLM-provided names; will be resolved to IDs
+		tags?: string[];
+	};
+	// Optional feedback describing how guardrails were applied
+	coherence_feedback?: string;
 };
 export type GameMasterAnswer = {
 	answerToPlayer: string;
@@ -149,14 +164,22 @@ export class GameAgent {
 		// 1. Obtenir les entités depuis EntityCoordinator au lieu du paramètre deprecated
 		const unifiedCompanions = entityCoordinator.getActiveCompanions();
 		const allEntities = entityCoordinator.getEntitiesForGameAgent();
-		
+
 		// 2. Générer contexte mémoire intelligent
 		const currentStoryId = historyMessages.length;
 		const playerEntityId = entityCoordinator.getPlayerEntity()?.id;
-		const entityIds = playerEntityId ? [playerEntityId] : [];
+		// Inclure toutes les entités connues (hostiles, neutres, amicales) pour éviter l'oubli de contexte
+		const presentEntityIds: string[] = [
+			...(allEntities?.hostile?.map((e) => e.uniqueTechnicalNameId) || []),
+			...(allEntities?.friendly?.map((e) => e.uniqueTechnicalNameId) || []),
+			...(allEntities?.neutral?.map((e) => e.uniqueTechnicalNameId) || [])
+		];
+		const entityIds = playerEntityId ? [playerEntityId, ...presentEntityIds] : presentEntityIds;
+		// Dédupliquer
+		const focusEntityIds = Array.from(new Set(entityIds));
 		const memoryContext = memoryCoordinator.generateContextForStory(
 			currentStoryId,
-			entityIds,
+			focusEntityIds,
 			10 // contexte depth
 		);
 
@@ -195,6 +218,27 @@ export class GameAgent {
 		);
 		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
 
+		// 4b. Injecter des guardrails de cohérence si nécessaire
+		try {
+			const coherenceService = getCoherenceMetricsService();
+			// Construire validations synthétiques depuis les coordinateurs
+			const entityValidation = getEntityCoordinator().detectAndResolveDuplicates();
+			const memoryValidation = await getMemoryCoordinator().validateOverallCoherence();
+			const metrics = coherenceService.calculateDetailedMetrics(
+				entityValidation,
+				memoryValidation,
+				currentStoryId,
+				`Action: ${action.text.substring(0, 60)}`
+			);
+			const insights = coherenceService.generatePredictiveInsights(entityValidation, memoryValidation);
+			if (coherenceService.shouldApplyGuardrails(metrics)) {
+				const guard = coherenceService.buildGuardrailsInstructions(entityValidation, memoryValidation, metrics, insights);
+				gameAgent.unshift(guard.instruction_block);
+			}
+		} catch (e) {
+			console.warn('Coherence guardrails skipped:', e);
+		}
+
 		console.log('🧠 Memory Context Events:', memoryContext.relevant_events.length);
 		console.log('🏭 Unified Entities:', allEntities);
 		console.log(combinedText);
@@ -207,7 +251,7 @@ export class GameAgent {
 		};
 		const time = new Date().toLocaleTimeString();
 		console.log('Starting game agent with unified systems:', time);
-		
+
 		const newState = (await this.llm.generateContentStream(
 			request,
 			storyUpdateCallback,
@@ -226,11 +270,11 @@ export class GameAgent {
 				if (entity) {
 					const resourceKey = statsUpdate.type.replace('_gained', '').replace('_lost', '');
 					const value = parseInt(statsUpdate.value.result) || 0;
-					
+
 					if (entity.resources[resourceKey]) {
 						if (statsUpdate.type.includes('_gained')) {
 							const newValue = Math.min(
-								entity.resources[resourceKey].current_value + Math.abs(value), 
+								entity.resources[resourceKey].current_value + Math.abs(value),
 								entity.resources[resourceKey].max_value
 							);
 							entityCoordinator.syncEntityStats(entity.id, {
@@ -250,32 +294,60 @@ export class GameAgent {
 			});
 		}
 
-		// 7. Enregistrer l'événement dans MemoryCoordinator
+		// 7. Enregistrer l'événement dans MemoryCoordinator (LLM-driven when provided)
 		const playerEntity = entityCoordinator.getPlayerEntity();
 		if (playerEntity && newState.story) {
-			const entitiesInvolved = [playerEntity.id];
-			
-			// Ajouter les compagnons présents
-			if (unifiedCompanions.length > 0) {
-				entitiesInvolved.push(...unifiedCompanions.map(c => c.id));
-			}
+			// Inclure toutes les entités pertinentes (joueur, compagnons, NPCs présents)
+			const baseInvolvedIds = new Set<string>();
+			baseInvolvedIds.add(playerEntity.id);
+			unifiedCompanions.forEach((c) => baseInvolvedIds.add(c.id));
+			presentEntityIds.forEach((id) => baseInvolvedIds.add(id));
 
-			await memoryCoordinator.recordEvent({
-				story_id: currentStoryId,
-				event_type: this.mapActionToEventType(action),
-				title: `${action.characterName}: ${action.text.substring(0, 50)}...`,
-				description: newState.story.substring(0, 200) + '...',
-				entities_involved: entitiesInvolved,
-				emotional_impact: this.calculateEmotionalImpact(action, newState),
-				importance_level: this.determineImportanceLevel(action, newState),
-				tags: this.generateEventTags(action, newState),
-				narrative_metadata: {
-					plot_advancement: !!newState.nextPlotPoint,
-					character_development: newState.stats_update?.some(u => u.type.includes('level')) || false,
-					world_building: action.type?.includes('exploration') || false,
-					mystery_revelation: newState.story.toLowerCase().includes('reveal') || newState.story.toLowerCase().includes('discover')
-				}
-			});
+			// Si le LLM propose un enregistrement mémoire, l'utiliser
+			const capture = newState.memory_capture;
+			if (capture?.should_record) {
+				// Résoudre les noms en IDs quand possible
+				const resolvedIds = new Set<string>(baseInvolvedIds);
+				(capture.entities_involved_names || []).forEach((name) => {
+					const ent = entityCoordinator.findEntityByName(name);
+					if (ent) resolvedIds.add(ent.id);
+				});
+
+				await memoryCoordinator.recordEvent({
+					story_id: currentStoryId,
+					event_type: capture.moment_type || this.mapActionToEventType(action),
+					title: capture.title || `${action.characterName}: ${action.text.substring(0, 50)}...`,
+					description: (capture.summary || newState.story.substring(0, 200)) + '...',
+					entities_involved: Array.from(resolvedIds),
+					emotional_impact: this.calculateEmotionalImpact(action, newState),
+					importance_level: capture.importance || this.determineImportanceLevel(action, newState),
+					tags: capture.tags && capture.tags.length > 0 ? capture.tags : this.generateEventTags(action, newState),
+					narrative_metadata: {
+						plot_advancement: !!newState.nextPlotPoint,
+						character_development: newState.stats_update?.some(u => u.type.includes('level')) || false,
+						world_building: action.type?.includes('exploration') || false,
+						mystery_revelation: newState.story.toLowerCase().includes('reveal') || newState.story.toLowerCase().includes('discover')
+					}
+				});
+			} else {
+				// Fallback: enregistrement basique comme avant
+				await memoryCoordinator.recordEvent({
+					story_id: currentStoryId,
+					event_type: this.mapActionToEventType(action),
+					title: `${action.characterName}: ${action.text.substring(0, 50)}...`,
+					description: newState.story.substring(0, 200) + '...',
+					entities_involved: Array.from(baseInvolvedIds),
+					emotional_impact: this.calculateEmotionalImpact(action, newState),
+					importance_level: this.determineImportanceLevel(action, newState),
+					tags: this.generateEventTags(action, newState),
+					narrative_metadata: {
+						plot_advancement: !!newState.nextPlotPoint,
+						character_development: newState.stats_update?.some(u => u.type.includes('level')) || false,
+						world_building: action.type?.includes('exploration') || false,
+						mystery_revelation: newState.story.toLowerCase().includes('reveal') || newState.story.toLowerCase().includes('discover')
+					}
+				});
+			}
 		}
 
 		const { userMessage, modelMessage } = this.buildHistoryMessages(
@@ -284,7 +356,7 @@ export class GameAgent {
 		);
 		const updatedHistoryMessages = [...historyMessages, userMessage, modelMessage];
 		mapGameState(newState);
-		
+
 		console.log('✅ Story generation complete with unified systems');
 		return { newState, updatedHistoryMessages };
 	}
@@ -307,14 +379,14 @@ export class GameAgent {
 	): Promise<{ thoughts?: string; answer: GameMasterAnswer }> {
 		const gameAgent = [
 			'You are Reviewer Agent, your task is to answer a players question.\n' +
-				'You can refer to the internal state, rules and previous messages that the Game Master has considered',
+			'You can refer to the internal state, rules and previous messages that the Game Master has considered',
 			'The following is the internal state of the NPCs.' + '\n' + stringifyPretty(npcState)
 		];
 		if (campaignChapterState) {
 			gameAgent.push(
 				'The following is the state of the current campaign chapter.' +
-					'\n' +
-					stringifyPretty(campaignChapterState)
+				'\n' +
+				stringifyPretty(campaignChapterState)
 			);
 		}
 		if (customGmNotes) {
@@ -325,8 +397,8 @@ export class GameAgent {
 		if (thoughtsState.storyThoughts) {
 			gameAgent.push(
 				'The following are thoughts of the Game Master regarding how to progress the story.' +
-					'\n' +
-					JSON.stringify(thoughtsState)
+				'\n' +
+				JSON.stringify(thoughtsState)
 			);
 		}
 		if (relatedHistory.length > 0) {
@@ -381,12 +453,12 @@ export class GameAgent {
 			systemBehaviour(gameSettings),
 			stringifyPretty(storyState),
 			'The following is a description of the player character, always refer to it when considering appearance, reasoning, motives etc.' +
-				'\n' +
-				stringifyPretty(characterState),
+			'\n' +
+			stringifyPretty(characterState),
 			"The following are the character's CURRENT resources, consider it in your response\n" +
-				stringifyPretty(Object.values(playerCharactersGameState)),
+			stringifyPretty(Object.values(playerCharactersGameState)),
 			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.\n" +
-				stringifyPretty(inventoryState)
+			stringifyPretty(inventoryState)
 		];
 
 		// Ajouter les compagnons actifs au contexte avec protection contre les doublons
@@ -416,7 +488,7 @@ export class GameAgent {
 				// Créer une blacklist des noms de compagnons
 				const companionNames = activeCompanions.map(c => c.character_description.name).filter(Boolean);
 				const companionNamesLower = companionNames.map(name => name.toLowerCase());
-				
+
 				gameAgent.push(
 					'ACTIVE COMPANIONS: The following companions are present and part of the story. They should be included in the narrative, react to events based on their personalities and memories, and be added to currently_present_npcs as friendly:\n' +
 					stringifyPretty(companionContexts) +
@@ -474,7 +546,7 @@ export class GameAgent {
 	 */
 	mapActionToEventType(action: Action): "discovery" | "action" | "dialogue" | "relationship_change" | "story_progression" | "combat" | "other" {
 		const actionType = action.type?.toLowerCase() || '';
-		
+
 		if (actionType.includes('combat') || actionType.includes('attack') || actionType.includes('fight')) {
 			return 'combat';
 		}
@@ -493,7 +565,7 @@ export class GameAgent {
 		if (actionType.includes('magic') || actionType.includes('spell') || actionType.includes('ritual')) {
 			return 'action';
 		}
-		
+
 		// Type par défaut basé sur le texte de l'action
 		const actionText = action.text.toLowerCase();
 		if (actionText.includes('help') || actionText.includes('save') || actionText.includes('protect')) {
@@ -505,7 +577,7 @@ export class GameAgent {
 		if (actionText.includes('discover') || actionText.includes('find') || actionText.includes('reveal')) {
 			return 'discovery';
 		}
-		
+
 		return 'action';
 	}
 
@@ -519,7 +591,7 @@ export class GameAgent {
 		if (gameState.stats_update) {
 			for (const statsUpdate of gameState.stats_update) {
 				const value = parseInt(statsUpdate.value.result) || 0;
-				
+
 				if (statsUpdate.type.includes('hp_lost')) {
 					impact -= Math.min(value * 2, 30); // Impact négatif pour dégâts
 				}
@@ -793,6 +865,11 @@ Storytelling
 - Introduce key characters by describing their actions, appearance, and manner of speaking. Reveal their emotions, motivations, and backstories gradually through their dialogue and how they react to the player character and the world.
 - Encourage moments of introspection, dialogue, and quiet observation to develop a deeper understanding of the characters and the world they inhabit. 
 - ${SLOW_STORY_PROMPT}
+- Strict anti-looping and continuity rules:
+	- Do not restate or paraphrase the last scene; move the situation forward with new beats.
+	- If the previous output ended mid-conversation or mid-action, continue it naturally instead of restarting it.
+	- Use PAST STORY PLOT and Memory Context to maintain continuity; never contradict established facts from earlier messages.
+	- If the player succeeds on a roll, reflect tangible forward progress or new consequences; avoid resetting the same obstacle.
 - Deconstruct Player Actions: Do not make decisions on behalf of the player character. More importantly, treat complex player intentions (e.g., 'I perform the ritual,' 'I persuade the guard,' 'I search the library') as the start of a scene, not a single action to be resolved immediately. Narrate the first step of the character's attempt and the immediate consequence or obstacle. Then, pause and wait for the player's next specific action within that scene.
 - For the story narration never mention game meta elements like dice rolls; Only describe the narrative the character experiences
 - The story history always takes precedence over the story progression, if the history does not allow for the progression to happen, the progression must be adjusted to fit the history.
@@ -832,6 +909,7 @@ const jsonSystemInstructionForGameAgent = (
   "gradualNarrativeExplanation": "Reasoning how the story development is broken down to meaningful narrative moments. Each step should represent a significant part of the process, giving the player the opportunity to make impactful choices.",
   "plotPointAdvancingNudgeExplanation": "VALUE MUST BE ALWAYS IN ENGLISH; Explain what could happen next to advance the story towards NEXT_PLOT_ID according to ADVENTURE_AND_MAIN_EVENT; Include brief explanation of NEXT_PLOT_ID; Format "CURRENT_PLOT_ID: {plotId}; NEXT_PLOT_ID: {currentPlotId + 1}; {Reasoning}",
   "story": "depending on If The Action Is A Success Or Failure progress the story further with appropriate consequences. ${!gameSettingsState.detailedNarrationLength ? storyWordLimit : ''} For character speech use single quotes. Format the narration using HTML tags for easier reading.",
+	"state_change_summary": ["Bullet points of concrete changes this turn (new clue, moved location, updated resource, NPC reaction, thread advanced)"],
   "story_memory_explanation": "Explanation if story progression has Long-term Impact: Remember events that significantly influence character arcs, plot direction, or the game world in ways that persist or resurface later; Format: {explanation} LONG_TERM_IMPACT: LOW, MEDIUM, HIGH",
   "image_prompt": "Create a prompt for an image generating ai that describes the scene of the story progression, do not use character names but appearance description. Always include the gender. Keep the prompt similar to previous prompts to maintain image consistency. When describing CHARACTER, always refer to appearance variable. Always use the format: {sceneDetailed} {adjective} {charactersDetailed}",
   "xpGainedExplanation": "Explain why or why nor the CHARACTER gains xp in this situation",
@@ -858,6 +936,16 @@ const jsonSystemInstructionForGameAgent = (
   "is_character_restrained_explanation": null | string; "If not restrained null, else Briefly explain how the character has entered a TEMPORARY state or condition that SIGNIFICANTLY RESTRICTS their available actions, changes how they act, or puts them under external control? (Examples: Put to sleep, paralyzed, charmed, blinded,  affected by an illusion, under a compulsion spell)",
   "currently_present_npcs_explanation": "For each NPC explain why they are or are not present in list currently_present_npcs",
   "currently_present_npcs": List of NPCs or party members that are present in the current situation. Format: ${currentlyPresentNPCSForPrompt}
+	,"memory_capture": {
+		"should_record": true | false,
+		"moment_type": "action" | "dialogue" | "discovery" | "relationship_change" | "story_progression" | "combat" | "other",
+		"title": "Short, 5-12 words, summarizing the moment",
+		"summary": "1-2 sentences capturing what matters long-term without spoilers",
+		"importance": "low" | "medium" | "high" | "critical",
+		"entities_involved_names": ["CHARACTER", "Companion Name", "NPC Name"],
+		"tags": ["plot_advancement", "clue", "relationship", "combat", "mystery", "worldbuilding"]
+	}
+		,"coherence_feedback": "If COHERENCE GUARDRAILS were present, briefly explain how continuity/anti-loop rules were applied in this turn."
 }`;
 
 const jsonSystemInstructionForPlayerQuestion = `Important Instruction! You must always respond with valid JSON in the following format:

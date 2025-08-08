@@ -65,12 +65,12 @@ export function getAllNpcsIds(targets: Targets): Array<NpcID> {
 // 🌟 VERSION UNIFIÉE avec EntityCoordinator
 export function getNewNPCs(targets: Targets, npcState?: NPCState): Array<NpcID> {
 	const allNpcIds = getAllNpcsIds(targets);
-	
+
 	// Utiliser EntityCoordinator au lieu de NPCState
 	const entityCoordinator = getEntityCoordinator();
 	const existingNPCs = entityCoordinator.getAllNPCs();
 	const existingNPCIds = existingNPCs.map(npc => npc.id);
-	
+
 	// Fallback vers l'ancien système si nécessaire (transition période)
 	if (npcState && Object.keys(npcState).length > 0) {
 		console.warn('⚠️ Using legacy NPCState - consider migrating to EntityCoordinator');
@@ -78,7 +78,7 @@ export function getNewNPCs(targets: Targets, npcState?: NPCState): Array<NpcID> 
 			(newNPC) => !Object.keys(npcState).includes(newNPC.uniqueTechnicalNameId)
 		);
 	}
-	
+
 	// Version moderne avec EntityCoordinator
 	return allNpcIds.filter(
 		(newNPC) => !existingNPCIds.includes(newNPC.uniqueTechnicalNameId)
@@ -93,7 +93,7 @@ export function getNewNPCs(targets: Targets, npcState?: NPCState): Array<NpcID> 
 export function getUnifiedNewEntities(targets: Targets): Array<NpcID> {
 	const entityCoordinator = getEntityCoordinator();
 	const allTargetIds = getAllNpcsIds(targets);
-	
+
 	// Récupérer toutes les entités (NPCs + compagnons)
 	const allNPCs = entityCoordinator.getAllNPCs();
 	const allCompanions = entityCoordinator.getActiveCompanions();
@@ -101,8 +101,8 @@ export function getUnifiedNewEntities(targets: Targets): Array<NpcID> {
 		...allNPCs.map(npc => npc.id),
 		...allCompanions.map(companion => companion.id)
 	];
-	
-	return allTargetIds.filter(target => 
+
+	return allTargetIds.filter(target =>
 		!existingEntityIds.includes(target.uniqueTechnicalNameId)
 	);
 }
@@ -113,22 +113,22 @@ export function getUnifiedNewEntities(targets: Targets): Array<NpcID> {
 export function syncEntityStatsFromUpdate(statsUpdate: StatsUpdate): boolean {
 	const entityCoordinator = getEntityCoordinator();
 	const entity = entityCoordinator.findEntityByName(statsUpdate.targetName);
-	
+
 	if (!entity) {
 		console.log(`🔍 Entity not found for stats update: ${statsUpdate.targetName}`);
 		return false;
 	}
-	
+
 	const resourceKey = statsUpdate.type.replace('_gained', '').replace('_lost', '').toUpperCase();
 	const value = parseInt(statsUpdate.value.result) || 0;
-	
+
 	if (!entity.resources[resourceKey]) {
 		console.log(`❌ Resource ${resourceKey} not found for entity ${entity.id}`);
 		return false;
 	}
-	
+
 	let newValue = entity.resources[resourceKey].current_value;
-	
+
 	if (statsUpdate.type.includes('_gained')) {
 		newValue = Math.min(
 			entity.resources[resourceKey].current_value + Math.abs(value),
@@ -140,7 +140,7 @@ export function syncEntityStatsFromUpdate(statsUpdate: StatsUpdate): boolean {
 			0
 		);
 	}
-	
+
 	// Utiliser EntityCoordinator pour synchroniser
 	entityCoordinator.syncEntityStats(entity.id, {
 		[resourceKey]: {
@@ -148,7 +148,7 @@ export function syncEntityStatsFromUpdate(statsUpdate: StatsUpdate): boolean {
 			current_value: newValue
 		}
 	});
-	
+
 	console.log(`✅ Synced ${resourceKey} for ${entity.id}: ${entity.resources[resourceKey].current_value} → ${newValue}`);
 	return true;
 }
@@ -236,7 +236,7 @@ export function recordCompanionMemoryFromGameAction(
 	storyResult: string
 ): void {
 	const activeCompanions = companionManager.getActiveCompanions();
-	
+
 	activeCompanions.forEach(companion => {
 		const memoryEvent: MemoryEvent = {
 			id: uuidv4(),
@@ -257,53 +257,53 @@ export function recordCompanionMemoryFromGameAction(
 
 function mapActionTypeToMemoryEventType(actionType?: string): MemoryEvent['event_type'] {
 	if (!actionType) return 'dialogue';
-	
+
 	const lowerType = actionType.toLowerCase();
 	if (lowerType.includes('combat') || lowerType.includes('attack')) return 'combat';
 	if (lowerType.includes('travel') || lowerType.includes('move')) return 'travel';
 	if (lowerType.includes('investigation') || lowerType.includes('search')) return 'discovery';
 	if (lowerType.includes('social') || lowerType.includes('dialogue')) return 'dialogue';
 	if (lowerType.includes('moral') || lowerType.includes('choice')) return 'moral_choice';
-	
+
 	return 'dialogue';
 }
 
 function calculateEmotionalImpact(gameActionState: GameActionState, action: Action): number {
 	let impact = 0;
-	
+
 	// Analyser les stats updates pour déterminer l'impact
 	const statsUpdates = gameActionState.stats_update || [];
 	const totalDamage = statsUpdates
 		.filter(update => update.type === 'hp_lost')
 		.reduce((sum, update) => sum + (parseInt(update.value.result) || 0), 0);
-	
+
 	const totalHealing = statsUpdates
 		.filter(update => update.type === 'hp_gained')
 		.reduce((sum, update) => sum + (parseInt(update.value.result) || 0), 0);
-	
+
 	// Impact négatif pour les dégâts
 	impact -= Math.min(totalDamage * 2, 50);
-	
+
 	// Impact positif pour les soins
 	impact += Math.min(totalHealing * 3, 30);
-	
+
 	// Impact basé sur la difficulté de l'action
 	const difficulty = action.action_difficulty?.toLowerCase();
 	if (difficulty === 'very_difficult') impact += 20;
 	else if (difficulty === 'difficult') impact += 10;
-	
+
 	// Impact basé sur le type d'action
 	const actionType = action.type?.toLowerCase();
 	if (actionType?.includes('heroic')) impact += 30;
 	if (actionType?.includes('betrayal')) impact -= 40;
 	if (actionType?.includes('help')) impact += 15;
-	
+
 	return Math.max(-100, Math.min(100, impact));
 }
 
 function getParticipantsFromAction(action: Action, gameActionState: GameActionState): string[] {
 	const participants = ['player'];
-	
+
 	// Note: gameActionState.targets might not exist, using a different approach
 	// This would need to be implemented based on the actual GameActionState structure
 	return participants;
@@ -330,27 +330,27 @@ function generateCompanionReaction(
 	// Réaction basée sur la personnalité du compagnon
 	const personality = companion.character_description.personality.toLowerCase();
 	const actionType = action.type?.toLowerCase() || '';
-	
+
 	if (personality.includes('loyal')) {
 		if (actionType.includes('help')) return 'Shows approval for the helpful action';
 		if (actionType.includes('combat')) return 'Stands ready to support in battle';
 	}
-	
+
 	if (personality.includes('cynical')) {
 		if (actionType.includes('trust')) return 'Expresses skepticism about trusting others';
 		if (actionType.includes('optimistic')) return 'Remains doubtful despite positive outcomes';
 	}
-	
+
 	if (personality.includes('brave')) {
 		if (actionType.includes('danger')) return 'Eager to face the challenge head-on';
 		if (actionType.includes('retreat')) return 'Reluctantly follows but wishes to fight';
 	}
-	
+
 	// Réaction par défaut
 	const emotionalImpact = calculateEmotionalImpact(gameActionState, action);
 	if (emotionalImpact > 20) return 'Reacts positively to the outcome';
 	if (emotionalImpact < -20) return 'Shows concern about the situation';
-	
+
 	return 'Observes the situation thoughtfully';
 }
 
@@ -360,7 +360,7 @@ function determineLongTermSignificance(
 ): MemoryEvent['long_term_significance'] {
 	const emotionalImpact = Math.abs(calculateEmotionalImpact(gameActionState, action));
 	const difficulty = action.action_difficulty?.toLowerCase();
-	
+
 	if (emotionalImpact >= 40 || difficulty === 'very_difficult') return 'high';
 	if (emotionalImpact >= 20 || difficulty === 'difficult') return 'medium';
 	return 'low';
@@ -368,7 +368,7 @@ function determineLongTermSignificance(
 
 export async function processCompanionEvolution(companionManager: CompanionManager): Promise<void> {
 	const activeCompanions = companionManager.getActiveCompanions();
-	
+
 	// Déclencher l'évolution de personnalité périodiquement
 	for (const companion of activeCompanions) {
 		const recentEvents = companion.companion_memory.significant_events
@@ -455,7 +455,7 @@ export function shouldValidateCompanions(
 	// 5. Validation périodique (toutes les 50 actions)
 	const actionsSinceLastValidation = currentActionIndex - validationState.lastValidationActionIndex;
 	const VALIDATION_INTERVAL = 50;
-	
+
 	if (actionsSinceLastValidation >= VALIDATION_INTERVAL) {
 		return {
 			shouldValidate: true,
@@ -486,15 +486,15 @@ export function shouldValidateCompanions(
  * qui justifient une validation des compagnons
  */
 function detectSignificantNarrativeEvent(
-	action: Action, 
+	action: Action,
 	gameActionState?: GameActionState
 ): string | null {
 	const actionText = action.text?.toLowerCase() || '';
 	const actionType = action.type?.toLowerCase() || '';
-	
+
 	// Time skip ou voyage long
-	if (actionText.includes('time passes') || 
-		actionText.includes('days pass') || 
+	if (actionText.includes('time passes') ||
+		actionText.includes('days pass') ||
 		actionText.includes('weeks pass') ||
 		actionText.includes('months pass') ||
 		actionType.includes('time_skip')) {
@@ -502,7 +502,7 @@ function detectSignificantNarrativeEvent(
 	}
 
 	// Événements de transformation ou changement majeur
-	if (actionType.includes('transformation') || 
+	if (actionType.includes('transformation') ||
 		actionText.includes('transform') ||
 		actionText.includes('become') ||
 		actionText.includes('change into')) {
@@ -516,7 +516,7 @@ function detectSignificantNarrativeEvent(
 	}
 
 	// Combat majeur ou boss fight
-	if (actionType.includes('boss') || 
+	if (actionType.includes('boss') ||
 		actionText.includes('boss') ||
 		actionText.includes('final battle') ||
 		(gameActionState?.is_character_in_combat && action.action_difficulty === 'very_difficult')) {
@@ -524,15 +524,15 @@ function detectSignificantNarrativeEvent(
 	}
 
 	// Nouveaux lieux importants
-	if (actionText.includes('arrive') || 
-		actionText.includes('enter') || 
+	if (actionText.includes('arrive') ||
+		actionText.includes('enter') ||
 		actionText.includes('reach') ||
 		actionType.includes('travel')) {
 		return 'location_change';
 	}
 
 	// Événements de quête majeurs
-	if (actionText.includes('complete') || 
+	if (actionText.includes('complete') ||
 		actionText.includes('finish') ||
 		actionText.includes('accomplish') ||
 		actionText.includes('achieve')) {
@@ -623,8 +623,8 @@ export async function smartValidateCompanions(
 			case 'targeted':
 				// Validation ciblée : seulement sur les compagnons mentionnés
 				return await performTargetedValidation(
-					companionValidationService, 
-					companionManager, 
+					companionValidationService,
+					companionManager,
 					targetedCompanions,
 					storyHistory,
 					currentStory
@@ -675,8 +675,8 @@ async function performLightValidation(
 
 	return {
 		validatedCompanions: activeCompanions,
-		validationSummary: validationIssues.length > 0 
-			? `Light validation found ${validationIssues.length} minor issues` 
+		validationSummary: validationIssues.length > 0
+			? `Light validation found ${validationIssues.length} minor issues`
 			: 'Light validation passed',
 		enrichmentPerformed: false
 	};
@@ -762,7 +762,7 @@ export async function validateAndEnrichCompanionsForStoryGeneration(
 }> {
 	try {
 		const companionValidationService = new CompanionValidationService(llm);
-		
+
 		// Préparer le contexte d'enrichissement
 		const enrichmentContext = {
 			storyHistory,
@@ -815,21 +815,21 @@ function buildValidationSummary(validationResults: Array<{
 }>): string {
 	const enriched = validationResults.filter(r => r.wasEnriched);
 	const totalIssues = validationResults.flatMap(r => r.issues).length;
-	
+
 	if (enriched.length === 0 && totalIssues === 0) {
 		return 'All companions validated successfully - no enrichment needed';
 	}
-	
+
 	const summaryParts: string[] = [];
-	
+
 	if (enriched.length > 0) {
 		summaryParts.push(`${enriched.length} companion(s) data enriched`);
 	}
-	
+
 	if (totalIssues > 0) {
 		summaryParts.push(`${totalIssues} validation issue(s) resolved`);
 	}
-	
+
 	return summaryParts.join(', ');
 }
 
@@ -847,10 +847,10 @@ export function generateEnhancedCompanionPromptContext(
 
 	// Générer le contexte principal des compagnons
 	const companionPromptContext = companionValidationService.generateCompanionPromptContext(validatedCompanions);
-	
+
 	// Générer la blacklist des noms pour éviter les doublons
 	const companionBlacklist = companionValidationService.generateCompanionBlacklist(validatedCompanions);
-	
+
 	// Construire le prompt final avec protection anti-duplication renforcée
 	const enhancedContext = `
 ${companionPromptContext}
@@ -891,22 +891,22 @@ export function checkNPCNameForCompanionConflict(
 } {
 	const activeCompanions = companionManager.getActiveCompanions();
 	const hasConflict = companionValidationService.isNpcNameConflictingWithCompanions(npcName, activeCompanions);
-	
+
 	if (hasConflict) {
-		const conflictingCompanion = activeCompanions.find(c => 
+		const conflictingCompanion = activeCompanions.find(c =>
 			c.character_description.name.toLowerCase() === npcName.toLowerCase() ||
 			c.character_description.name.toLowerCase().includes(npcName.toLowerCase())
 		);
-		
+
 		return {
 			hasConflict: true,
 			conflictingCompanion,
-			suggestion: conflictingCompanion ? 
+			suggestion: conflictingCompanion ?
 				`Use existing companion "${conflictingCompanion.character_description.name}" instead of creating new NPC` :
 				`Choose different name - "${npcName}" conflicts with existing companion`
 		};
 	}
-	
+
 	return {
 		hasConflict: false,
 		suggestion: `Name "${npcName}" is available for new NPC`
@@ -929,7 +929,7 @@ export async function performPeriodicCompanionMaintenance(
 	try {
 		// Nettoyer les doublons NPCs/Compagnons
 		const cleanupResult = await cleanupNPCCompanionDuplicates(llm, npcState, companionManager);
-		
+
 		// Valider les compagnons avec l'histoire récente
 		const lastStories = storyHistory.slice(-3).join('\n');
 		const validationResult = await validateAndEnrichCompanionsForStoryGeneration(
@@ -939,8 +939,8 @@ export async function performPeriodicCompanionMaintenance(
 			lastStories
 		);
 
-		const maintenancePerformed = 
-			cleanupResult.removedNPCs.length > 0 || 
+		const maintenancePerformed =
+			cleanupResult.removedNPCs.length > 0 ||
 			validationResult.enrichmentPerformed;
 
 		const summaryParts: string[] = [];
@@ -950,20 +950,20 @@ export async function performPeriodicCompanionMaintenance(
 		if (validationResult.enrichmentPerformed) {
 			summaryParts.push('Enriched companion data');
 		}
-		
-		const summary = maintenancePerformed ? 
-			summaryParts.join(', ') : 
+
+		const summary = maintenancePerformed ?
+			summaryParts.join(', ') :
 			'No maintenance needed';
 
 		console.log('Periodic companion maintenance:', summary);
-		
+
 		return { maintenancePerformed, summary };
-		
+
 	} catch (error) {
 		console.error('Error in companion maintenance:', error);
-		return { 
-			maintenancePerformed: false, 
-			summary: 'Maintenance failed due to error' 
+		return {
+			maintenancePerformed: false,
+			summary: 'Maintenance failed due to error'
 		};
 	}
 }
@@ -977,25 +977,25 @@ export interface CompanionMention {
 }
 
 export function detectCompanionMentions(
-	input: string, 
+	input: string,
 	companionManager: CompanionManager
 ): { cleanInput: string; mentions: CompanionMention[] } {
 	const mentionRegex = /@(\w+)/gi;
 	const mentions: CompanionMention[] = [];
 	const activeCompanions = companionManager.getActiveCompanions();
-	
+
 	// Détecter toutes les mentions @
 	const matches = Array.from(input.matchAll(mentionRegex));
-	
+
 	for (const match of matches) {
 		const mentionedName = match[1].toLowerCase();
-		
+
 		// Chercher le compagnon correspondant (insensible à la casse)
-		const companion = activeCompanions.find(c => 
+		const companion = activeCompanions.find(c =>
 			c.character_description.name.toLowerCase() === mentionedName ||
 			c.character_description.name.toLowerCase().startsWith(mentionedName)
 		);
-		
+
 		if (companion) {
 			mentions.push({
 				companionName: companion.character_description.name,
@@ -1004,31 +1004,31 @@ export function detectCompanionMentions(
 			});
 		}
 	}
-	
+
 	// Nettoyer l'input en remplaçant les mentions par le nom complet
 	let cleanInput = input;
 	mentions.forEach(mention => {
 		const regex = new RegExp(`@${mention.companionName}`, 'gi');
 		cleanInput = cleanInput.replace(regex, mention.companionName);
 	});
-	
+
 	return { cleanInput, mentions };
 }
 
 export function generateCompanionContextForPrompt(mentions: CompanionMention[]): string {
 	if (mentions.length === 0) return '';
-	
+
 	const contextParts = mentions.map(mention => {
 		const companion = mention.companion;
 		const recentMemories = companion.companion_memory.significant_events
 			.slice(-3) // 3 derniers événements
 			.map(event => `- ${event.description} (${event.emotional_impact > 0 ? 'positive' : 'negative'} impact)`)
 			.join('\n');
-		
+
 		const personalityTraits = companion.personality_evolution.current_personality_traits
 			.map(trait => `${trait.trait_name}: ${trait.value}`)
 			.join(', ');
-		
+
 		return `
 COMPAGNON MENTIONNÉ: ${companion.character_description.name} (ID: ${companion.id})
 Personnalité: ${companion.character_description.personality}
@@ -1041,7 +1041,7 @@ ${recentMemories || 'Aucun événement récent'}
 
 Réagir selon cette personnalité et ces souvenirs.`;
 	});
-	
+
 	return `
 === COMPAGNONS MENTIONNÉS ===
 ${contextParts.join('\n\n')}
@@ -1054,11 +1054,11 @@ export function updateCompanionFromStatsUpdate(companionManager: CompanionManage
 	const targetCompanion = activeCompanions.find(
 		companion => companion.character_description.name === statsUpdate.targetName
 	);
-	
+
 	if (targetCompanion && targetCompanion.character_stats.resources) {
 		const result = Number.parseInt(statsUpdate.value.result);
 		const resources = targetCompanion.character_stats.resources;
-		
+
 		switch (statsUpdate.type) {
 			case 'hp_gained':
 				if (resources.HP) {
@@ -1076,7 +1076,7 @@ export function updateCompanionFromStatsUpdate(companionManager: CompanionManage
 				break;
 			// Similar for MP cases...
 		}
-		
+
 		// Sauvegarder les changements
 		companionManager.updateCompanion(targetCompanion.id, {
 			character_stats: targetCompanion.character_stats
@@ -1105,7 +1105,7 @@ export async function processNarrativeEvolutionPostStory(
 }> {
 	try {
 		const narrativeEvolutionService = new NarrativeEvolutionService(llm);
-		
+
 		// Exécuter le processus d'évolution narrative complet
 		const results = await narrativeEvolutionService.processPostStoryEvolution(
 			currentStory,
@@ -1116,7 +1116,7 @@ export async function processNarrativeEvolutionPostStory(
 		);
 
 		// Analyser si le joueur doit être notifié
-		const shouldNotifyPlayer = 
+		const shouldNotifyPlayer =
 			results.deduplication.removedNPCs.length > 0 ||
 			results.evolution.newCompanionsCreated.length > 0 ||
 			results.evolution.companionsEvolved.length > 0 ||
@@ -1153,7 +1153,7 @@ export async function processNarrativeEvolutionPostStory(
  */
 function buildEvolutionSummary(results: { deduplication: any; evolution: any }): string {
 	const summaryParts: string[] = [];
-	
+
 	// NPCs supprimés pour éviter les doublons
 	if (results.deduplication.removedNPCs.length > 0) {
 		summaryParts.push(`🔄 ${results.deduplication.removedNPCs.length} duplicate character(s) resolved`);
@@ -1188,8 +1188,8 @@ function buildEvolutionSummary(results: { deduplication: any; evolution: any }):
 		}
 	}
 
-	return summaryParts.length > 0 ? 
-		'🌟 Story Evolution:\n' + summaryParts.join('\n') : 
+	return summaryParts.length > 0 ?
+		'🌟 Story Evolution:\n' + summaryParts.join('\n') :
 		'';
 }
 
@@ -1204,11 +1204,11 @@ export async function cleanupNPCCompanionDuplicates(
 	try {
 		const narrativeEvolutionService = new NarrativeEvolutionService(llm);
 		const result = await narrativeEvolutionService.deduplicateNPCsAndCompanions(npcState, companionManager);
-		
+
 		return {
 			removedNPCs: result.removedNPCs,
-			message: result.removedNPCs.length > 0 ? 
-				`Cleaned up ${result.removedNPCs.length} duplicate NPCs that became companions` : 
+			message: result.removedNPCs.length > 0 ?
+				`Cleaned up ${result.removedNPCs.length} duplicate NPCs that became companions` :
 				'No duplicates found'
 		};
 	} catch (error) {
@@ -1235,10 +1235,10 @@ export async function processTimeSkipAction(
 }> {
 	try {
 		const narrativeEvolutionService = new NarrativeEvolutionService(llm);
-		
+
 		// Construire une story artificielle pour le time skip
 		const timeSkipStory = `Time passes... ${timeSkipDescription}`;
-		
+
 		// Traiter l'évolution narrative pour ce time skip
 		const evolution = await narrativeEvolutionService.analyzeAndEvolveNarrative(
 			timeSkipStory,
@@ -1267,7 +1267,7 @@ export async function processTimeSkipAction(
 
 function generateTimeSkipStoryContent(evolution: any, timeSkipDescription: string): string {
 	let storyContent = `${timeSkipDescription}\n\n`;
-	
+
 	// Ajouter les changements de compagnons
 	if (evolution.companionsEvolved.length > 0) {
 		storyContent += `During this time, you notice changes in your companions. They seem to have grown and evolved through your shared experiences.\n\n`;
@@ -1287,7 +1287,7 @@ function generateTimeSkipStoryContent(evolution: any, timeSkipDescription: strin
 	}
 
 	storyContent += 'The passage of time has brought changes to your group, and new chapter of your adventure begins...';
-	
+
 	return storyContent;
 }
 
@@ -1561,7 +1561,7 @@ export function getContinueTalePromptAddition(
 
 	const lastAction = gameActions[gameActions.length - 1];
 	const lastStory = lastAction?.story || '';
-	
+
 	// Construire un prompt spécifique pour "Continue The Tale"
 	let continuationPrompt = '\n\nCONTINUE THE TALE INSTRUCTIONS:\n';
 	continuationPrompt += '- Move the story forward with new developments, do not repeat recent events\n';
@@ -1569,7 +1569,7 @@ export function getContinueTalePromptAddition(
 	continuationPrompt += '- Build upon the current situation without rehashing what just happened\n';
 	continuationPrompt += '- If characters were speaking, continue or conclude their conversation naturally\n';
 	continuationPrompt += '- If action was taking place, show the next logical consequence or development\n';
-	
+
 	// Analyser le dernier événement pour donner des directions spécifiques
 	const lastStoryLower = lastStory.toLowerCase();
 	if (lastStoryLower.includes('says') || lastStoryLower.includes('speaks') || lastStoryLower.includes('"')) {
@@ -1584,9 +1584,11 @@ export function getContinueTalePromptAddition(
 	if (lastStoryLower.includes('combat') || lastStoryLower.includes('fight') || lastStoryLower.includes('attack')) {
 		continuationPrompt += '- Continue the combat sequence with new developments\n';
 	}
-	
+
 	continuationPrompt += '\nFocus on advancing the narrative meaningfully rather than describing the same scene again.\n';
-	
+	continuationPrompt += '- Avoid repeating the same sentences or re-describing the same setting; build the next beat.\n';
+	continuationPrompt += "- If nothing new can happen logically, introduce a small but fresh development (a reaction, clue, or consequence) consistent with prior events.\n";
+
 	return continuationPrompt;
 }
 
@@ -1607,11 +1609,13 @@ export function addAdditionsFromActionSideeffects(
 		additionalStoryInput += '\nenemyEncounter: ' + encounterString;
 	}
 
-	if (randomEventsHandling !== 'none' && diceRollResult !== 'critical_success') {
+	// Respect player success more: avoid random interruptions on any success unless explicitly ALWAYS
+	const isSuccess = diceRollResult === 'critical_success' || diceRollResult === 'major_success' || diceRollResult === 'regular_success';
+	if (randomEventsHandling !== 'none' && !isSuccess) {
 		const is_interruptible = JSON.stringify(action.is_interruptible) || '';
 		const probabilityEnum = getProbabilityEnum(is_interruptible);
 		const directly_interrupted =
-			probabilityEnum === InterruptProbability.ALWAYS || InterruptProbability.HIGH;
+			probabilityEnum === InterruptProbability.ALWAYS || probabilityEnum === InterruptProbability.HIGH;
 		const travel_interrupted = is_travel && probabilityEnum === InterruptProbability.MEDIUM;
 
 		if (randomEventsHandling === 'ai_decides') {
@@ -1621,7 +1625,9 @@ export function addAdditionsFromActionSideeffects(
 		}
 		if (randomEventsHandling === 'probability') {
 			//combat is already long enough, dont interrupt often
-			const modifier = is_character_in_combat ? 0.5 : 1;
+			let modifier = is_character_in_combat ? 0.5 : 1;
+			// Reduce chance further on partial failure (player still made progress)
+			if (diceRollResult === 'partial_failure') modifier *= 0.7;
 			const randomEventCreated = isRandomEventCreated(probabilityEnum, modifier);
 			console.log('randomEventCreated', randomEventCreated);
 			if (randomEventCreated) {
@@ -1689,7 +1695,7 @@ export function undoLastAction(
 
 	// Remove the last action
 	const updatedGameActions = gameActions.slice(0, -1);
-	
+
 	// Reset all game states to their initial values
 	const restoredPlayerCharactersGameState: PlayerCharactersGameState = {};
 	const restoredNpcState: NPCState = {};
