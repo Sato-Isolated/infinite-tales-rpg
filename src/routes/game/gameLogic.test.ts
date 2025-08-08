@@ -18,23 +18,28 @@ import type { StatsUpdate } from '$lib/ai/agents/combatAgent';
  */
 
 describe('renderStatUpdates', () => {
+	const resources = {
+		HP: { max_value: 100, start_value: 100, current_value: 50, game_ends_when_zero: true },
+		MP: { max_value: 100, start_value: 100, current_value: 50, game_ends_when_zero: false }
+	} as any;
+	const playerNames = ['Player1', 'Player2', 'Player 1', 'PlayerA', 'PlayerB'];
 	it('should return an empty array when statsUpdates is undefined', () => {
-		const result = renderStatUpdates(undefined as unknown as Array<StatsUpdate>, 'Player1');
+		const result = renderStatUpdates(undefined as unknown as Array<StatsUpdate>, resources, playerNames);
 		expect(result).toEqual([]);
 	});
 
 	it('should filter out updates with result 0 or type null', () => {
 		const statsUpdates = [
-			{ targetId: 'Player1', value: { result: '0' }, type: 'null' },
-			{ targetId: 'Player2', value: { result: '0' }, type: 'some_gained' }
-		];
-		const result = renderStatUpdates(statsUpdates, 'Player1');
+			{ targetName: 'Player1', value: { result: '0' }, type: 'null' },
+			{ targetName: 'Player2', value: { result: '0' }, type: 'some_gained' }
+		] as unknown as StatsUpdate[];
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result).toEqual([]);
 	});
 
 	it('should handle HP-related updates for the player', () => {
-		const statsUpdates = [{ targetId: 'Player1', value: { result: '10' }, type: 'hp_gained' }];
-		const result = renderStatUpdates(statsUpdates, 'Player1');
+	const statsUpdates = [{ targetName: 'Player1', value: { result: '10' }, type: 'hp_gained' } as unknown as StatsUpdate];
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result).toEqual([
 			{
 				text: 'You gain',
@@ -45,8 +50,8 @@ describe('renderStatUpdates', () => {
 	});
 
 	it('should handle MP-related updates for other players', () => {
-		const statsUpdates = [{ targetId: 'Player2', value: { result: '5' }, type: 'mp_lost' }];
-		const result = renderStatUpdates(statsUpdates, 'Player1');
+	const statsUpdates = [{ targetName: 'Player2', value: { result: '5' }, type: 'mp_lost' } as unknown as StatsUpdate];
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result).toEqual([
 			{
 				text: 'Player2 looses',
@@ -58,9 +63,9 @@ describe('renderStatUpdates', () => {
 
 	it('should handle status effects with unhandled types', () => {
 		const statsUpdates = [
-			{ targetId: 'Player1', value: { result: 'stunned' }, type: 'status_effect' }
+			{ targetName: 'Player1', value: { result: 'stunned' }, type: 'status_effect' } as unknown as StatsUpdate
 		];
-		const result = renderStatUpdates(statsUpdates, 'Player1');
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result).toEqual([
 			{
 				text: 'You are',
@@ -72,18 +77,18 @@ describe('renderStatUpdates', () => {
 
 	it('should handle undefined effects with unhandled types', () => {
 		const statsUpdates = [
-			{ targetId: 'Player1', value: { result: undefined }, type: 'status_effect' }
+			{ targetName: 'Player1', value: { result: undefined }, type: 'status_effect' } as unknown as StatsUpdate
 		];
-		const result = renderStatUpdates(statsUpdates, 'Player1');
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result.length).toEqual(0);
 	});
 
 	it('should sort updates by targetId', () => {
 		const statsUpdates = [
-			{ targetId: 'PlayerB', value: { result: '5' }, type: 'hp_gained' },
-			{ targetId: 'PlayerA', value: { result: '10' }, type: 'mp_gained' }
+			{ targetName: 'PlayerB', value: { result: '5' }, type: 'hp_gained' } as unknown as StatsUpdate,
+			{ targetName: 'PlayerA', value: { result: '10' }, type: 'mp_gained' } as unknown as StatsUpdate
 		];
-		const result = renderStatUpdates(statsUpdates, 'Player1');
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result).toEqual([
 			{
 				text: 'PlayerA gains',
@@ -99,8 +104,8 @@ describe('renderStatUpdates', () => {
 	});
 
 	it('should format names and types correctly for third-person updates', () => {
-		const statsUpdates = [{ targetId: 'Player_id1', value: { result: '20' }, type: 'hp_gained' }];
-		const result = renderStatUpdates(statsUpdates, 'Player2');
+	const statsUpdates = [{ targetName: 'Player_id1', value: { result: '20' }, type: 'hp_gained' } as unknown as StatsUpdate];
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result).toEqual([
 			{
 				text: 'Player 1 gains',
@@ -112,19 +117,19 @@ describe('renderStatUpdates', () => {
 
 	it('should filter out if value is object', () => {
 		const statsUpdates = [
-			{ targetId: 'Player_id1', value: { result: { effect: ' cool effect' } }, type: 'hp_gained' }
+			{ targetName: 'Player_id1', value: { result: { effect: ' cool effect' } as any }, type: 'hp_gained' } as unknown as StatsUpdate
 		];
-		const result = renderStatUpdates(statsUpdates, 'Player2');
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result.length).toBe(0);
 	});
 
 	it('should handle complex scenarios with mixed updates', () => {
 		const statsUpdates = [
-			{ targetId: 'Player1', value: { result: '15' }, type: 'hp_gained' },
-			{ targetId: 'Player2', value: { result: '10' }, type: 'mp_lost' },
-			{ targetId: 'Player1', value: { result: '5' }, type: 'mp_gained' }
+			{ targetName: 'Player1', value: { result: '15' }, type: 'hp_gained' } as unknown as StatsUpdate,
+			{ targetName: 'Player2', value: { result: '10' }, type: 'mp_lost' } as unknown as StatsUpdate,
+			{ targetName: 'Player1', value: { result: '5' }, type: 'mp_gained' } as unknown as StatsUpdate
 		];
-		const result = renderStatUpdates(statsUpdates, 'Player1');
+		const result = renderStatUpdates(statsUpdates, resources, playerNames);
 		expect(result).toEqual([
 			{
 				text: 'You gain',

@@ -6,7 +6,7 @@
 	import TTSComponent from '$lib/components/TTSComponent.svelte';
 	import type { AIConfig } from '$lib';
 
-	export type StoryProgressionWithImageProps = {
+	type StoryProgressionWithImageProps = {
 		storyTextRef?: HTMLElement;
 		story: string;
 		gameUpdates?: Array<RenderedGameUpdate | undefined>;
@@ -56,9 +56,9 @@
 		{@html rendered(story)}
 	</div>
 	<div id="gameUpdates mt-2">
-		{#each gameUpdates as gameUpdate}
+		{#each gameUpdates.filter(Boolean) as gameUpdate}
 			<p class="m-1 text-center text-sm capitalize">
-				{gameUpdate.text} <span class={gameUpdate.color}>{gameUpdate.resourceText}</span>
+				{gameUpdate!.text} <span class={gameUpdate!.color}>{gameUpdate!.resourceText}</span>
 			</p>
 		{/each}
 	</div>

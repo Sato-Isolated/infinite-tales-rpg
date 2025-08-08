@@ -142,13 +142,13 @@
 						</div>
 
 						<!-- Sélection de l'approche -->
-						<div class="form-control">
-							<label class="label">
+						<fieldset class="form-control">
+							<legend id="approach-label" class="label">
 								<span class="label-text font-semibold">Choose your approach:</span>
-							</label>
-							<div class="space-y-3">
+							</legend>
+							<div class="space-y-3" role="radiogroup" aria-labelledby="approach-label">
 								{#each approaches as approach}
-									<label class="cursor-pointer">
+									<label class="cursor-pointer" for={`approach-${approach.value}`}>
 										<div class="card bg-base-100 hover:bg-base-200 transition-colors">
 											<div class="card-body p-4">
 												<div class="flex items-center space-x-3">
@@ -156,6 +156,7 @@
 														type="radio"
 														name="approach"
 														value={approach.value}
+														id={`approach-${approach.value}`}
 														bind:group={selectedApproach}
 														class="radio radio-primary"
 													/>
@@ -169,7 +170,7 @@
 									</label>
 								{/each}
 							</div>
-						</div>
+						</fieldset>
 					</div>
 				{:else if availableNPCs.length > 0}
 					<!-- Liste des NPCs disponibles -->
@@ -180,8 +181,9 @@
 						
 						<div class="grid gap-4 max-h-96 overflow-y-auto">
 							{#each availableNPCs as npc}
-								<div class="card bg-base-100 hover:bg-base-200 cursor-pointer transition-colors" 
-									 onclick={() => handleSelectNPC(npc)}>
+								<div class="card bg-base-100 hover:bg-base-200 cursor-pointer transition-colors" role="button" tabindex="0"
+									 onclick={() => handleSelectNPC(npc)}
+									 onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectNPC(npc); } }}>
 									<div class="card-body p-4">
 										<div class="flex items-center justify-between">
 											<div class="flex-1">

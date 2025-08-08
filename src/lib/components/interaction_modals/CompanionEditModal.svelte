@@ -90,15 +90,29 @@
 
 {#if isOpen}
 	<!-- Modal Overlay -->
-	<div class="modal modal-open" onclick={handleClose}>
+	<div
+		class="modal modal-open relative"
+		role="dialog"
+		aria-modal="true"
+		aria-label="Companion editor dialog"
+		tabindex="-1"
+	>
+		<!-- Accessible backdrop button to close when clicking outside the modal box -->
+		<button
+			class="absolute inset-0 z-0 bg-transparent"
+			onclick={handleClose}
+			aria-label="Close dialog by clicking backdrop"
+			tabindex="-1"
+			aria-hidden="true"
+		></button>
 		<!-- Modal Content -->
-		<div class="modal-box w-11/12 max-w-5xl max-h-[90vh] overflow-hidden p-0" onclick={(e) => e.stopPropagation()}>
+				<div class="modal-box w-11/12 max-w-5xl max-h-[90vh] overflow-hidden p-0 relative z-10" role="region" aria-label="Companion editor">
 			<!-- Header -->
-			<div class="flex items-center justify-between p-6 border-b border-base-300">
+				<div class="flex items-center justify-between p-6 border-b border-base-300">
 				<h2 class="text-2xl font-bold">
 					Edit Companion: {editedCompanion.character_description.name}
 				</h2>
-				<button class="btn btn-ghost btn-sm btn-circle" onclick={handleClose}>
+								<button class="btn btn-ghost btn-sm btn-circle" aria-label="Close dialog" onclick={handleClose}>
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 					</svg>
@@ -107,7 +121,7 @@
 
 			<div class="flex h-[calc(90vh-180px)]">
 				<!-- Sidebar Navigation -->
-				<div class="w-64 bg-base-200 p-4 overflow-y-auto">
+				<div class="w-64 bg-base-200 p-4 overflow-y-auto" role="region" aria-label="Section navigation">
 					<ul class="menu menu-compact">
 						{#each sections as section}
 							<li>
@@ -124,16 +138,17 @@
 				</div>
 
 				<!-- Content Area -->
-				<div class="flex-1 p-6 overflow-y-auto">
+				<div class="flex-1 p-6 overflow-y-auto" role="region" aria-label="Editor content">
 					{#if activeSection === 'basic'}
 						<div class="space-y-4">
 							<h3 class="text-lg font-semibold mb-4">Basic Information</h3>
 							
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-name">
 									<span class="label-text">Name</span>
 								</label>
-								<input 
+								<input
+									id="companion-name"
 									type="text" 
 									class="input input-bordered" 
 									bind:value={editedCompanion.character_description.name}
@@ -142,10 +157,11 @@
 
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div class="form-control">
-									<label class="label">
+									<label class="label" for="companion-class">
 										<span class="label-text">Class</span>
 									</label>
-									<input 
+									<input
+										id="companion-class"
 										type="text" 
 										class="input input-bordered" 
 										bind:value={editedCompanion.character_description.class}
@@ -153,10 +169,11 @@
 								</div>
 
 								<div class="form-control">
-									<label class="label">
+									<label class="label" for="companion-race">
 										<span class="label-text">Race</span>
 									</label>
-									<input 
+									<input
+										id="companion-race"
 										type="text" 
 										class="input input-bordered" 
 										bind:value={editedCompanion.character_description.race}
@@ -164,10 +181,11 @@
 								</div>
 
 								<div class="form-control">
-									<label class="label">
+									<label class="label" for="companion-gender">
 										<span class="label-text">Gender</span>
 									</label>
-									<input 
+									<input
+										id="companion-gender"
 										type="text" 
 										class="input input-bordered" 
 										bind:value={editedCompanion.character_description.gender}
@@ -175,10 +193,11 @@
 								</div>
 
 								<div class="form-control">
-									<label class="label">
+									<label class="label" for="companion-alignment">
 										<span class="label-text">Alignment</span>
 									</label>
-									<input 
+									<input
+										id="companion-alignment"
 										type="text" 
 										class="input input-bordered" 
 										bind:value={editedCompanion.character_description.alignment}
@@ -187,10 +206,11 @@
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-level">
 									<span class="label-text">Level</span>
 								</label>
-								<input 
+								<input
+									id="companion-level"
 									type="number" 
 									min="1" 
 									max="20" 
@@ -216,40 +236,44 @@
 							<h3 class="text-lg font-semibold mb-4">Description</h3>
 							
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-personality">
 									<span class="label-text">Personality</span>
 								</label>
-								<textarea 
+								<textarea
+									id="companion-personality"
 									class="textarea textarea-bordered h-24" 
 									bind:value={editedCompanion.character_description.personality}
 								></textarea>
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-background">
 									<span class="label-text">Background</span>
 								</label>
-								<textarea 
+								<textarea
+									id="companion-background"
 									class="textarea textarea-bordered h-32" 
 									bind:value={editedCompanion.character_description.background}
 								></textarea>
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-appearance">
 									<span class="label-text">Appearance</span>
 								</label>
-								<textarea 
+								<textarea
+									id="companion-appearance"
 									class="textarea textarea-bordered h-24" 
 									bind:value={editedCompanion.character_description.appearance}
 								></textarea>
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-motivation">
 									<span class="label-text">Motivation</span>
 								</label>
-								<textarea 
+								<textarea
+									id="companion-motivation"
 									class="textarea textarea-bordered h-24" 
 									bind:value={editedCompanion.character_description.motivation}
 								></textarea>
@@ -345,22 +369,24 @@
 												</div>
 												<div class="grid grid-cols-1 md:grid-cols-3 gap-2">
 													<div class="form-control">
-														<label class="label">
+														<label class="label" for={`resource-${name}-max`}>
 															<span class="label-text text-xs">Max Value</span>
 														</label>
-														<input 
-															type="number" 
-															class="input input-bordered input-sm" 
+														<input
+															id={`resource-${name}-max`}
+															type="number"
+															class="input input-bordered input-sm"
 															bind:value={resource.max_value}
 														/>
 													</div>
 													<div class="form-control">
-														<label class="label">
+														<label class="label" for={`resource-${name}-start`}>
 															<span class="label-text text-xs">Start Value</span>
 														</label>
-														<input 
-															type="number" 
-															class="input input-bordered input-sm" 
+														<input
+															id={`resource-${name}-start`}
+															type="number"
+															class="input input-bordered input-sm"
 															bind:value={resource.start_value}
 														/>
 													</div>
@@ -403,40 +429,43 @@
 												</div>
 												<div class="space-y-2">
 													<div class="form-control">
-														<label class="label">
+														<label class="label" for={`ability-${index}-name`}>
 															<span class="label-text text-xs">Name</span>
 														</label>
-														<input 
-															type="text" 
-															class="input input-bordered input-sm" 
+														<input
+															id={`ability-${index}-name`}
+															type="text"
+															class="input input-bordered input-sm"
 															bind:value={ability.name}
 														/>
 													</div>
 													<div class="form-control">
-														<label class="label">
+														<label class="label" for={`ability-${index}-effect`}>
 															<span class="label-text text-xs">Effect</span>
 														</label>
-														<textarea 
-															class="textarea textarea-bordered textarea-sm h-20" 
+														<textarea
+															id={`ability-${index}-effect`}
+															class="textarea textarea-bordered textarea-sm h-20"
 															bind:value={ability.effect}
 														></textarea>
 													</div>
 													<div class="grid grid-cols-2 gap-2">
 														<div class="form-control">
-															<label class="label">
+															<label class="label" for={`ability-${index}-resource-cost`}>
 																<span class="label-text text-xs">Resource Cost</span>
 															</label>
-															<input 
-																type="number" 
-																class="input input-bordered input-sm" 
+															<input
+																id={`ability-${index}-resource-cost`}
+																type="number"
+																class="input input-bordered input-sm"
 																bind:value={ability.resource_cost.cost}
 															/>
 														</div>
 														<div class="form-control">
-															<label class="label">
+															<label class="label" for={`ability-${index}-resource-key`}>
 																<span class="label-text text-xs">Resource Key</span>
 															</label>
-															<select class="select select-bordered select-sm" bind:value={ability.resource_cost.resource_key}>
+															<select id={`ability-${index}-resource-key`} class="select select-bordered select-sm" bind:value={ability.resource_cost.resource_key}>
 																<option value={undefined}>None</option>
 																{#each Object.keys(editedCompanion.character_stats.resources) as resourceKey}
 																	<option value={resourceKey}>{resourceKey}</option>
@@ -460,10 +489,11 @@
 							<h3 class="text-lg font-semibold mb-4">Loyalty & Trust</h3>
 							
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-loyalty">
 									<span class="label-text">Loyalty Level: {editedCompanion.loyalty_level}%</span>
 								</label>
-								<input 
+								<input
+									id="companion-loyalty"
 									type="range" 
 									min="0" 
 									max="100" 
@@ -478,10 +508,11 @@
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-trust">
 									<span class="label-text">Trust Level: {editedCompanion.trust_level}%</span>
 								</label>
-								<input 
+								<input
+									id="companion-trust"
 									type="range" 
 									min="0" 
 									max="100" 
@@ -496,10 +527,10 @@
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-relationship-status">
 									<span class="label-text">Current Relationship Status</span>
 								</label>
-								<select class="select select-bordered" bind:value={editedCompanion.relationship_data.current_status}>
+								<select id="companion-relationship-status" class="select select-bordered" bind:value={editedCompanion.relationship_data.current_status}>
 									<option value="stranger">Stranger</option>
 									<option value="acquaintance">Acquaintance</option>
 									<option value="friend">Friend</option>
@@ -517,10 +548,11 @@
 							<h3 class="text-lg font-semibold mb-4">Advanced Settings</h3>
 							
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-id">
 									<span class="label-text">Companion ID (readonly)</span>
 								</label>
-								<input 
+								<input
+									id="companion-id"
 									type="text" 
 									class="input input-bordered" 
 									value={editedCompanion.id}
@@ -529,10 +561,11 @@
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-created-at">
 									<span class="label-text">Created At (readonly)</span>
 								</label>
-								<input 
+								<input
+									id="companion-created-at"
 									type="text" 
 									class="input input-bordered" 
 									value={new Date(editedCompanion.created_at).toLocaleString()}
@@ -541,10 +574,11 @@
 							</div>
 
 							<div class="form-control">
-								<label class="label">
+								<label class="label" for="companion-last-interaction">
 									<span class="label-text">Last Interaction (readonly)</span>
 								</label>
-								<input 
+								<input
+									id="companion-last-interaction"
 									type="text" 
 									class="input input-bordered" 
 									value={new Date(editedCompanion.last_interaction).toLocaleString()}

@@ -349,7 +349,7 @@
 								class="input input-bordered flex-1"
 								bind:value={searchQuery}
 							/>
-							<button class="btn btn-square btn-outline">
+							<button class="btn btn-square btn-outline" aria-label="Search companions">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 								</svg>
@@ -387,13 +387,13 @@
 									Level {companion.character_stats.level} {companion.character_description.race} {companion.character_description.class}
 								</p>
 							</div>
-							<div class="dropdown dropdown-end">
-								<button class="btn btn-ghost btn-circle btn-sm" tabindex="0">
+				<div class="dropdown dropdown-end">
+					<button class="btn btn-ghost btn-circle btn-sm" tabindex="0" aria-label="Open companion actions menu">
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
 									</svg>
 								</button>
-								<ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-10">
+								<ul class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-10">
 									<li><button onclick={() => handleEditCompanion(companion)}>✏️ Edit</button></li>
 									<li><button onclick={() => handleToggleActive(companion)}>
 										{companion.is_active_in_party ? '👥 Remove from Party' : '➕ Add to Party'}

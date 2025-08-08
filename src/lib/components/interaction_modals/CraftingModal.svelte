@@ -10,12 +10,15 @@
 		onclose: (selectedItems: ItemWithId[], craftDescription: string) => void;
 	} = $props();
 
-	let itemForm;
+	let itemForm: HTMLFormElement;
 	let craftDescription = $state<string>('');
 
 	function mapSelectedItems(): ItemWithId[] {
-		const selectedItemIds = Array.from(itemForm.elements)
-			.filter((elm) => elm.checked && elm.value)
+		const checkboxes = Array.from(
+			itemForm.querySelectorAll('input[type="checkbox"]')
+		) as HTMLInputElement[];
+		const selectedItemIds = checkboxes
+			.filter((elm) => elm.checked && !!elm.value)
 			.map((elm) => {
 				elm.checked = false; // Uncheck after selection
 				return elm.value as string;

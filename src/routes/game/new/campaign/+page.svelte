@@ -143,8 +143,9 @@
 		isGeneratingState = false;
 	};
 
-	function handleInput(evt, stateValue) {
-		campaignStateOverwrites[stateValue] = evt.target.value;
+	function handleInput(evt: Event, stateValue: string) {
+		const target = evt.target as HTMLTextAreaElement | HTMLInputElement;
+		campaignStateOverwrites[stateValue] = target?.value;
 	}
 
 	function isCampaignSet() {
@@ -368,9 +369,10 @@
 																									chapterProperty
 																								][plotPoint] = {};
 																							}
+																							const t0 = evt.target as HTMLTextAreaElement | HTMLInputElement;
 																							campaignStateOverwrites[stateValue][chapterNumber][
 																								chapterProperty
-																							][plotPoint][plotPointProperty] = evt.target?.value;
+																							][plotPoint][plotPointProperty] = t0?.value;
 																						}}
 																						class="textarea textarea-bordered textarea-md mt-2 w-full"
 																					>
@@ -456,9 +458,10 @@
 																	if (!campaignStateOverwrites[stateValue][chapterNumber]) {
 																		campaignStateOverwrites[stateValue][chapterNumber] = {};
 																	}
+																	const t1 = evt.target as HTMLTextAreaElement | HTMLInputElement;
 																	campaignStateOverwrites[stateValue][chapterNumber][
 																		chapterProperty
-																	] = evt.target?.value;
+																	] = t1?.value;
 																}}
 																class="textarea textarea-bordered textarea-md mt-2 w-full"
 															>
@@ -529,7 +532,7 @@
 				<button
 					class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 					onclick={() => {
-						campaignState.resetProperty(stateValue);
+						campaignState.resetProperty(stateValue as keyof Campaign);
 						delete campaignStateOverwrites[stateValue];
 					}}
 				>

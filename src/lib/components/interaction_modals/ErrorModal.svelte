@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { errorState } from '$lib/state/errorState.svelte';
-	let dialog;
-	let { onclose } = $props();
+	let dialog: HTMLDialogElement;
+	let { onclose }: { onclose?: () => void } = $props();
 </script>
 
 <dialog
 	bind:this={dialog}
-	{onclose}
 	class="modal z-[1000]"
 	open
 	style="background: rgba(0, 0, 0, 0.3);"
@@ -25,6 +24,7 @@
 			onclick={() => {
 				dialog.close();
 				errorState.clear();
+				if (onclose) onclose();
 				goto('/game/settings/ai');
 			}}
 		>
@@ -35,6 +35,7 @@
 			onclick={() => {
 				dialog.close();
 				errorState.clear();
+				if (onclose) onclose();
 			}}
 		>
 			Close

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import {
 		getEntityCoordinator,
-		type EntityConflict,
-		type EntityValidationResult
+		type EntityValidationResult,
+		type EntityConflict
 	} from '$lib/services/entityCoordinator';
 	import {
 		getMemoryCoordinator,
@@ -15,10 +15,11 @@
 		type CoherenceGuardrails
 	} from '$lib/services/coherenceMetrics';
 
-	// UI state (Svelte 5 runes)
+	// UI state
 	let isExpanded = $state(false);
-	let autoRefresh = $state(false);
-	let refreshIntervalMs = $state(30000);
+	let autoRefresh = $state(true);
+	const refreshIntervalMs = 30000;
+
 	let selectedConflictType = $state<'all' | string>('all');
 
 	// Data state
@@ -164,7 +165,7 @@
 					for (const id of conflict.entities_involved) {
 						const ent = entityCoordinator.getEntity(id);
 						if (ent) {
-							Object.values(ent.resources).forEach((res) => {
+							Object.values(ent.resources as any).forEach((res: any) => {
 								if (res.current_value > res.max_value) res.current_value = res.max_value;
 								if (res.current_value < 0) res.current_value = 0;
 							});
@@ -213,26 +214,19 @@
 					{/if}
 				</div>
 			</div>
-			<div
-				class="flex items-center gap-2"
-				onclick={(e) => e.stopPropagation()}
-				onkeydown={(e) => e.stopPropagation()}
-			>
+			<div class="flex items-center gap-2">
 				<label class="flex cursor-pointer items-center gap-2 text-sm">
 					<span>Auto-refresh</span>
 					<input
 						type="checkbox"
 						checked={autoRefresh}
-						onchange={() => (autoRefresh = !autoRefresh)}
+						onchange={(e) => { e.stopPropagation(); autoRefresh = !autoRefresh; }}
 						class="checkbox checkbox-sm"
 					/>
 				</label>
 				<button
 					class="btn btn-primary btn-sm"
-					onclick={(e) => {
-						e.stopPropagation();
-						handleRefresh();
-					}}
+					onclick={(e) => { e.stopPropagation(); handleRefresh(); }}
 					aria-label="Refresh coherence data"
 				>
 					🔄 Refresh

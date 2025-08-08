@@ -108,14 +108,24 @@
 		getCharacterTechnicalId,
 		addCharacterToPlayerCharactersIdToNamesMap
 	} from './characterLogic';
-	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
+	import { getDiceRollPromptAddition, type DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
 	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
-	import StoryProgressionWithImage, {
-		type StoryProgressionWithImageProps
-	} from '$lib/components/StoryProgressionWithImage.svelte';
+	import StoryProgressionWithImage from '$lib/components/StoryProgressionWithImage.svelte';
+	import type { RenderedGameUpdate } from './gameLogic';
+	type StoryProgressionWithImageProps = {
+		storyTextRef?: HTMLElement;
+		story: string;
+		gameUpdates?: Array<RenderedGameUpdate | undefined>;
+		imagePrompt?: string;
+		stream_finished?: boolean;
+	};
 	// eslint-disable-next-line svelte/valid-compile
-	let diceRollDialog, useSpellsAbilitiesModal, useItemsModal, actionsDiv, customActionInput;
+	let diceRollDialog = $state<HTMLDialogElement | undefined>(undefined);
+	let useSpellsAbilitiesModal = $state<any>(undefined);
+	let useItemsModal = $state<any>(undefined);
+	let actionsDiv = $state<HTMLDivElement | undefined>(undefined);
+	let customActionInput = $state<HTMLInputElement | undefined>(undefined);
 
 	//ai state
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
@@ -237,6 +247,11 @@
 	let latestStoryProgressionTextComponent = $state<HTMLElement | undefined>();
 
 	let actionsTextForTTS: string = $state('');
+	$effect(() => {
+		// Keep TTS text in sync with currently rendered actions
+		const actions = characterActionsState.value || [];
+		actionsTextForTTS = actions.map((a) => getTextForActionButton(a)).join(' ') || ' ';
+	});
 	//TODO const lastCombatSinceXActions: number = $derived(
 	//	gameActionsState.value && (gameActionsState.value.length - (gameActionsState.value.findLastIndex(state => state.is_character_in_combat ) + 1))
 	//);
@@ -336,7 +351,8 @@
 			);
 		gameActionsState.value = updatedGameActionsState;
 		playerCharactersGameState = updatedPlayerCharactersGameState;
-		tick().then(() => customActionInput.scrollIntoView(false));
+		// Guard undefined input ref
+		tick().then(() => customActionInput?.scrollIntoView?.(false));
 		if (characterActionsState.value.length === 0) {
 			const { thoughts, actions } = await actionAgent.generateActions(
 				currentGameActionState,
@@ -493,10 +509,11 @@
 	function openDiceRollDialog() {
 		//TODO showModal can not be used because it hides the dice roll
 		didAIProcessDiceRollActionState.value = false;
-		diceRollDialog.show();
-		diceRollDialog.addEventListener('close', function sendWithManuallyRolled() {
-			diceRollDialog.removeEventListener('close', sendWithManuallyRolled);
-			const result = diceRollDialog.returnValue;
+			diceRollDialog?.show();
+			diceRollDialog?.addEventListener('close', function sendWithManuallyRolled() {
+				diceRollDialog?.removeEventListener('close', sendWithManuallyRolled);
+				const resultString = diceRollDialog?.returnValue as string | undefined;
+				const result = (resultString as DiceRollResult) || undefined;
 
 			const skillName = getSkillIfApplicable(characterStatsState.value, chosenActionState.value);
 			if (skillName) {
@@ -545,7 +562,7 @@
 			additionalStoryInputState.value += costString;
 			await sendAction(chosenActionState.value, true);
 		}
-		customActionInput.value = '';
+		customActionInput && (customActionInput.value = '');
 		customActionImpossibleReasonState = undefined;
 	}
 
@@ -753,7 +770,7 @@
 			additionalStoryInput,
 			gameSettingsState.value.randomEventsHandling,
 			currentGameActionState.is_character_in_combat,
-			diceRollDialog.returnValue //TODO better way to pass the result ?, its string here
+			(diceRollDialog?.returnValue as DiceRollResult)
 		);
 		
 		// Special handling for "Continue The Tale" to avoid repetition
@@ -1224,15 +1241,7 @@
 	}
 
 	function renderGameState(state: GameActionState, actions: Array<Action>) {
-		if (!isGameEnded.value) {
-			actions.forEach((action) =>
-				addActionButton(action, state.is_character_in_combat, 'ai-gen-action')
-			);
-			actionsTextForTTS =
-				Array.from(document.querySelectorAll('.ai-gen-action'))
-					.map((elm) => elm.textContent || ' ')
-					.join(' ') || ' ';
-		}
+		// No-op: actions now render declaratively below; keep for backward compatibility
 	}
 
 	function levelUpClicked(playerName: string) {
@@ -1354,7 +1363,7 @@
 	};
 	const onCustomDiceRollClosed = () => {
 		customDiceRollNotation = '';
-		customActionInput.value = '';
+		customActionInput && (customActionInput.value = '');
 	};
 	const onLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
 		if (aiLevelUp) {
@@ -1490,7 +1499,7 @@
 		gmAnswerStateAsContext?: GameMasterAnswer
 	) => {
 		if (closedByPlayer) {
-			customActionInput.value = '';
+			customActionInput && (customActionInput.value = '');
 		}
 		if (gmAnswerStateAsContext) {
 			const context = '\nGM Context:\n' + stringifyPretty(gmAnswerStateAsContext);
@@ -1813,6 +1822,8 @@
 		<CoherenceMonitor />
 	</div>
 	<div id="story" class="mt-4 justify-items-center rounded-lg bg-base-100 p-4 shadow-md">
+		<!-- Announce streamed story updates to assistive tech -->
+		<div class="sr-only" aria-live="polite"></div>
 		<button onclick={() => showXLastStoryPrgressions++} class="btn-xs w-full"
 			>Show Previous Story
 		</button>
@@ -1852,7 +1863,27 @@
 			></TTSComponent>
 		</div>
 	{/if}
-	<div id="actions" bind:this={actionsDiv} class="mt-2 p-4 pb-0 pt-0"></div>
+	<div id="actions" class="mt-2 p-4 pb-0 pt-0">
+		{#if !isGameEnded.value && characterActionsState.value?.length}
+			{#each characterActionsState.value as action, i (action.text + i)}
+				<button
+					class="btn btn-neutral mb-3 w-full text-md ai-gen-action"
+					aria-label={`Perform action: ${getTextForActionButton(action)}`}
+					tabindex="0"
+					disabled={!isEnoughResource(action, playerCharactersGameState[playerCharacterIdState], inventoryState.value)}
+					onclick={() => {
+						chosenActionState.value = $state.snapshot(action);
+						sendAction(
+							chosenActionState.value,
+							gameLogic.mustRollDice(chosenActionState.value, currentGameActionState.is_character_in_combat)
+						);
+					}}
+				>
+					{getTextForActionButton(action)}
+				</button>
+			{/each}
+		{/if}
+	</div>
 	{#if Object.keys(currentGameActionState).length !== 0}
 		{#if !isGameEnded.value}
 			{#if characterActionsState.value?.length === 0}
@@ -1925,7 +1956,7 @@
 				</button>
 			</div>
 		{/if}
-		<form id="input-form" class="p-4 pb-2">
+		<form id="input-form" class="p-4 pb-2 sticky bottom-0 bg-base-100 z-10">
 			<div class="w-full lg:join">
 				<select bind:value={customActionReceiver} class="select select-bordered w-full lg:w-fit">
 					<option selected>Character Action</option>
@@ -1947,7 +1978,7 @@
 								: 'Command without restrictions'}
 				/>
 				<button
-					onclick={() => onCustomActionSubmitted(customActionInput.value)}
+							onclick={() => onCustomActionSubmitted(customActionInput?.value || '')}
 					class="btn btn-neutral w-full lg:w-1/4"
 					id="submit-button"
 					>Submit

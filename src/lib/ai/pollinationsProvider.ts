@@ -5,7 +5,8 @@ import {
 	type LLMconfig,
 	type LLMMessage,
 	type LLMRequest,
-	LANGUAGE_PROMPT
+	LANGUAGE_PROMPT,
+	type ContentWithThoughts
 } from '$lib/ai/llm';
 import isPlainObject from 'lodash.isplainobject';
 import type { GenerateContentConfig } from '@google/genai';
@@ -44,7 +45,7 @@ export class PollinationsProvider extends LLM {
 		throw new Error('Method not implemented.' + request + storyUpdateCallback);
 	}
 
-	async generateContent(request: LLMRequest): Promise<object | undefined> {
+	async generateContent(request: LLMRequest): Promise<ContentWithThoughts | undefined> {
 		const contents = this.buildContentsFormat(request.userMessage, request.historyMessages || []);
 		const systemInstructions = this.buildSystemInstruction(
 			request.systemInstruction || this.llmConfig.systemInstruction
@@ -106,7 +107,11 @@ export class PollinationsProvider extends LLM {
 				((request.tryAutoFixJSONError || request.tryAutoFixJSONError === undefined) &&
 					this.llmConfig.tryAutoFixJSONError) ||
 				false;
-			return this.parseContentByModel(this.model, response, autoFixJSON);
+			const parsed = await this.parseContentByModel(this.model, response, autoFixJSON);
+			if (parsed && typeof parsed === 'object') {
+				return { thoughts: '', content: parsed } as ContentWithThoughts;
+			}
+			return undefined;
 		} catch (e) {
 			handleError(e as string);
 		}

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { initialThoughtsState, stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
+	import type { GameActionState } from '$lib/ai/agents/gameAgent';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 
-	const gameActionsState = useLocalStorage('gameActionsState');
-	const npcState = useLocalStorage('npcState', {});
-	const characterActionsState = useLocalStorage('characterActionsState', {});
+	const gameActionsState = useLocalStorage<GameActionState[]>('gameActionsState', []);
+	const npcState = useLocalStorage<Record<string, unknown>>('npcState', {});
+	const characterActionsState = useLocalStorage<Record<string, unknown>>('characterActionsState', {});
 	let thoughtsState = useLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
 </script>
 
@@ -28,7 +29,9 @@
 	</summary>
 	<output style="white-space: pre-wrap"
 		>{stringifyPretty(
-			gameActionsState.value ? gameActionsState.value[gameActionsState.value.length - 1] : {}
+			gameActionsState.value && gameActionsState.value.length > 0
+				? (gameActionsState.value[gameActionsState.value.length - 1] as GameActionState)
+				: {}
 		)}</output
 	>
 </details>
