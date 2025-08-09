@@ -90,6 +90,8 @@ export type GameActionState = {
 	story: string;
 	// Optional concise bullets describing concrete changes this turn
 	state_change_summary?: string[];
+	// Optional very short recap (1–2 sentences) of important recent events for continuity
+	recent_important_summary?: string;
 	inventory_update: Array<InventoryUpdate>;
 	stats_update: Array<StatsUpdate>;
 	is_character_in_combat: boolean;
@@ -314,7 +316,7 @@ export class GameAgent {
 					story_id: currentStoryId,
 					event_type: capture.moment_type || this.mapActionToEventType(action),
 					title: capture.title || `${action.characterName}: ${action.text.substring(0, 50)}...`,
-					description: (capture.summary || newState.story.substring(0, 200)) + '...',
+					description: (capture.summary || newState.recent_important_summary || newState.story.substring(0, 200)) + '...',
 					entities_involved: Array.from(resolvedIds),
 					emotional_impact: this.calculateEmotionalImpact(action, newState),
 					importance_level: capture.importance || this.determineImportanceLevel(action, newState),
@@ -332,7 +334,7 @@ export class GameAgent {
 					story_id: currentStoryId,
 					event_type: this.mapActionToEventType(action),
 					title: `${action.characterName}: ${action.text.substring(0, 50)}...`,
-					description: newState.story.substring(0, 200) + '...',
+					description: (newState.recent_important_summary || newState.story.substring(0, 200)) + '...',
 					entities_involved: Array.from(baseInvolvedIds),
 					emotional_impact: this.calculateEmotionalImpact(action, newState),
 					importance_level: this.determineImportanceLevel(action, newState),
@@ -457,6 +459,39 @@ export class GameAgent {
 			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.\n" +
 			stringifyPretty(inventoryState)
 		];
+
+		// Inject Memory Context for continuity and coherence
+		if (memoryContext) {
+			const summarizeEvents = (events: any[]) =>
+				events?.map((e) => ({
+					story_id: e.story_id,
+					title: e.title,
+					description: (e.description || '').slice(0, 240),
+					importance: e.importance_level,
+					tags: e.tags?.slice(0, 6)
+				})) || [];
+
+			const memory_context_for_prompt = {
+				recent_developments: summarizeEvents(memoryContext.recent_developments),
+				long_term_context: summarizeEvents(memoryContext.long_term_context),
+				active_plot_threads: (memoryContext.active_plot_threads || []).map((t: any) => ({
+					title: t.title,
+					description: (t.description || '').slice(0, 200),
+					status: t.status,
+					entities_involved_count: t.entities_involved?.length || 0
+				})),
+				entity_summaries: memoryContext.entity_summaries || {},
+				location_history: memoryContext.location_history || []
+			};
+
+			gameAgent.push(
+				'MEMORY CONTEXT: Use the following to maintain continuity. Do not contradict facts here; prefer these over hallucinated details.\n' +
+				stringifyPretty(memory_context_for_prompt)
+			);
+			gameAgent.push(
+				'When filling "recent_important_summary", base it on the MEMORY CONTEXT above (especially recent_developments) in 1–2 sentences.'
+			);
+		}
 
 		// Ajouter les compagnons actifs au contexte avec protection contre les doublons
 		if (activeCompanions && activeCompanions.length > 0) {
@@ -903,6 +938,7 @@ const jsonSystemInstructionForGameAgent = (
 	"plotPointAdvancingNudgeExplanation": "CURRENT_PLOT_ID: 2; NEXT_PLOT_ID: 3; Short reasoning in ENGLISH.",
 	"story": "${!gameSettingsState.detailedNarrationLength ? storyWordLimit : ''} Narrative continuation. Use single quotes for dialogue and simple HTML for formatting.",
 	"state_change_summary": ["bullet 1", "bullet 2"],
+		"recent_important_summary": "1–2 sentences recapping the most important recent events or the current moment for continuity.",
 	"story_memory_explanation": "Explanation. LONG_TERM_IMPACT: LOW",
 	"xpGainedExplanation": "Explanation why XP is or isn't gained.",
 	${statsUpdatePromptObject},
