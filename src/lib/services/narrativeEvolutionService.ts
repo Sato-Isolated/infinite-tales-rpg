@@ -321,6 +321,10 @@ export class NarrativeEvolutionService {
 	): Promise<string | null> {
 
 		try {
+			// Strict guard: avoid creating a companion if a similar one already exists
+			if (companionManager.existsByName(newCompanionInfo.name)) {
+				return null;
+			}
 			const companionData = await this.narrativeAgent.generateNewCompanionFromNarrativeContext(
 				newCompanionInfo,
 				existingCompanions,
@@ -334,6 +338,9 @@ export class NarrativeEvolutionService {
 					id: uuidv4(),
 					character_description: companionData.character_description as CharacterDescription,
 					character_stats: companionData.character_stats || this.generateBasicStats(),
+					source_type: 'narrative',
+					source_ref: newCompanionInfo.name,
+					signature: (companionData.character_description.name || '').toLowerCase().replace(/[\s'`´’-]+/g, ''),
 					companion_memory: {
 						significant_events: [{
 							id: uuidv4(),
@@ -370,8 +377,10 @@ export class NarrativeEvolutionService {
 					trust_level: 50
 				};
 
+				// Persist via CompanionManager to enforce strict dedupe
 				companionManager.createCompanion(newCompanion);
-				return newCompanion.id;
+				const saved = companionManager.getByName(newCompanion.character_description.name);
+				return saved ? saved.id : newCompanion.id;
 			}
 		} catch (error) {
 			console.error('Failed to create new companion from narrative:', error);

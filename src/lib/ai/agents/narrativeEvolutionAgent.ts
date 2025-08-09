@@ -68,6 +68,35 @@ export interface CharacterEvolutionChanges {
 export class NarrativeEvolutionAgent {
 	constructor(private llm: LLM) {}
 
+	/** Safely parse JSON content that may include code fences or extra text */
+	private safeParseJson<T = any>(content: any): T | {} {
+		try {
+			if (!content) return {};
+			if (typeof content === 'object') return content as T;
+			let text = String(content).trim();
+			// Strip code fences if present
+			if (text.startsWith('```')) {
+				text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '');
+				// remove trailing fence
+				text = text.replace(/```\s*$/i, '').trim();
+			}
+			// Ensure we start at first '{'
+			const firstBrace = text.indexOf('{');
+			if (firstBrace > 0) {
+				text = text.slice(firstBrace);
+			}
+			// If any non-JSON trailing text exists after the last '}', cut it
+			const lastBrace = text.lastIndexOf('}');
+			if (lastBrace !== -1 && lastBrace < text.length - 1) {
+				text = text.slice(0, lastBrace + 1);
+			}
+			return JSON.parse(text) as T;
+		} catch (e) {
+			console.error('safeParseJson failed, returning empty object. Raw:', content);
+			return {};
+		}
+	}
+
 	async analyzeNarrativeContext(
 		currentStory: string,
 		storyHistory: LLMMessage[],
@@ -244,39 +273,18 @@ Generate a comprehensive character with realistic background, personality, and r
 	}
 
 	private parseNarrativeContext(content: any): NarrativeContext {
-		try {
-			if (typeof content === 'string') {
-				return JSON.parse(content);
-			}
-			return content as NarrativeContext;
-		} catch (error) {
-			console.error('Failed to parse narrative context:', error);
-			return {};
-		}
+		const parsed = this.safeParseJson<NarrativeContext>(content);
+		return (parsed || {}) as NarrativeContext;
 	}
 
 	private parseCharacterUpdates(content: any): Partial<CompanionCharacter> {
-		try {
-			if (typeof content === 'string') {
-				return JSON.parse(content);
-			}
-			return content as Partial<CompanionCharacter>;
-		} catch (error) {
-			console.error('Failed to parse character updates:', error);
-			return {};
-		}
+		const parsed = this.safeParseJson<Partial<CompanionCharacter>>(content);
+		return (parsed || {}) as Partial<CompanionCharacter>;
 	}
 
 	private parseNewCompanionData(content: any): Partial<CompanionCharacter> {
-		try {
-			if (typeof content === 'string') {
-				return JSON.parse(content);
-			}
-			return content as Partial<CompanionCharacter>;
-		} catch (error) {
-			console.error('Failed to parse new companion data:', error);
-			return {};
-		}
+		const parsed = this.safeParseJson<Partial<CompanionCharacter>>(content);
+		return (parsed || {}) as Partial<CompanionCharacter>;
 	}
 
 	private getSystemPrompt(): string {

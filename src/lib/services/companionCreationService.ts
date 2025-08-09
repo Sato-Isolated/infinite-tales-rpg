@@ -127,6 +127,9 @@ export class CompanionCreationService {
 			id: companionId,
 			character_description: description,
 			character_stats: stats,
+			source_type: 'template',
+			source_ref: template.role,
+			signature: (description.name || '').toLowerCase().replace(/[\s'`´’-]+/g, ''),
 			companion_memory: {
 				significant_events: [],
 				personality_influences: [],

@@ -6,6 +6,20 @@ export type CompanionCharacter = {
 	id: string;
 	character_description: CharacterDescription;
 	character_stats: CharacterStats;
+
+	// Meta d'origine et de contrôle (optionnels)
+	/**
+	 * Origine de création du compagnon pour appliquer des règles strictes.
+	 * - 'template': créé depuis un template de départ
+	 * - 'npc_recruitment': conversion d'un NPC recruté
+	 * - 'narrative': créé automatiquement par la narration
+	 * - 'import': importé d'une sauvegarde
+	 */
+	source_type?: 'template' | 'npc_recruitment' | 'narrative' | 'import';
+	/** Référence de source (ex: technicalId NPC ou autre) */
+	source_ref?: string;
+	/** Signature normalisée du nom (pour déduplication) */
+	signature?: string;
 	
 	// Système évolutif spécifique aux compagnons
 	companion_memory: CompanionMemory;

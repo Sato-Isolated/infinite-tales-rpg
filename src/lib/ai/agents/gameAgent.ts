@@ -231,7 +231,29 @@ export class GameAgent {
 			request,
 			storyUpdateCallback,
 			thoughtUpdateCallback
-		)) as GameActionState;
+		)) as GameActionState | undefined;
+
+		// Guard against failed or undefined JSON stream results
+		if (!newState || typeof newState !== 'object') {
+			const safeEmpty: GameActionState = {
+				id: historyMessages.length + 1,
+				currentPlotPoint: '',
+				nextPlotPoint: '',
+				story: '',
+				inventory_update: [],
+				stats_update: [],
+				is_character_in_combat: false,
+				currently_present_npcs: allEntities,
+				story_memory_explanation: ''
+			};
+			const { userMessage, modelMessage } = this.buildHistoryMessages(
+				playerActionTextForHistory,
+				safeEmpty
+			);
+			const updatedHistoryMessages = [...historyMessages, userMessage, modelMessage];
+			console.warn('LLM stream returned no valid JSON. Using safe fallback state.');
+			return { newState: safeEmpty, updatedHistoryMessages };
+		}
 
 		// 5. Utiliser EntityCoordinator pour currently_present_npcs au lieu de l'ancien système
 		if (newState.currently_present_npcs) {
@@ -475,10 +497,10 @@ export class GameAgent {
 					'- Be treated as important NPCs, not background elements\n\n' +
 					'CRITICAL ANTI-DUPLICATION RULES:\n' +
 					`- NEVER create new NPCs with these names: ${companionNames.join(', ')}\n` +
-					'- NEVER create NPCs with similar names or variations of companion names\n' +
-					'- These companions already exist and should not be duplicated\n' +
-					'- Always include existing companions in currently_present_npcs when they should be present\n' +
-					'- If a companion is mentioned in the story, use their existing data, do not create a new NPC'
+					'- NEVER create NPCs with similar names or variations of companion names (strip spaces, dashes, apostrophes for comparison)\n' +
+					'- These companions ALREADY EXIST and must not be duplicated\n' +
+					'- Always include existing companions in currently_present_npcs when they are present in the scene\n' +
+					'- If a companion name appears in the story, ALWAYS reference the existing companion and DO NOT create a new NPC'
 				);
 			}
 		}
@@ -873,53 +895,43 @@ NPC Interactions:
 Always review context from system instructions and my last message before responding.`;
 
 const jsonSystemInstructionForGameAgent = (
-	gameSettingsState: GameSettings
-) => `Important Instruction! You must always respond with valid JSON in the following format:
+		gameSettingsState: GameSettings
+) => `Important Instruction! Output only a single valid JSON object. No markdown, no backticks, no extra text. Use English for enums and identifiers. Here is the exact JSON shape with placeholder values:
 {
-  "currentPlotPoint": VALUE MUST BE ALWAYS IN ENGLISH; Identify the most relevant plotId in ADVENTURE_AND_MAIN_EVENT that the story aligns with; Explain your reasoning briefly; Format "{Reasoning} - PLOT_ID: {plotId}",
-  "gradualNarrativeExplanation": "Reasoning how the story development is broken down to meaningful narrative moments. Each step should represent a significant part of the process, giving the player the opportunity to make impactful choices.",
-  "plotPointAdvancingNudgeExplanation": "VALUE MUST BE ALWAYS IN ENGLISH; Explain what could happen next to advance the story towards NEXT_PLOT_ID according to ADVENTURE_AND_MAIN_EVENT; Include brief explanation of NEXT_PLOT_ID; Format "CURRENT_PLOT_ID: {plotId}; NEXT_PLOT_ID: {currentPlotId + 1}; {Reasoning}",
-  "story": "depending on If The Action Is A Success Or Failure progress the story further with appropriate consequences. ${!gameSettingsState.detailedNarrationLength ? storyWordLimit : ''} For character speech use single quotes. Format the narration using HTML tags for easier reading.",
-	"state_change_summary": ["Bullet points of concrete changes this turn (new clue, moved location, updated resource, NPC reaction, thread advanced)"],
-  "story_memory_explanation": "Explanation if story progression has Long-term Impact: Remember events that significantly influence character arcs, plot direction, or the game world in ways that persist or resurface later; Format: {explanation} LONG_TERM_IMPACT: LOW, MEDIUM, HIGH",
-  "xpGainedExplanation": "Explain why or why nor the CHARACTER gains xp in this situation",
-  ${statsUpdatePromptObject},
-  "inventory_update": [
-        #Add this to the JSON if the story implies that an item is added or removed from the character's inventory
-		#This section is only for items and never spells or abilities
-        #For each item addition or removal this object is added once, the whole inventory does not need to be tracked here
-        #The starting items are also listed here as add_item
-    {
-      "type": "add_item",
-      "item_id": "unique name of the item to identify it",
-      "item_added": {
-        "description": "A description of the item",
-        "effect": "Clearly state effect(s) and whether an effect is active or passive"
-      }
-    },
-    {
-      "type": "remove_item",
-      "item_id": "unique name of the item to identify it"
-    }
-  ],
-  "is_character_in_combat": true if CHARACTER is in active combat else false,
-  "is_character_restrained_explanation": null | string; "If not restrained null, else Briefly explain how the character has entered a TEMPORARY state or condition that SIGNIFICANTLY RESTRICTS their available actions, changes how they act, or puts them under external control? (Examples: Put to sleep, paralyzed, charmed, blinded,  affected by an illusion, under a compulsion spell)",
-  "currently_present_npcs_explanation": "For each NPC explain why they are or are not present in list currently_present_npcs",
-  "currently_present_npcs": List of NPCs or party members that are present in the current situation. Format: ${currentlyPresentNPCSForPrompt}
-	,"memory_capture": {
-		"should_record": true | false,
-		"moment_type": "action" | "dialogue" | "discovery" | "relationship_change" | "story_progression" | "combat" | "other",
-		"title": "Short, 5-12 words, summarizing the moment",
-		"summary": "1-2 sentences capturing what matters long-term without spoilers",
-		"importance": "low" | "medium" | "high" | "critical",
-		"entities_involved_names": ["CHARACTER", "Companion Name", "NPC Name"],
-		"tags": ["plot_advancement", "clue", "relationship", "combat", "mystery", "worldbuilding"]
+	"currentPlotPoint": "{Reasoning} - PLOT_ID: 2",
+	"gradualNarrativeExplanation": "Step-by-step reasoning of the narrative progression.",
+	"plotPointAdvancingNudgeExplanation": "CURRENT_PLOT_ID: 2; NEXT_PLOT_ID: 3; Short reasoning in ENGLISH.",
+	"story": "${!gameSettingsState.detailedNarrationLength ? storyWordLimit : ''} Narrative continuation. Use single quotes for dialogue and simple HTML for formatting.",
+	"state_change_summary": ["bullet 1", "bullet 2"],
+	"story_memory_explanation": "Explanation. LONG_TERM_IMPACT: LOW",
+	"xpGainedExplanation": "Explanation why XP is or isn't gained.",
+	${statsUpdatePromptObject},
+	"inventory_update": [
+		{"type": "add_item", "item_id": "iron_key", "item_added": {"description": "Old iron key.", "effect": "Opens a rustic door."}},
+		{"type": "remove_item", "item_id": "rusty_dagger"}
+	],
+	"is_character_in_combat": false,
+	"is_character_restrained_explanation": null,
+	"currently_present_npcs_explanation": "Brief explanation for presence list.",
+	"currently_present_npcs": {
+		"hostile": [{"uniqueTechnicalNameId": "bandit_001", "displayName": "Bandit"}],
+		"friendly": [],
+		"neutral": []
+	},
+	"memory_capture": {
+		"should_record": false,
+		"moment_type": "action",
+		"title": "Short title",
+		"summary": "Short summary",
+		"importance": "low",
+		"entities_involved_names": ["CHARACTER"],
+		"tags": ["plot_advancement"]
 	}
 }`;
 
-const jsonSystemInstructionForPlayerQuestion = `Important Instruction! You must always respond with valid JSON in the following format:
+const jsonSystemInstructionForPlayerQuestion = `Important Instruction! Output only a single valid JSON object. No markdown, no backticks, no extra text:
 {
-  "game_state_considered": Brief explanation on how the game state is involved in the answer; mention relevant variables explicitly,
-  "rules_considered": String Array; Identify the relevant Game Master's rules that are related to the question; Include the exact text of a rule,
-  "answerToPlayer": Answer outside of character, do not describe the story, but give an explanation
+	"game_state_considered": "Brief explanation mentioning relevant variables.",
+	"rules_considered": ["Exact text of rule 1", "Exact text of rule 2"],
+	"answerToPlayer": "Direct answer outside of character."
 }`;

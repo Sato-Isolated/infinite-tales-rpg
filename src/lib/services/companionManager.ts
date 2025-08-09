@@ -15,12 +15,123 @@ export class CompanionManager {
 	private companionState = useLocalStorage<CompanionState>('companions', {});
 	private startingCompanionsState = useLocalStorage<CompanionCharacter[]>('startingCompanions', []);
 
+	// Helper: normalize names for duplicate detection
+	private normalizeName(name?: string): string {
+		return (name || '')
+			.toLowerCase()
+			.replace(/[\s'`´’-]+/g, '')
+			.trim();
+	}
+
+	/** Public helper to compute a stable signature */
+	private computeSignature(name?: string): string | undefined {
+		const norm = this.normalizeName(name);
+		return norm || undefined;
+	}
+
+	private findCompanionByName(name?: string): CompanionCharacter | undefined {
+		const norm = this.normalizeName(name);
+		if (!norm) return undefined;
+		return Object.values(this.companionState.value).find(c => this.normalizeName(c.character_description?.name) === norm);
+	}
+
+	/** Public: check if a companion exists by (fuzzy) name */
+	existsByName(name?: string): boolean {
+		return !!this.findCompanionByName(name);
+	}
+
+	/** Public: get a companion by (fuzzy) name */
+	getByName(name?: string): CompanionCharacter | undefined {
+		return this.findCompanionByName(name);
+	}
+
+	private mergeCompanions(existing: CompanionCharacter, incoming: CompanionCharacter): CompanionCharacter {
+		// Merge core description conservatively
+		const mergedDescription = {
+			...existing.character_description,
+			...incoming.character_description
+		};
+
+		// Merge stats: keep existing, add new abilities without duplicates by name
+		const existingStats = existing.character_stats || ({} as any);
+		const incomingStats = incoming.character_stats || ({} as any);
+		const mergedAbilities = [
+			...(existingStats.spells_and_abilities || [])
+		];
+		(incomingStats.spells_and_abilities || []).forEach((ability: any) => {
+			if (!mergedAbilities.some((a: any) => a.name === ability.name)) {
+				mergedAbilities.push(ability);
+			}
+		});
+
+		const mergedStats = {
+			...existingStats,
+			...incomingStats,
+			spells_and_abilities: mergedAbilities
+		};
+
+		// Merge memory arrays
+		const mergedMemory = {
+			significant_events: [
+				...(existing.companion_memory?.significant_events || []),
+				...(incoming.companion_memory?.significant_events || [])
+			].filter((v, i, arr) => v && v.id ? arr.findIndex(x => x.id === v.id) === i : true),
+			personality_influences: [
+				...(existing.companion_memory?.personality_influences || []),
+				...(incoming.companion_memory?.personality_influences || [])
+			],
+			relationship_timeline: [
+				...(existing.companion_memory?.relationship_timeline || []),
+				...(incoming.companion_memory?.relationship_timeline || [])
+			],
+			combat_experiences: [
+				...(existing.companion_memory?.combat_experiences || []),
+				...(incoming.companion_memory?.combat_experiences || [])
+			],
+			dialogue_history: [
+				...(existing.companion_memory?.dialogue_history || []),
+				...(incoming.companion_memory?.dialogue_history || [])
+			]
+		};
+
+		return {
+			...existing,
+			character_description: mergedDescription,
+			character_stats: mergedStats,
+			companion_memory: mergedMemory,
+			personality_evolution: incoming.personality_evolution || existing.personality_evolution,
+			relationship_data: incoming.relationship_data || existing.relationship_data,
+			is_active_in_party: existing.is_active_in_party || incoming.is_active_in_party || false,
+			loyalty_level: Math.max(existing.loyalty_level ?? 0, incoming.loyalty_level ?? 0),
+			trust_level: Math.max(existing.trust_level ?? 0, incoming.trust_level ?? 0),
+			created_at: existing.created_at || incoming.created_at || new Date().toISOString(),
+			last_interaction: new Date().toISOString()
+		};
+	}
+
 	// ===== CRUD de Base =====
 	createCompanion(companion: CompanionCharacter): void {
+		// Strict validation: must have a valid, non-empty name
+		const name = companion?.character_description?.name?.trim();
+		if (!name || name.length < 2) {
+			// Do not allow unnamed/unknown companions to pop in
+			return;
+		}
+
+		// Attach signature for future checks
+		companion.signature = companion.signature || this.computeSignature(name);
+
+		// Check for duplicates by normalized name and merge instead of duplicating
+		const existing = this.findCompanionByName(name);
+		if (existing) {
+			const merged = this.mergeCompanions(existing, companion);
+			this.companionState.value[existing.id] = merged;
+			return;
+		}
+
 		companion.id = companion.id || uuidv4();
 		companion.created_at = companion.created_at || new Date().toISOString();
 		companion.last_interaction = new Date().toISOString();
-		
 		this.companionState.value[companion.id] = companion;
 	}
 
@@ -333,7 +444,15 @@ export class CompanionManager {
 
 	// Import des données
 	importCompanionData(data: CompanionState): void {
-		this.companionState.value = data;
+		// Rebuild state via createCompanion to ensure signatures and dedupe are applied
+		this.companionState.value = {};
+		Object.values(data || {}).forEach((c) => {
+			this.createCompanion({
+				...c,
+				// ensure metadata exists
+				signature: c.signature || this.computeSignature(c.character_description?.name),
+			});
+		});
 	}
 }
 

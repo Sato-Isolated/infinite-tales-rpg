@@ -2,6 +2,7 @@ import type { Targets } from '$lib/ai/agents/gameAgent.js';
 import type { NpcID, NPCState } from '$lib/ai/agents/characterStatsAgent.js';
 import type { StatsUpdate } from '$lib/ai/agents/combatAgent.js';
 import { getEntityCoordinator } from '$lib/services/entityCoordinator.js';
+import type { CompanionCharacter } from '$lib/types/companion.js';
 
 function getNPCTechnicalID(npc: NpcID): string {
 	return npc.uniqueTechnicalNameId;
@@ -32,19 +33,33 @@ export function getNewNPCs(targets: Targets, npcState?: NPCState): Array<NpcID> 
 	const entityCoordinator = getEntityCoordinator();
 	const existingNPCs = entityCoordinator.getAllNPCs();
 	const existingNPCIds = existingNPCs.map(npc => npc.id);
+	const existingCompanionNames = entityCoordinator
+		.getActiveCompanions()
+		.map(c => c.name.toLowerCase());
+
+	// Helper to check name conflict with existing companions
+	const conflictsWithCompanionByName = (displayName: string) => {
+		const norm = displayName.toLowerCase();
+		return existingCompanionNames.some(name => {
+			if (name === norm) return true;
+			const cleanA = name.replace(/[\s'`´’-]+/g, '');
+			const cleanB = norm.replace(/[\s'`´’-]+/g, '');
+			return cleanA === cleanB || cleanA.includes(cleanB) || cleanB.includes(cleanA);
+		});
+	};
 
 	// Fallback vers l'ancien système si nécessaire (transition période)
 	if (npcState && Object.keys(npcState).length > 0) {
 		console.warn('⚠️ Using legacy NPCState - consider migrating to EntityCoordinator');
-		return allNpcIds.filter(
-			(newNPC) => !Object.keys(npcState).includes(newNPC.uniqueTechnicalNameId)
-		);
+		return allNpcIds
+			.filter((newNPC) => !Object.keys(npcState).includes(newNPC.uniqueTechnicalNameId))
+			.filter((newNPC) => !conflictsWithCompanionByName(newNPC.displayName));
 	}
 
 	// Version moderne avec EntityCoordinator
-	return allNpcIds.filter(
-		(newNPC) => !existingNPCIds.includes(newNPC.uniqueTechnicalNameId)
-	);
+	return allNpcIds
+		.filter((newNPC) => !existingNPCIds.includes(newNPC.uniqueTechnicalNameId))
+		.filter((newNPC) => !conflictsWithCompanionByName(newNPC.displayName));
 }
 
 /**
@@ -62,9 +77,20 @@ export function getUnifiedNewEntities(targets: Targets): Array<NpcID> {
 		...allCompanions.map(companion => companion.id)
 	];
 
-	return allTargetIds.filter(target =>
-		!existingEntityIds.includes(target.uniqueTechnicalNameId)
-	);
+	const existingCompanionNames = allCompanions.map(c => c.name.toLowerCase());
+	const conflictsWithCompanionByName = (displayName: string) => {
+		const norm = displayName.toLowerCase();
+		return existingCompanionNames.some(name => {
+			if (name === norm) return true;
+			const cleanA = name.replace(/[\s'`´’-]+/g, '');
+			const cleanB = norm.replace(/[\s'`´’-]+/g, '');
+			return cleanA === cleanB || cleanA.includes(cleanB) || cleanB.includes(cleanA);
+		});
+	};
+
+	return allTargetIds
+		.filter(target => !existingEntityIds.includes(target.uniqueTechnicalNameId))
+		.filter(target => !conflictsWithCompanionByName(target.displayName));
 }
 
 /**

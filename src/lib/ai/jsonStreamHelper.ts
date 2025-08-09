@@ -242,7 +242,7 @@ export async function requestLLMJsonStream(
 	// 2. Final trim
 	cleanedJsonText = cleanedJsonText.trim();
 
-	// 3. Basic validation & Final Parse
+	// 3. Basic validation & Final repairs
 	if (cleanedJsonText.length === 0) {
 		storyUpdateCallback('', true); // Ensure final empty update
 		return undefined;
@@ -253,8 +253,16 @@ export async function requestLLMJsonStream(
 		console.warn(
 			"Cleaned text doesn't start with '{' or end with '}'. Attempting to repair."
 		);
-		//TODO repair issue with missing opening brace
-		
+		// Repair missing opening garbage by cutting before the first '{'
+		const firstBraceIndex = cleanedJsonText.indexOf('{');
+		if (firstBraceIndex > 0) {
+			const removed = cleanedJsonText.substring(0, firstBraceIndex);
+			console.warn(
+				`Repairing JSON: Removing text before first '{'. Removed: "${removed.substring(0, 30)}${removed.length > 30 ? '...' : ''}"`
+			);
+			cleanedJsonText = cleanedJsonText.substring(firstBraceIndex);
+		}
+
 		// Attempt to fix the end of the string by removing text after the last '}'
 		const lastBraceIndex = cleanedJsonText.lastIndexOf('}');
 		if (lastBraceIndex !== -1) {
@@ -280,8 +288,70 @@ export async function requestLLMJsonStream(
 		}
 	}
 
+	// 4. Final sanitize: remove any remaining code fences and slice strictly between first '{' and last '}'
 	cleanedJsonText = cleanedJsonText.replaceAll('```', '').trim();
-	finalJsonObject = JSON.parse(cleanedJsonText);
+	const fb = cleanedJsonText.indexOf('{');
+	const lb = cleanedJsonText.lastIndexOf('}');
+	if (fb > 0 || (lb !== -1 && lb < cleanedJsonText.length - 1)) {
+		cleanedJsonText = cleanedJsonText.substring(Math.max(0, fb), lb !== -1 ? lb + 1 : undefined).trim();
+	}
+
+	// 5. Final Parse
+	try {
+		finalJsonObject = JSON.parse(cleanedJsonText);
+	} catch (e) {
+		console.warn('Final JSON.parse failed after cleaning. Attempting balanced extraction...', e);
+		// Fallback: try to extract the last balanced JSON object
+		const extractBalancedJson = (text: string): string | undefined => {
+			let inString = false;
+			let escape = false;
+			let depth = 0;
+			let start = -1;
+			let candidate: string | undefined;
+			for (let i = 0; i < text.length; i++) {
+				const ch = text[i];
+				if (inString) {
+					if (escape) {
+						escape = false;
+					} else if (ch === '\\') {
+						escape = true;
+					} else if (ch === '"') {
+						inString = false;
+					}
+					continue;
+				}
+				if (ch === '"') {
+					inString = true;
+					continue;
+				}
+				if (ch === '{') {
+					if (depth === 0) start = i;
+					depth++;
+				} else if (ch === '}') {
+					if (depth > 0) depth--;
+					if (depth === 0 && start !== -1) {
+						candidate = text.substring(start, i + 1);
+					}
+				}
+			}
+			return candidate?.trim();
+		};
+		const balanced = extractBalancedJson(accumulatedRawText) || extractBalancedJson(cleanedJsonText);
+		if (balanced) {
+			try {
+				finalJsonObject = JSON.parse(balanced);
+				console.log('--> Final JSON object parsed via balanced extraction.');
+			} catch (e2) {
+				console.warn('Balanced extraction also failed to parse.', e2);
+				try { storyUpdateCallback('', true); } catch {}
+				return undefined;
+			}
+		} else {
+			console.warn('No balanced JSON object could be extracted. Returning undefined.');
+			try { storyUpdateCallback('', true); } catch {}
+			return undefined;
+		}
+	}
 	console.log('--> Final JSON object successfully parsed after cleaning.');
 
 	// Ensure the final story state is sent via callback

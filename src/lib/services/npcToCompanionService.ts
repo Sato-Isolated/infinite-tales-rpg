@@ -10,6 +10,7 @@ import {
 } from '$lib/ai/agents/npcToCompanionAgent';
 import { CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 import { v4 as uuidv4 } from 'uuid';
+import { CompanionManager } from './companionManager';
 
 export class NPCToCompanionService {
 	private npcToCompanionAgent: NPCToCompanionAgent;
@@ -82,6 +83,16 @@ export class NPCToCompanionService {
 		message: string;
 	}> {
 		try {
+			// Deduplication: if a companion with same/similar name already exists, reuse it
+			const tempManager = new CompanionManager();
+			const existing = tempManager
+				.getAllCompanions()
+				.find(c => {
+					const cleanA = (c.character_description?.name || '').toLowerCase().replace(/[\s'`´’-]+/g, '');
+					const cleanB = (npcName || '').toLowerCase().replace(/[\s'`´’-]+/g, '');
+					return cleanA && cleanB && (cleanA === cleanB || cleanA.includes(cleanB) || cleanB.includes(cleanA));
+				});
+
 			// Étape 1: Analyser le NPC
 			const analysis = await this.analyzeNPCRecruitment(
 				storyState,
@@ -101,12 +112,47 @@ export class NPCToCompanionService {
 				};
 			}
 
-			// Étape 3: Convertir en compagnon
-			const companion = await this.convertNPCToCompanion(analysis, npcData, storyState);
+			// Étape 3: Convertir en compagnon (or reuse existing)
+			let companion: CompanionCharacter;
+			if (existing) {
+				// Reuse existing companion and enrich stats/memory
+				const enriched = await this.convertNPCToCompanion(analysis, npcData, storyState);
+				companion = {
+					...existing,
+					character_stats: {
+						...existing.character_stats,
+						...enriched.character_stats,
+						spells_and_abilities: [
+							...(existing.character_stats.spells_and_abilities || []),
+							...(enriched.character_stats.spells_and_abilities || [])
+						].filter((a, i, arr) => a && a.name ? arr.findIndex(x => x.name === a.name) === i : true)
+					},
+					companion_memory: {
+						...existing.companion_memory,
+						significant_events: [
+							...(existing.companion_memory.significant_events || []),
+							...(enriched.companion_memory.significant_events || [])
+						]
+					},
+					last_interaction: new Date().toISOString(),
+					loyalty_level: Math.max(existing.loyalty_level, analysis.initialLoyalty),
+					trust_level: Math.max(existing.trust_level, analysis.initialTrust),
+					source_type: existing.source_type || 'npc_recruitment',
+					source_ref: existing.source_ref || npcName,
+					signature: existing.signature || (c => c?.toLowerCase().replace(/[\s'`´’-]+/g, ''))(existing.character_description?.name)
+				};
+			} else {
+				companion = await this.convertNPCToCompanion(analysis, npcData, storyState);
+				companion.source_type = 'npc_recruitment';
+				companion.source_ref = npcName;
+			}
+
+			// Persist via CompanionManager to enforce central dedup rules
+			tempManager.createCompanion(companion);
 
 			return {
 				success: true,
-				companion,
+				companion: tempManager.getByName(companion.character_description?.name) || companion,
 				analysis,
 				message: `${companion.character_description.name} has successfully joined your party!`
 			};
@@ -158,7 +204,11 @@ export class NPCToCompanionService {
 				playerCharacter
 			);
 
-			return suggestions.map(suggestion => ({
+			// Filter out any suggestion that matches existing companion names
+			const manager = new CompanionManager();
+			const filtered = (suggestions || []).filter(s => !manager.existsByName(s.npcName));
+
+			return filtered.map(suggestion => ({
 				technicalId: suggestion.npcName,
 				name: suggestion.npcName,
 				description: suggestion.briefReasoning,
@@ -339,6 +389,9 @@ export class NPCToCompanionService {
 			id: companionId,
 			character_description: analysis.characterDescription,
 			character_stats: companionStats,
+			source_type: 'npc_recruitment',
+			source_ref: analysis.characterDescription?.name,
+			signature: (analysis.characterDescription?.name || '').toLowerCase().replace(/[\s'`´’-]+/g, ''),
 			companion_memory: {
 				significant_events: foundingMemories,
 				personality_influences: [],

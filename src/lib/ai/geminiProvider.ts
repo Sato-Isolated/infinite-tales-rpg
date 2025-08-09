@@ -61,7 +61,7 @@ const safetySettings: Array<SafetySetting> = [
 
 export const defaultGeminiJsonConfig: GenerationConfig = {
 	temperature: 1,
-	responseMimeType: 'text/plain'
+	responseMimeType: 'application/json'
 };
 
 export const getThoughtsFromResponse = (response: GenerateContentResponse): string => {
@@ -242,7 +242,9 @@ export class GeminiProvider extends LLM {
 				...request.config,
 				safetySettings,
 				systemInstruction,
-				temperature
+				temperature,
+				// Force JSON-only responses
+				responseMimeType: 'application/json'
 			};
 			if (this.supportsThinkingBudget(modelToUse)) {
 				config.thinkingConfig = request.thinkingConfig;
@@ -261,6 +263,7 @@ export class GeminiProvider extends LLM {
 				contents: contents
 			};
 			if (request.stream) {
+				// Stream with JSON-only mime type
 				return this.genAI.models.generateContentStream(genAIRequest) as any;
 			} else {
 				result = await this.genAI.models.generateContent(genAIRequest);
