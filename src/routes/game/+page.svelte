@@ -74,11 +74,9 @@
 	import SuggestedActionsModal from '$lib/components/interaction_modals/SuggestedActionsModal.svelte';
 	import type { AIConfig } from '$lib';
 	import ResourcesComponent from '$lib/components/ResourcesComponent.svelte';
-	import CoherenceMonitor from '$lib/components/CoherenceMonitor.svelte';
 	import { getCompanionManager } from '$lib/contexts/companionContext';
 	import type { CompanionCharacter } from '$lib/types/companion';
 	import { CompanionValidationService } from '$lib/services/companionValidationService';
-	import { getCoherenceMetricsService, type CoherenceMetrics } from '$lib/services/coherenceMetrics';
 	import { getEntityCoordinator } from '$lib/services/entityCoordinator';
 	import { getMemoryCoordinator } from '$lib/services/memoryCoordinator';
 
@@ -154,11 +152,6 @@
 	let companionValidationState = useLocalStorage('companionValidationState', initialCompanionValidationState);
 	let currentActionIndex = $derived(gameActionsState.value.length);
 	
-	// Coherence Metrics state
-	let coherenceMetricsService = getCoherenceMetricsService();
-	let currentCoherenceMetrics = $state<CoherenceMetrics | null>(null);
-	let coherenceAlerts = $state<string[]>([]);
-	let showCoherenceAlerts = $state(false);
 	const characterActionsState = useLocalStorage<Action[]>('characterActionsState', []);
 	const historyMessagesState = useLocalStorage<LLMMessage[]>('historyMessagesState', []);
 	const characterState = useLocalStorage<CharacterDescription>(
@@ -1027,51 +1020,7 @@
 					// Pour l'instant, ajoutons simplement le résumé au state pour debug
 					thoughtsState.value.narrativeEvolution = evolutionResults.evolutionSummary;
 				}
-				
-				// === SYSTÈME DE MÉTRIQUES DE COHÉRENCE ===
-				// Calculer les métriques de cohérence après chaque génération d'histoire
-				try {
-					// Pour l'instant, implémentation simplifiée - sera développée plus tard
-					console.log('🔍 Coherence metrics system - placeholder for future implementation');
 					
-					// Placeholder pour les métriques de base
-					const basicMetrics = {
-						overall_score: 85, // Score fictif pour le moment
-						category_scores: {
-							temporal: 90,
-							character: 80,
-							plot: 85,
-							world: 90,
-							memory: 85
-						},
-						timestamp: new Date().toISOString(),
-						action_index: currentActionIndex,
-						trends: {
-							improving: false,
-							stable: true,
-							degrading: false
-						},
-						quality_indicators: {
-							consistency_level: 'good' as const,
-							risk_level: 'low' as const,
-							player_experience: 'engaging' as const
-						}
-					};
-					
-					// Stocker les métriques basiques
-					currentCoherenceMetrics = basicMetrics;
-					
-					// Logging pour le debugging
-					console.log('📊 Basic coherence metrics calculated:', basicMetrics);
-					
-					// Pour l'instant, pas d'alertes automatiques
-					// Cela sera implémenté quand les coordinateurs seront prêts
-					
-				} catch (coherenceError) {
-					console.error('Error in coherence metrics placeholder:', coherenceError);
-					// Ne pas interrompre le flux du jeu si les métriques échouent
-				}
-				
 			} catch (evolutionError) {
 				console.error('Error in narrative evolution processing:', evolutionError);
 				// Ne pas interrompre le flux du jeu si l'évolution échoue
@@ -1816,9 +1765,7 @@
 	/>
 	
 	<!-- Moniteur de Cohérence Narrative -->
-	<div class="mt-4">
-		<CoherenceMonitor />
-	</div>
+
 	<div id="story" class="mt-4 justify-items-center rounded-lg bg-base-100 p-4 shadow-md">
 		<!-- Announce streamed story updates to assistive tech -->
 		<div class="sr-only" aria-live="polite"></div>

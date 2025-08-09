@@ -14,7 +14,6 @@ import {
 import type { CampaignChapter } from '$lib/ai/agents/campaignAgent';
 import { getEntityCoordinator } from '$lib/services/entityCoordinator';
 import { getMemoryCoordinator } from '$lib/services/memoryCoordinator';
-import { getCoherenceMetricsService } from '$lib/services/coherenceMetrics';
 
 export type InventoryUpdate = {
 	type: 'add_item' | 'remove_item';
@@ -107,8 +106,6 @@ export type GameActionState = {
 		entities_involved_names?: string[]; // LLM-provided names; will be resolved to IDs
 		tags?: string[];
 	};
-	// Optional feedback describing how guardrails were applied
-	coherence_feedback?: string;
 };
 export type GameMasterAnswer = {
 	answerToPlayer: string;
@@ -216,27 +213,6 @@ export class GameAgent {
 			memoryContext
 		);
 		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
-
-		// 4b. Injecter des guardrails de cohérence si nécessaire
-		try {
-			const coherenceService = getCoherenceMetricsService();
-			// Construire validations synthétiques depuis les coordinateurs
-			const entityValidation = getEntityCoordinator().detectAndResolveDuplicates();
-			const memoryValidation = await getMemoryCoordinator().validateOverallCoherence();
-			const metrics = coherenceService.calculateDetailedMetrics(
-				entityValidation,
-				memoryValidation,
-				currentStoryId,
-				`Action: ${action.text.substring(0, 60)}`
-			);
-			const insights = coherenceService.generatePredictiveInsights(entityValidation, memoryValidation);
-			if (coherenceService.shouldApplyGuardrails(metrics)) {
-				const guard = coherenceService.buildGuardrailsInstructions(entityValidation, memoryValidation, metrics, insights);
-				gameAgent.unshift(guard.instruction_block);
-			}
-		} catch (e) {
-			console.warn('Coherence guardrails skipped:', e);
-		}
 
 		console.log('🧠 Memory Context Events:', memoryContext.relevant_events.length);
 		console.log('🏭 Unified Entities:', allEntities);
@@ -939,7 +915,6 @@ const jsonSystemInstructionForGameAgent = (
 		"entities_involved_names": ["CHARACTER", "Companion Name", "NPC Name"],
 		"tags": ["plot_advancement", "clue", "relationship", "combat", "mystery", "worldbuilding"]
 	}
-		,"coherence_feedback": "If COHERENCE GUARDRAILS were present, briefly explain how continuity/anti-loop rules were applied in this turn."
 }`;
 
 const jsonSystemInstructionForPlayerQuestion = `Important Instruction! You must always respond with valid JSON in the following format:

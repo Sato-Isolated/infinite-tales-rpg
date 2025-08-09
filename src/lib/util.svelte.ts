@@ -12,8 +12,6 @@ export type ThoughtsState = {
 	eventThoughts: string;
 	narrativeEvolution?: string;
 	companionValidation?: string;
-	coherenceAlerts?: string;
-	coherenceInsights?: string;
 };
 
 export const initialThoughtsState: ThoughtsState = {
@@ -21,9 +19,7 @@ export const initialThoughtsState: ThoughtsState = {
 	actionsThoughts: '',
 	eventThoughts: '',
 	narrativeEvolution: '',
-	companionValidation: '',
-	coherenceAlerts: '',
-	coherenceInsights: ''
+	companionValidation: ''
 };
 
 export type CompanionValidationState = {
