@@ -16,7 +16,16 @@ export { mustRollDice, getTargetPromptAddition, getContinueTalePromptAddition, a
 export { renderStatUpdates, renderInventoryUpdate } from '$lib/rendering/gameRendering.js';
 
 // State Management
-export { applyGameActionState, applyInventoryUpdate, applyGameActionStates, getGameEndedMessage, undoLastAction } from '$lib/state/gameStateUtils.js';
+export { 
+	applyGameActionState, 
+	applyInventoryUpdate, 
+	applyGameActionStates, 
+	getGameEndedMessage, 
+	undoLastAction,
+	getPlayerStats,
+	applyStatDeltas,
+	toStatDeltas
+} from '$lib/state/gameStateUtils.js';
 
 // Companion System - Core Functions
 export { 

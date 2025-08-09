@@ -17,10 +17,14 @@ export function renderStatUpdates(
 			.toSorted((a, b) => (a.targetName < b.targetName ? -1 : 1))
 			.map(mapStatsUpdateToGameLogic)
 			.map((statsUpdate) => {
+				const raw = statsUpdate.value?.result as unknown;
+				const parsed = Number.parseInt(String(raw ?? ''));
 				if (
-					!statsUpdate.value?.result ||
-					isPlainObject(statsUpdate.value.result) ||
-					Number.parseInt(statsUpdate.value.result) <= 0 ||
+					raw === undefined ||
+					raw === null ||
+					isPlainObject(raw) ||
+					!Number.isFinite(parsed) ||
+					parsed <= 0 ||
 					statsUpdate.type === 'null' ||
 					statsUpdate.type === 'none'
 				) {

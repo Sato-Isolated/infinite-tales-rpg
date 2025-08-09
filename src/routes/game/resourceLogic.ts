@@ -71,10 +71,16 @@ export function initializeMissingResources(
 ) {
 	// Check for any resources that are missing in the player's state.
 	const missingResources: Resources = Object.entries(resources)
-		.filter(
-			([resourceKey]) =>
-				playerCharactersGameState[playerId][resourceKey]?.current_value === undefined
-		)
+		.filter(([resourceKey]) => {
+			const current = playerCharactersGameState[playerId]?.[resourceKey]?.current_value as unknown;
+			// Treat undefined, null, non-number, or NaN as missing and re-initialize
+			return (
+				current === undefined ||
+				current === null ||
+				typeof current !== 'number' ||
+				Number.isNaN(current)
+			);
+		})
 		.reduce((acc, [resourceKey, resource]) => ({ ...acc, [resourceKey]: resource }), {});
 	if (Object.keys(missingResources).length > 0) {
 		const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
