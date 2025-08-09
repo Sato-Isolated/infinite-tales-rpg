@@ -1,27 +1,24 @@
 <script lang="ts">
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import { marked } from 'marked';
 	import type { RenderedGameUpdate } from '../../routes/game/gameLogic';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
-	import TTSComponent from '$lib/components/TTSComponent.svelte';
 	import type { AIConfig } from '$lib';
 
 	type StoryProgressionWithImageProps = {
 		storyTextRef?: HTMLElement;
 		story: string;
 		gameUpdates?: Array<RenderedGameUpdate | undefined>;
-		imagePrompt?: string;
+		// imagePrompt removed with AI image generation
 		stream_finished?: boolean;
 	};
 	let {
 		storyTextRef = $bindable(),
 		story,
 		gameUpdates = [],
-		imagePrompt = '',
+		// imagePrompt removed
 		stream_finished = true
 	}: StoryProgressionWithImageProps = $props();
-	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 
 	let rendered = (toRender: string) => {
 		if (!toRender) return '';
@@ -38,14 +35,7 @@
 	};
 </script>
 
-{#if !aiConfigState.value?.disableAudioState}
-	<div class="mt-4 flex">
-		<TTSComponent
-			text={stream_finished ? story?.replaceAll('_', ' ') : ''}
-			voice={ttsVoiceState.value}
-		></TTSComponent>
-	</div>
-{/if}
+<!-- TTS removed -->
 <article
 	bind:this={storyTextRef}
 	class="prose prose-neutral m-auto mb-2 mt-2 scroll-mt-24"
@@ -63,6 +53,4 @@
 		{/each}
 	</div>
 </article>
-{#if imagePrompt?.trim() && !aiConfigState.value?.disableImagesState}
-	<AIGeneratedImage showLoadingSpinner={false} {imagePrompt} showGenerateButton={false} />
-{/if}
+<!-- AI image generation removed -->

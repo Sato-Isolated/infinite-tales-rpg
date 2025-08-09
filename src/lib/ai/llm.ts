@@ -38,7 +38,7 @@ export interface LLMRequest {
 }
 
 export interface LLMconfig {
-	provider?: 'gemini' | 'pollinations';
+	provider?: 'gemini';
 	temperature?: number;
 	config?: GenerateContentConfig;
 	language?: string;

@@ -6,7 +6,6 @@
 		initialCharacterState
 	} from '$lib/ai/agents/characterAgent';
 	import LoadingModal from '$lib/components/LoadingModal.svelte';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { getRowsForTextarea, navigate } from '$lib/util.svelte';
 	import isEqual from 'lodash.isequal';
@@ -343,15 +342,7 @@
 		>
 			Clear {stateValue.replaceAll('_', ' ')}
 		</button>
-		{#if !aiConfigState.value?.disableImagesState && stateValue === 'appearance'}
-			<div class="m-auto flex w-full flex-col">
-				<AIGeneratedImage
-					storageKey="companionImageState"
-					{resetImageState}
-					imagePrompt="{storyState.value.general_image_prompt} {companionDescription.appearance}"
-				/>
-			</div>
-		{/if}
+		<!-- AI image generation removed -->
 	{/each}
 	
 	<!-- Actions pour sauvegarder -->

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import { CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 	import type { Ability } from '$lib/ai/agents/characterStatsAgent';
@@ -25,18 +24,7 @@
 			class="grid-cols mt-4 grid overflow-hidden overflow-ellipsis text-center"
 		>
 			<div class="m-auto sm:col-span-3">
-				{#if !aiConfigState.value?.disableImagesState}
-					<AIGeneratedImage
-						noLogo={true}
-						enhance={false}
-						imageClassesString="w-[90px] sm:w-[100px] h-[90px] sm:h-[100px] m-auto"
-						imagePrompt={CharacterStatsAgent.getSpellImagePrompt(
-							ability,
-							storyState?.value?.general_image_prompt
-						)}
-						showGenerateButton={false}
-					></AIGeneratedImage>
-				{/if}
+				<!-- AI image generation removed -->
 			</div>
 			<div
 				class:sm:col-span-3={aiConfigState.value?.disableImagesState}

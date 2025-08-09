@@ -91,7 +91,6 @@ export type GameActionState = {
 	story: string;
 	// Optional concise bullets describing concrete changes this turn
 	state_change_summary?: string[];
-	image_prompt: string;
 	inventory_update: Array<InventoryUpdate>;
 	stats_update: Array<StatsUpdate>;
 	is_character_in_combat: boolean;
@@ -816,10 +815,6 @@ export class GameAgent {
 		};
 	}
 
-	static getItemImagePrompt(item_id: string, item: Item, storyImagePrompt: string): string {
-		return `${storyImagePrompt} RPG game icon ${item_id} ${item.description}`;
-	}
-
 	static getPromptForGameMasterNotes = (notes: Array<string>) => {
 		if (!notes || notes.length === 0) {
 			return '';
@@ -911,7 +906,6 @@ const jsonSystemInstructionForGameAgent = (
   "story": "depending on If The Action Is A Success Or Failure progress the story further with appropriate consequences. ${!gameSettingsState.detailedNarrationLength ? storyWordLimit : ''} For character speech use single quotes. Format the narration using HTML tags for easier reading.",
 	"state_change_summary": ["Bullet points of concrete changes this turn (new clue, moved location, updated resource, NPC reaction, thread advanced)"],
   "story_memory_explanation": "Explanation if story progression has Long-term Impact: Remember events that significantly influence character arcs, plot direction, or the game world in ways that persist or resurface later; Format: {explanation} LONG_TERM_IMPACT: LOW, MEDIUM, HIGH",
-  "image_prompt": "Create a prompt for an image generating ai that describes the scene of the story progression, do not use character names but appearance description. Always include the gender. Keep the prompt similar to previous prompts to maintain image consistency. When describing CHARACTER, always refer to appearance variable. Always use the format: {sceneDetailed} {adjective} {charactersDetailed}",
   "xpGainedExplanation": "Explain why or why nor the CHARACTER gains xp in this situation",
   ${statsUpdatePromptObject},
   "inventory_update": [

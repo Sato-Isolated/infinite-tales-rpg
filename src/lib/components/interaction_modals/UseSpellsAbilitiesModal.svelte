@@ -2,14 +2,12 @@
 	import TargetModal from '$lib/components/interaction_modals/TargetModal.svelte';
 	import { type Ability, CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 	import type { Action, ResourcesWithCurrentValue, Targets } from '$lib/ai/agents/gameAgent';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
 
 	let {
 		abilities,
 		playerName,
-		storyImagePrompt,
 		resources,
 		targets,
 		onclose,
@@ -17,7 +15,6 @@
 	}: {
 		abilities: Array<Ability>;
 		playerName: string;
-		storyImagePrompt: string;
 		resources: ResourcesWithCurrentValue;
 		targets: Targets;
 		onclose;
@@ -66,15 +63,7 @@
 
 							<!-- Middle: Image (if enabled) and ability name -->
 							<div class="mt-3 flex flex-col items-center">
-								{#if !aiConfigState.value?.disableImagesState}
-									<AIGeneratedImage
-										noLogo={true}
-										enhance={false}
-										imageClassesString="w-[90px] sm:w-[100px] h-[90px] sm:h-[100px] m-auto"
-										imagePrompt={CharacterStatsAgent.getSpellImagePrompt(ability, storyImagePrompt)}
-										showGenerateButton={false}
-									/>
-								{/if}
+								<!-- AI image generation removed -->
 								<p class="mt-2 overflow-hidden overflow-ellipsis">{ability.name}</p>
 							</div>
 

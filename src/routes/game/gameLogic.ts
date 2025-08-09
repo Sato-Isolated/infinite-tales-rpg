@@ -16,11 +16,11 @@ export { mustRollDice, getTargetPromptAddition, getContinueTalePromptAddition, a
 export { renderStatUpdates, renderInventoryUpdate } from '$lib/rendering/gameRendering.js';
 
 // State Management
-export { 
-	applyGameActionState, 
-	applyInventoryUpdate, 
-	applyGameActionStates, 
-	getGameEndedMessage, 
+export {
+	applyGameActionState,
+	applyInventoryUpdate,
+	applyGameActionStates,
+	getGameEndedMessage,
 	undoLastAction,
 	getPlayerStats,
 	applyStatDeltas,
@@ -28,10 +28,10 @@ export {
 } from '$lib/state/gameStateUtils.js';
 
 // Companion System - Core Functions
-export { 
-	initializeGameWithCompanions, 
-	recordCompanionMemoryFromGameAction, 
-	processCompanionEvolution, 
+export {
+	initializeGameWithCompanions,
+	recordCompanionMemoryFromGameAction,
+	processCompanionEvolution,
 	getActiveCompanions,
 	shouldValidateCompanions,
 	updateValidationState,

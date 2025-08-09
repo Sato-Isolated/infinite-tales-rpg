@@ -31,8 +31,7 @@
 				>Google Gemini Terms</a
 			>
 			and the
-			<a class="link" target="_blank" href="https://pollinations.ai/terms">Pollinations Terms</a
-			></span
+			<!-- Pollinations removed --></span
 		>
 		<span class="mt-2 font-semibold">Age Restriction</span>
 		<span class="mt-2">This game is intended for players aged 18 and above.</span>

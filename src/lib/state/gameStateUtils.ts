@@ -1,6 +1,6 @@
-import type { 
-	PlayerCharactersGameState, 
-	PlayerCharactersIdToNamesMap, 
+import type {
+	PlayerCharactersGameState,
+	PlayerCharactersIdToNamesMap,
 	GameActionState,
 	InventoryState,
 	ResourcesWithCurrentValue,

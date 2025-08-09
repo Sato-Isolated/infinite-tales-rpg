@@ -600,13 +600,11 @@
 							name: '',
 							effect: '',
 							resource_cost: { cost: 0, resource_key: undefined },
-							image_prompt: ''
 						});
 						addSpellOverwrite(characterStatsState.value.spells_and_abilities.length - 1, {
 							name: '',
 							effect: '',
-							resource_cost: { cost: 0, resource_key: undefined },
-							image_prompt: ''
+							resource_cost: { cost: 0, resource_key: undefined }
 						});
 					}}
 				>

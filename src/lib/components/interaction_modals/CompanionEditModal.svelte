@@ -80,8 +80,7 @@
 		editedCompanion.character_stats.spells_and_abilities.push({
 			name: 'New Ability',
 			effect: '',
-			resource_cost: { cost: 0, resource_key: undefined },
-			image_prompt: ''
+			resource_cost: { cost: 0, resource_key: undefined }
 		});
 	};
 </script>

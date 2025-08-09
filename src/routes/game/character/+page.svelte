@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent.ts';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
@@ -23,14 +22,7 @@
 			<h1 id="name" class="class mb-4 border-b border-gray-600 text-center text-3xl font-bold">
 				{characterState.value.name}
 			</h1>
-			{#if !aiConfigState.value?.disableImagesState}
-				<div class="m-auto flex w-full flex-col">
-					<AIGeneratedImage
-						storageKey="characterImageState"
-						imagePrompt="{storyState.value.general_image_prompt} {characterState.value.appearance}"
-					></AIGeneratedImage>
-				</div>
-			{/if}
+			<!-- AI image generation removed -->
 			<div class="section mb-6">
 				<h2 class="mb-2 mt-2 border-b border-gray-600 pb-1 text-xl font-semibold">
 					Basic Information

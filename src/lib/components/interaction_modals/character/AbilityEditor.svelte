@@ -6,7 +6,6 @@
 		type Resources
 	} from '$lib/ai/agents/characterStatsAgent';
 	import { initialStoryState, type Story } from '$lib/ai/agents/storyAgent';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 
 	type Props = {
@@ -66,29 +65,12 @@
 		const resource_key = event.currentTarget.value || undefined; // Handle empty string as undefined
 		_onUpdate(index, { resource_cost: { ...ability.resource_cost, resource_key } });
 	};
-
-	const handleImagePromptInput = (event: Event & { currentTarget: HTMLInputElement }) => {
-		_onUpdate(index, { image_prompt: event.currentTarget.value });
-	};
 </script>
 
 <details class="collapse collapse-arrow textarea-bordered mb-4 border bg-base-200">
 	<summary class="collapse-title capitalize" tabindex="0">
 		<div class="grid overflow-hidden overflow-ellipsis text-center">
-			{#if !aiConfigState.value?.disableImagesState}
-				<div class="m-auto mb-3">
-					<AIGeneratedImage
-						noLogo={true}
-						enhance={false}
-						imageClassesString="w-[90px] sm:w-[100px] h-[90px] sm:h-[100px] m-auto"
-						imagePrompt={CharacterStatsAgent.getSpellImagePrompt(
-							ability,
-							storyState.value?.general_image_prompt || ''
-						)}
-						buttonClassesString="btn-xs no-animation"
-					/>
-				</div>
-			{/if}
+			<!-- AI image generation removed -->
 			<div class="m-auto w-full">
 				<p
 					class="content-center overflow-hidden overflow-ellipsis"
@@ -175,18 +157,6 @@
 					</select>
 				</div>
 			</div>
-			<label class="label mt-2 cursor-pointer" for={`ability-${index}-image-prompt`}
-				><span class="m-auto">Image Prompt</span></label
-			>
-
-			<input
-				type="text"
-				id={`ability-${index}-image-prompt`}
-				class="input input-bordered w-full"
-				value={ability.image_prompt}
-				oninput={handleImagePromptInput}
-				aria-label="Image Prompt"
-			/>
 
 			<button
 				class="btn btn-accent btn-sm mt-2 w-full"

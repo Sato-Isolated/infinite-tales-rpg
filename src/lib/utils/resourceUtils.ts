@@ -1,5 +1,6 @@
 import type { ResourcesWithCurrentValue, Action, InventoryState } from '$lib/ai/agents/gameAgent.js';
 import type { StatsUpdate } from '$lib/ai/agents/combatAgent.js';
+import { XP_INCREASING_SCALE } from '../../routes/game/levelLogic';
 
 export function getEmptyCriticalResourceKeys(resources: ResourcesWithCurrentValue): string[] {
 	return Object.entries(resources)
@@ -15,8 +16,17 @@ export function mapStatsUpdateToGameLogic(statsUpdate: StatsUpdate): StatsUpdate
 }
 
 function mapXP(statsUpdate: StatsUpdate) {
-	// TODO: Implement XP mapping logic
-	// This function should contain the XP mapping implementation
+	// Convert categorical XP values (SMALL|MEDIUM|HIGH) into numeric XP using global scale
+	try {
+		const raw = String(statsUpdate.value?.result ?? '').toUpperCase();
+		if (raw in XP_INCREASING_SCALE) {
+			// mutate in place to stay consistent with callers
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(statsUpdate.value as any).result = XP_INCREASING_SCALE[raw as keyof typeof XP_INCREASING_SCALE];
+		}
+	} catch {
+		// noop – keep original value if mapping fails
+	}
 }
 
 export function getColorForStatUpdate(mappedType: string, resources: ResourcesWithCurrentValue): string {

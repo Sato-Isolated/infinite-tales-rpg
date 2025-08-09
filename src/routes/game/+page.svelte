@@ -66,7 +66,6 @@
 	import { type Campaign, CampaignAgent, type CampaignChapter } from '$lib/ai/agents/campaignAgent';
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
-	import TTSComponent from '$lib/components/TTSComponent.svelte';
 	import { applyLevelUp, getXPNeededForLevel } from './levelLogic';
 	import LevelUpModal from '$lib/components/interaction_modals/LevelUpModal.svelte';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
@@ -117,7 +116,6 @@
 		storyTextRef?: HTMLElement;
 		story: string;
 		gameUpdates?: Array<RenderedGameUpdate | undefined>;
-		imagePrompt?: string;
 		stream_finished?: boolean;
 	};
 	// eslint-disable-next-line svelte/valid-compile
@@ -239,19 +237,11 @@
 		gameUpdates: storyChunkState
 			? []
 			: getRenderedGameUpdates(currentGameActionState, playerCharacterIdState),
-		imagePrompt: storyChunkState
-			? ''
-			: [currentGameActionState.image_prompt, storyState.value.general_image_prompt].join(' '),
 		stream_finished: !storyChunkState
 	});
 	let latestStoryProgressionTextComponent = $state<HTMLElement | undefined>();
 
-	let actionsTextForTTS: string = $state('');
-	$effect(() => {
-		// Keep TTS text in sync with currently rendered actions
-		const actions = characterActionsState.value || [];
-		actionsTextForTTS = actions.map((a) => getTextForActionButton(a)).join(' ') || ' ';
-	});
+	// TTS removed
 	//TODO const lastCombatSinceXActions: number = $derived(
 	//	gameActionsState.value && (gameActionsState.value.length - (gameActionsState.value.findLastIndex(state => state.is_character_in_combat ) + 1))
 	//);
@@ -272,7 +262,7 @@
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 	let useDynamicCombat = useLocalStorage('useDynamicCombat', false);
 	let gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState', defaultGameSettings());
-	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
+	// TTS voice state removed
 
 	onMount(async () => {
 		beforeNavigate(({ cancel }) => {
@@ -1786,7 +1776,6 @@
 		playerName={characterState.value.name}
 		resources={playerCharactersGameState[playerCharacterIdState]}
 		abilities={characterStatsState.value?.spells_and_abilities}
-		storyImagePrompt={storyState.value.general_image_prompt}
 		targets={currentGameActionState.currently_present_npcs}
 		onclose={onTargetedSpellsOrAbility}
 	></UseSpellsAbilitiesModal>
@@ -1795,7 +1784,6 @@
 		{onDeleteItem}
 		playerName={characterState.value.name}
 		inventoryState={inventoryState.value}
-		storyImagePrompt={storyState.value.general_image_prompt}
 		oncrafting={(craftingPrompt) => {
 			if (craftingPrompt) {
 				onCustomActionSubmitted(craftingPrompt, true);
@@ -1841,7 +1829,6 @@
 			{#each !latestStoryProgressionState.stream_finished ? [currentGameActionState] : gameActionsState.value.slice(-2 + showXLastStoryPrgressions * -1, -1) as gameActionState (gameActionState.id)}
 				<StoryProgressionWithImage
 					story={gameActionState.story}
-					imagePrompt="{gameActionState.image_prompt} {storyState.value.general_image_prompt}"
 					gameUpdates={getRenderedGameUpdates(gameActionState, playerCharacterIdState)}
 				/>
 				{#if gameActionState['fallbackUsed']}
@@ -1852,7 +1839,6 @@
 		<StoryProgressionWithImage
 			bind:storyTextRef={latestStoryProgressionTextComponent}
 			story={latestStoryProgressionState.story}
-			imagePrompt={latestStoryProgressionState.imagePrompt}
 			gameUpdates={latestStoryProgressionState.gameUpdates}
 			stream_finished={latestStoryProgressionState.stream_finished}
 		/>
@@ -1864,15 +1850,7 @@
 		{/if}
 	</div>
 
-	{#if !aiConfigState.value?.disableAudioState && actionsTextForTTS}
-		<div class="mt-4 flex">
-			<TTSComponent
-				text={actionsTextForTTS}
-				voice={ttsVoiceState.value}
-				hidden={characterActionsState.value?.length === 0}
-			></TTSComponent>
-		</div>
-	{/if}
+	<!-- TTS removed -->
 	<div id="actions" class="mt-2 p-4 pb-0 pt-0">
 		{#if !isGameEnded.value && characterActionsState.value?.length}
 			{#each characterActionsState.value as action, i (action.text + i)}
