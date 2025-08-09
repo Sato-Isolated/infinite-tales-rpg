@@ -4,10 +4,8 @@
 		type EntityValidationResult,
 		type EntityConflict
 	} from '$lib/services/entityCoordinator';
-	import {
-		getMemoryCoordinator,
-		type MemoryValidationResult
-	} from '$lib/services/memoryCoordinator';
+        import { getMemoryCoordinator } from '$lib/services/memoryCoordinator';
+        import type { MemoryValidationResult } from '$lib/services/memoryCoordinator.types';
 	import {
 		getCoherenceMetricsService,
 		type CoherenceMetrics,

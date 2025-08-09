@@ -1,5 +1,5 @@
 import type { EntityValidationResult } from './entityCoordinator';
-import type { MemoryValidationResult } from './memoryCoordinator';
+import type { MemoryValidationResult } from './memoryCoordinator.types';
 
 /**
  * Service de métriques avancées pour la cohérence narrative

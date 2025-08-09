@@ -111,15 +111,9 @@
 	import { getDiceRollPromptAddition, type DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
 	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
-	import StoryProgressionWithImage from '$lib/components/StoryProgressionWithImage.svelte';
-	import type { RenderedGameUpdate } from './gameLogic';
-	type StoryProgressionWithImageProps = {
-		storyTextRef?: HTMLElement;
-		story: string;
-		gameUpdates?: Array<RenderedGameUpdate | undefined>;
-		imagePrompt?: string;
-		stream_finished?: boolean;
-	};
+        import StoryProgressionWithImage from '$lib/components/StoryProgressionWithImage.svelte';
+        import type { RenderedGameUpdate } from './gameLogic';
+        import { initialLevelUpState, type LevelUpState, type StoryProgressionWithImageProps } from './gamePage.types';
 	// eslint-disable-next-line svelte/valid-compile
 	let diceRollDialog = $state<HTMLDialogElement | undefined>(undefined);
 	let useSpellsAbilitiesModal = $state<any>(undefined);
@@ -205,15 +199,7 @@
 		];
 	};
 
-	let levelUpState = useLocalStorage<{
-		buttonEnabled: boolean;
-		dialogOpened: boolean;
-		playerName: string;
-	}>('levelUpState', {
-		buttonEnabled: false,
-		dialogOpened: false,
-		playerName: ''
-	});
+        let levelUpState = useLocalStorage<LevelUpState>('levelUpState', initialLevelUpState);
 	const currentGameActionState: GameActionState = $derived(
 		(gameActionsState.value && gameActionsState.value[gameActionsState.value.length - 1]) ||
 			({} as GameActionState)
