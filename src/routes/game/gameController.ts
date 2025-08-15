@@ -16,8 +16,9 @@ import { stringifyPretty } from '$lib/util.svelte';
 import type { ThoughtsState } from '$lib/util.svelte';
 import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
 import { getSkillIfApplicable, applyCharacterChange, addCharacterToPlayerCharactersIdToNamesMap } from './characterLogic';
+import { getXPNeededForLevel, applyLevelUp } from './levelLogic';
 import { refillResourcesFully } from './resourceLogic';
-import type { Ability } from '$lib/ai/agents/characterStatsAgent';
+import type { AiLevelUp, Ability } from '$lib/ai/agents/characterStatsAgent';
 
 export type ControllerCtx = {
   agents: {
@@ -81,6 +82,8 @@ export type ControllerCtx = {
     setGMQuestion: (text: string) => void;
     setCustomDiceRollNotation: (notation: string) => void;
     setCustomActionImpossibleReason: (reason: 'not_enough_resource' | 'not_plausible' | undefined) => void;
+    setItemForSuggestActions: (item: any) => void;
+    setLevelUpState: (state: { buttonEnabled: boolean; dialogOpened: boolean; playerName: string }) => void;
     // triggerPlayerResourcesReactivity removed - not needed with useLocalStorage
   };
   skills: {
@@ -521,5 +524,135 @@ export function createGameController(ctx: ControllerCtx) {
     }
   }
 
-  return { sendAction, regenerateActions, confirmCharacterChangeEvent, confirmAbilitiesLearned, generateActionFromCustomInput, onCustomActionSubmitted, handleUtilityAction } as const;
+  async function handleTargetedSpellsOrAbility(action: Action, targets: string[]) {
+    ctx.state.isAiGeneratingState.set(true);
+    let targetAddition = '';
+    if (targets?.length > 0 && !targets.some((t) => t === undefined)) {
+      targetAddition = `\n\nTargets: ${targets.join(', ')}\n`;
+    }
+    action.text += targetAddition;
+    const { getRelatedHistory } = await import('./memoryLogic');
+    ctx.state.relatedActionHistoryState.value = await getRelatedHistory(
+      ctx.agents.summaryAgent,
+      action,
+      ctx.state.gameActionsState.value,
+      ctx.state.relatedStoryHistoryState.value,
+      ctx.state.customMemoriesState.value
+    );
+    const generatedAction = await ctx.agents.actionAgent.generateSingleAction(
+      action,
+      ctx.state.getCurrentGameActionState(),
+      ctx.state.historyMessagesState.value,
+      ctx.state.storyState.value,
+      ctx.state.characterState.value,
+      ctx.state.characterStatsState.value,
+      ctx.state.inventoryState.value,
+      ctx.state.systemInstructionsState.value.generalSystemInstruction,
+      ctx.state.systemInstructionsState.value.actionAgentInstruction,
+      ctx.state.relatedActionHistoryState.value,
+      ctx.state.gameSettingsState.value?.aiIntroducesSkills,
+      ctx.state.getCurrentGameActionState().is_character_restrained_explanation,
+      ctx.state.additionalActionInputState.value
+    );
+    if (generatedAction) {
+      action = { ...action, ...generatedAction };
+    }
+    action.is_custom_action = true;
+    ctx.state.chosenActionState.value = action;
+    ctx.skills.addSkillsIfApplicable([action]);
+    const abilityAddition =
+      '\n If this is a friendly action used on an enemy, play out the effect as described, even though the result may be unintended.' +
+      '\n Hostile NPCs stay hostile unless explicitly described otherwise by the actions effect.' +
+      '\n Friendly NPCs turn hostile if attacked.';
+
+    ctx.state.additionalStoryInputState.value =
+      targetAddition + abilityAddition + (ctx.state.additionalStoryInputState.value || '');
+    await sendAction(
+      action,
+      gameLogic.mustRollDice(action, ctx.state.getCurrentGameActionState().is_character_in_combat)
+    );
+    ctx.state.isAiGeneratingState.set(false);
+  }
+
+  function handleItemUseChosen(item: Action & any & { item_id: string }) {
+    return item;
+  }
+
+  function getEventToConfirm(gameEvent: CharacterChangedInto): {
+    title: string;
+    description: string;
+  } {
+    return {
+      title: `Transform into ${gameEvent.changed_into}`,
+      description: `Your character is changing into: ${gameEvent.changed_into}. ${gameEvent.description || ''}. Do you accept this transformation?`
+    };
+  }
+
+  function handleLevelUpModalClosed(aiLevelUp: AiLevelUp) {
+    if (aiLevelUp) {
+      ctx.state.characterStatsState.value = applyLevelUp(aiLevelUp, ctx.state.characterStatsState.value);
+    } else {
+      console.log('Level up cancelled');
+    }
+
+    const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
+      JSON.parse(JSON.stringify(ctx.state.characterStatsState.value.resources)),
+      ctx.state.playerCharacterId,
+      ctx.state.characterState.value.name,
+      JSON.parse(JSON.stringify(ctx.state.gameActionsState.value)),
+      JSON.parse(JSON.stringify(ctx.state.playerCharactersGameState.value))
+    );
+    ctx.state.gameActionsState.value = updatedGameActionsState;
+    ctx.state.playerCharactersGameState.value = updatedPlayerCharactersGameState;
+    ctx.helpers.checkForLevelUp();
+  }
+
+  function handleSuggestItemActionClosed(action?: Action) {
+    if (action) {
+      ctx.state.chosenActionState.value = action;
+      ctx.skills.addSkillsIfApplicable([action]);
+      void sendAction(
+        action,
+        gameLogic.mustRollDice(action, ctx.state.getCurrentGameActionState().is_character_in_combat)
+      );
+    }
+  }
+
+  function handleCustomDiceRollClosed() {
+    // Reset custom dice roll notation in component
+  }
+
+  function levelUpClicked(playerName: string) {
+    const level = JSON.parse(JSON.stringify(ctx.state.characterStatsState.value.level));
+    const xpNeededForLevel = getXPNeededForLevel(level);
+    if (!xpNeededForLevel) {
+      console.error('No XP requirement found for level', level);
+      return;
+    }
+    const buyLevelUpObject = GameAgent.getLevelUpCostObject(xpNeededForLevel, playerName, level);
+    // Ensure character state exists before accessing XP
+    if (ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId]?.XP) {
+      ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId].XP.current_value -= xpNeededForLevel;
+    }
+    ctx.state.gameActionsState.value[ctx.state.gameActionsState.value.length - 1].stats_update.push(buyLevelUpObject);
+    ctx.helpers.checkForLevelUp();
+    return true; // Signal to open level up dialog
+  }
+
+  return { 
+    sendAction, 
+    regenerateActions, 
+    confirmCharacterChangeEvent, 
+    confirmAbilitiesLearned, 
+    generateActionFromCustomInput, 
+    onCustomActionSubmitted, 
+    handleUtilityAction,
+    handleTargetedSpellsOrAbility,
+    handleItemUseChosen,
+    getEventToConfirm,
+    handleLevelUpModalClosed,
+    handleSuggestItemActionClosed,
+    handleCustomDiceRollClosed,
+    levelUpClicked
+  } as const;
 }

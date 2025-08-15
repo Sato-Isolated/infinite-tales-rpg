@@ -348,7 +348,9 @@
 				getCurrentDiceRollResult: () => diceRollDialog?.returnValue as DiceRollResult | undefined,
 				setGMQuestion: (text: string) => (gmQuestionState = text),
 				setCustomDiceRollNotation: (notation: string) => (customDiceRollNotation = notation),
-				setCustomActionImpossibleReason: (reason) => (customActionImpossibleReasonState = reason)
+				setCustomActionImpossibleReason: (reason) => (customActionImpossibleReasonState = reason),
+				setItemForSuggestActions: (item: any) => (itemForSuggestActionsState = item),
+				setLevelUpState: (state) => (levelUpState.value = state)
 				// Remove complex reactivity callback - not needed with useLocalStorage
 			},
 			skills: {
@@ -700,21 +702,10 @@
 
 	function levelUpClicked(playerName: string) {
 		levelUpState.value.playerName = playerName;
-		const level = $state.snapshot(characterStatsState.value.level);
-		const xpNeededForLevel = getXPNeededForLevel(level);
-		if (!xpNeededForLevel) {
-			handleError('Could not calculate XP needed for level up!');
-			return;
+		const shouldOpenDialog = controller!.levelUpClicked(playerName);
+		if (shouldOpenDialog) {
+			levelUpState.value.dialogOpened = true;
 		}
-		const buyLevelUpObject = GameAgent.getLevelUpCostObject(xpNeededForLevel, playerName, level);
-		// Ensure character state exists before accessing XP
-		if (playerCharactersGameState.value[playerCharacterIdState]?.XP) {
-			playerCharactersGameState.value[playerCharacterIdState].XP.current_value -= xpNeededForLevel;
-		}
-		// No manual reactivity needed with useLocalStorage
-		gameActionsState.value[gameActionsState.value.length - 1].stats_update.push(buyLevelUpObject);
-		levelUpState.value.dialogOpened = true;
-		checkForLevelUp();
 	}
 
 	// addActionButton removed
@@ -723,102 +714,26 @@
 		getLatestStoryMessagesFromHistory(historyMessagesState.value, numOfActions);
 
 	const handleItemUseChosen = async (item: Action & Item & { item_id: string }) => {
-		itemForSuggestActionsState = item;
+		itemForSuggestActionsState = controller!.handleItemUseChosen(item);
 	};
 
 	const handleTargetedSpellsOrAbility = async (action: Action, targets: string[]) => {
-		isAiGeneratingState = true;
-		let targetAddition = '';
-		if (targets?.length > 0 && !targets.some((t) => t === undefined)) {
-			targetAddition = targets?.length === 0 ? '' : gameLogic.getTargetPromptAddition(targets);
-		}
-		action.text += targetAddition;
-		relatedActionHistoryState.value = await getRelatedHistory(
-			summaryAgent,
-			action,
-			gameActionsState.value,
-			$state.snapshot(relatedStoryHistoryState.value),
-			$state.snapshot(customMemoriesState.value)
-		);
-		const generatedAction = await actionAgent.generateSingleAction(
-			action,
-			currentGameActionState,
-			getLatestStoryMessages(),
-			storyState.value,
-			characterState.value,
-			characterStatsState.value,
-			inventoryState.value,
-			systemInstructionsState.value.generalSystemInstruction,
-			systemInstructionsState.value.actionAgentInstruction,
-			relatedActionHistoryState.value,
-			gameSettingsState.value?.aiIntroducesSkills,
-			currentGameActionState.is_character_restrained_explanation,
-			additionalActionInputState.value
-		);
-		if (generatedAction) {
-			for (const key in generatedAction) {
-				if (action[key] === undefined) {
-					action[key] = generatedAction[key];
-				}
-			}
-		}
-		action.is_custom_action = true;
-		console.log('generatedAction', stringifyPretty(action));
-		chosenActionState.value = action;
-		addSkillsIfApplicable([action]);
-		const abilityAddition =
-			'\n If this is a friendly action used on an enemy, play out the effect as described, even though the result may be unintended.' +
-			'\n Hostile NPCs stay hostile unless explicitly described otherwise by the actions effect.' +
-			'\n Friendly NPCs turn hostile if attacked.';
-
-		additionalStoryInputState.value =
-			targetAddition + abilityAddition + (additionalStoryInputState.value || '');
-		await controller!.sendAction(
-			action,
-			gameLogic.mustRollDice(action, currentGameActionState.is_character_in_combat)
-		);
-		isAiGeneratingState = false;
+		await controller!.handleTargetedSpellsOrAbility(action, targets);
 	};
+
 	const handleCustomDiceRollClosed = () => {
+		controller!.handleCustomDiceRollClosed();
 		customDiceRollNotation = '';
 		actionInputFormComponent?.clear?.();
 	};
-	const handleLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
-		if (aiLevelUp) {
-			characterStatsState.value = applyLevelUp(aiLevelUp, characterStatsState.value);
-		} else {
-			characterStatsState.value = {
-				...characterStatsState.value,
-				level: characterStatsState.value.level + 1
-			};
-		}
-		levelUpState.reset();
 
-		const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
-			$state.snapshot(characterStatsState.value.resources),
-			playerCharacterIdState,
-			characterState.value.name,
-			$state.snapshot(gameActionsState.value),
-			$state.snapshot(playerCharactersGameState.value)
-		);
-		gameActionsState.value = updatedGameActionsState;
-		playerCharactersGameState.value = updatedPlayerCharactersGameState;
-		checkForLevelUp();
+	const handleLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
+		controller!.handleLevelUpModalClosed(aiLevelUp);
+		levelUpState.reset();
 	};
 
 	const handleSuggestItemActionClosed = (action?: Action) => {
-		if (action) {
-			if (action.is_custom_action) {
-				generateActionFromCustomInput(action);
-			} else {
-				chosenActionState.value = $state.snapshot(action);
-				addSkillsIfApplicable([action]);
-				controller!.sendAction(
-					action,
-					mustRollDice(action, currentGameActionState.is_character_in_combat)
-				);
-			}
-		}
+		controller!.handleSuggestItemActionClosed(action);
 		itemForSuggestActionsState = undefined;
 	};
 
@@ -828,57 +743,7 @@
 		);
 
 	const generateActionFromCustomInput = async (action: Action) => {
-		isAiGeneratingState = true;
-		relatedActionHistoryState.value = await getRelatedHistory(
-			summaryAgent,
-			action,
-			gameActionsState.value,
-			$state.snapshot(relatedStoryHistoryState.value),
-			$state.snapshot(customMemoriesState.value)
-		);
-		console.log(
-			'relatedHistoryDetails',
-			stringifyPretty($state.snapshot(relatedStoryHistoryState.value))
-		);
-		const generatedAction = await actionAgent.generateSingleAction(
-			action,
-			currentGameActionState,
-			historyMessagesState.value,
-			storyState.value,
-			characterState.value,
-			characterStatsState.value,
-			inventoryState.value,
-			systemInstructionsState.value.generalSystemInstruction,
-			systemInstructionsState.value.actionAgentInstruction,
-			relatedActionHistoryState.value,
-			gameSettingsState.value?.aiIntroducesSkills,
-			currentGameActionState.is_character_restrained_explanation,
-			additionalActionInputState.value
-		);
-		console.log('generatedAction', stringifyPretty(generatedAction));
-		action = { ...generatedAction, ...action };
-		chosenActionState.value = action;
-		addSkillsIfApplicable([action]);
-		if (action.is_possible === false) {
-			customActionImpossibleReasonState = 'not_plausible';
-		} else {
-			if (
-				!isEnoughResource(
-					action,
-					playerCharactersGameState.value[playerCharacterIdState],
-					inventoryState.value
-				)
-			) {
-				customActionImpossibleReasonState = 'not_enough_resource';
-			} else {
-				customActionImpossibleReasonState = undefined;
-				await controller!.sendAction(
-					action,
-					gameLogic.mustRollDice(action, currentGameActionState.is_character_in_combat)
-				);
-			}
-		}
-		isAiGeneratingState = false;
+		await controller!.generateActionFromCustomInput(action);
 	};
 
 	const handleCustomActionSubmit = async (text: string, mustGenerateCustomAction = false) => {
@@ -919,10 +784,7 @@
 		title: string;
 		description: string;
 	} {
-		return {
-			title: 'Character Change: ' + gamEvent.changed_into,
-			description: gamEvent.description
-		};
+		return controller!.getEventToConfirm(gamEvent);
 	}
 
 	async function confirmCharacterChangeEvent(
