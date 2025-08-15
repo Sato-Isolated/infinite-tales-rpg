@@ -1,0 +1,44 @@
+<script lang="ts" context="module">
+	export type Receiver = 'Character Action' | 'Game Command' | 'GM Question' | 'Dice Roll';
+</script>
+
+<script lang="ts">
+	export let receiver: Receiver = 'Character Action';
+	export let onSubmit: (text: string, receiver: Receiver) => void;
+	let inputRef: HTMLInputElement;
+	export function clear() {
+		if (inputRef) inputRef.value = '';
+	}
+	const handleSubmit = (e: Event) => {
+		e.preventDefault();
+		if (!inputRef?.value) return;
+		onSubmit(inputRef.value, receiver);
+		clear();
+	};
+
+	const getPlaceholder = () => {
+		if (receiver === 'Character Action') return 'What do you want to do?';
+		if (receiver === 'GM Question') return 'Message to the Game Master';
+		if (receiver === 'Dice Roll') return 'notation like 1d20, 2d6+3';
+		return 'Command without restrictions';
+	};
+</script>
+
+<form id="input-form" class="p-4 pb-2" onsubmit={handleSubmit}>
+	<div class="w-full lg:join">
+		<select bind:value={receiver} class="select select-bordered w-full lg:w-fit">
+			<option>Character Action</option>
+			<option>Game Command</option>
+			<option>GM Question</option>
+			<option>Dice Roll</option>
+		</select>
+		<input
+			type="text"
+			bind:this={inputRef}
+			class="input input-bordered w-full"
+			id="user-input"
+			placeholder={getPlaceholder()}
+		/>
+		<button class="btn btn-neutral w-full lg:w-1/4" id="submit-button" type="submit">Submit</button>
+	</div>
+</form>

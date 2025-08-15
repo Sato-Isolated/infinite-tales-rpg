@@ -106,14 +106,18 @@
 	import StoryProgressionWithImage, {
 		type StoryProgressionWithImageProps
 	} from '$lib/components/StoryProgressionWithImage.svelte';
+	import StorySection from '$lib/components/game/StorySection.svelte';
+	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
+	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
+	import ActionInputForm from '$lib/components/game/ActionInputForm.svelte';
+	// (refactor note) skill progression helpers kept inline for now; extraction deferred
 	import UtilityModal from '$lib/components/interaction_modals/UtilityModal.svelte';
-	// eslint-disable-next-line svelte/valid-compile
-	let diceRollDialog,
-		useSpellsAbilitiesModal,
-		useItemsModal,
-		utilityModal,
-		actionsDiv,
-		customActionInput;
+	// Element/component refs (dialogs, child components)
+	let diceRollDialog = $state<any>(),
+		useSpellsAbilitiesModal = $state<any>(),
+		useItemsModal = $state<any>(),
+		utilityModal = $state<any>(),
+		actionInputFormComponent = $state<{ clear?: () => void }>();
 
 	//ai state
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
@@ -222,7 +226,9 @@
 	});
 	let latestStoryProgressionTextComponent = $state<HTMLElement | undefined>();
 
-	let actionsTextForTTS: string = $state('');
+	let actionsTextForTTS = $derived(
+		(characterActionsState.value || []).map((a) => getTextForActionButton(a)).join(' ')
+	);
 	//TODO const lastCombatSinceXActions: number = $derived(
 	//	gameActionsState.value && (gameActionsState.value.length - (gameActionsState.value.findLastIndex(state => state.is_character_in_combat ) + 1))
 	//);
@@ -322,7 +328,7 @@
 			);
 		gameActionsState.value = updatedGameActionsState;
 		playerCharactersGameState = updatedPlayerCharactersGameState;
-		tick().then(() => customActionInput.scrollIntoView(false));
+		tick().then(() => document.getElementById('user-input')?.scrollIntoView(false));
 		if (characterActionsState.value.length === 0) {
 			const { thoughts, actions } = await actionAgent.generateActions(
 				currentGameActionState,
@@ -347,7 +353,7 @@
 			characterActionsState.value = actions;
 			thoughtsState.value.actionsThoughts = thoughts;
 		}
-		renderGameState(currentGameActionState, characterActionsState.value);
+		// legacy renderGameState call removed
 		if (!didAIProcessDiceRollActionState.value) {
 			openDiceRollDialog();
 		}
@@ -388,7 +394,9 @@
 		combatAgent: CombatAgent
 	): Promise<{
 		additionalStoryInput: string;
-		determinedActionsAndStatsUpdate: ReturnType<typeof combatAgent.generateActionsFromContext>;
+		determinedActionsAndStatsUpdate: Awaited<
+			ReturnType<typeof combatAgent.generateActionsFromContext>
+		>;
 	}> {
 		// Get details for all NPC targets based on the current game action state.
 		const allNpcsDetailsAsList = gameLogic
@@ -468,6 +476,17 @@
 		}
 	};
 
+	const addSkillsIfApplicable = (actions: Action[]) => {
+		if (gameSettingsState.value?.aiIntroducesSkills) {
+			actions.forEach((action: Action) => {
+				const skill = isNewSkill($state.snapshot(characterStatsState.value), action);
+				if (skill) {
+					characterStatsState.value.skills[skill] = 0;
+				}
+			});
+		}
+	};
+
 	function openDiceRollDialog() {
 		//TODO showModal can not be used because it hides the dice roll
 		didAIProcessDiceRollActionState.value = false;
@@ -523,7 +542,7 @@
 			additionalStoryInputState.value += costString;
 			await sendAction(chosenActionState.value, true);
 		}
-		customActionInput.value = '';
+		actionInputFormComponent?.clear?.();
 		customActionImpossibleReasonState = undefined;
 	}
 
@@ -544,8 +563,8 @@
 		useDynamicCombat: boolean
 	): Promise<{
 		additionalStoryInput: string;
-		allCombatDeterminedActionsAndStatsUpdate?: ReturnType<
-			typeof combatAgent.generateActionsFromContext
+		allCombatDeterminedActionsAndStatsUpdate?: Awaited<
+			ReturnType<typeof combatAgent.generateActionsFromContext>
 		>;
 	}> {
 		let deadNPCs: string[] = [];
@@ -598,8 +617,8 @@
 		relatedActionHistoryState.reset();
 		relatedStoryHistoryState.reset();
 		skillsProgressionForCurrentActionState = undefined;
-		if (actionsDiv) actionsDiv.innerHTML = '';
-		if (customActionInput) customActionInput.value = '';
+		// actions previously rendered imperatively; no longer needed
+		// cleared via component
 		didAIProcessDiceRollActionState.value = true;
 	}
 
@@ -685,8 +704,8 @@
 		finalAdditionalStoryInput: string;
 		combatAndNPCState: {
 			additionalStoryInput: string;
-			allCombatDeterminedActionsAndStatsUpdate?: ReturnType<
-				typeof combatAgent.generateActionsFromContext
+			allCombatDeterminedActionsAndStatsUpdate?: Awaited<
+				ReturnType<typeof combatAgent.generateActionsFromContext>
 			>;
 		};
 	}> {
@@ -786,8 +805,8 @@
 		isCharacterInCombat: boolean,
 		combatAndNPCState: {
 			additionalStoryInput: string;
-			allCombatDeterminedActionsAndStatsUpdate?: ReturnType<
-				typeof combatAgent.generateActionsFromContext
+			allCombatDeterminedActionsAndStatsUpdate?: Awaited<
+				ReturnType<typeof combatAgent.generateActionsFromContext>
 			>;
 		}
 	) {
@@ -815,7 +834,8 @@
 			// If combat provided a specific stat update, use it.
 			if (combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate) {
 				newState.stats_update =
-					combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate.stats_update;
+					combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate?.stats_update ||
+					newState.stats_update;
 				applyInventoryUpdate(inventoryState.value, newState);
 			} else {
 				// Otherwise, apply the new state to the game state.
@@ -891,7 +911,7 @@
 						if (actions) {
 							console.log(stringifyPretty(actions));
 							characterActionsState.value = actions;
-							renderGameState(currentGameActionState, actions);
+							// legacy renderGameState call removed
 							addSkillsIfApplicable(actions);
 						}
 						thoughtsState.value.actionsThoughts = thoughts;
@@ -900,18 +920,6 @@
 			}
 		}
 	}
-
-	const addSkillsIfApplicable = (actions: Action[]) => {
-		if (gameSettingsState.value?.aiIntroducesSkills) {
-			actions.forEach((action: Action) => {
-				const skill = isNewSkill($state.snapshot(characterStatsState.value), action);
-				//TODO skill can be trait sometimes which we dont want?
-				if (skill) {
-					characterStatsState.value.skills[skill] = 0;
-				}
-			});
-		}
-	};
 
 	function getRelatedHistoryForStory() {
 		summaryAgent
@@ -977,17 +985,7 @@
 		}
 	}
 
-	function renderGameState(state: GameActionState, actions: Array<Action>) {
-		if (!isGameEnded.value) {
-			actions.forEach((action) =>
-				addActionButton(action, state.is_character_in_combat, 'ai-gen-action')
-			);
-			actionsTextForTTS =
-				Array.from(document.querySelectorAll('.ai-gen-action'))
-					.map((elm) => elm.textContent || ' ')
-					.join(' ') || ' ';
-		}
-	}
+	// renderGameState removed; replaced by declarative components
 
 	function levelUpClicked(playerName: string) {
 		levelUpState.value.playerName = playerName;
@@ -1004,35 +1002,7 @@
 		checkForLevelUp();
 	}
 
-	function addActionButton(action: Action, is_character_in_combat?: boolean, addClass?: string) {
-		if (!actionsDiv) {
-			return;
-		}
-		const button = document.createElement('button');
-		button.className = 'btn btn-neutral mb-3 w-full text-md';
-		if (addClass) {
-			button.className += ' ' + addClass;
-		}
-		button.textContent = getTextForActionButton(action);
-
-		if (
-			!isEnoughResource(
-				action,
-				playerCharactersGameState[playerCharacterIdState],
-				inventoryState.value
-			)
-		) {
-			button.disabled = true;
-		}
-		button.addEventListener('click', () => {
-			chosenActionState.value = $state.snapshot(action);
-			sendAction(
-				chosenActionState.value,
-				gameLogic.mustRollDice(chosenActionState.value, is_character_in_combat)
-			);
-		});
-		actionsDiv.appendChild(button);
-	}
+	// addActionButton removed
 
 	function getLatestStoryMessages(numOfActions = 2) {
 		const historyMessages: LLMMessage[] = historyMessagesState.value.slice(numOfActions * -2);
@@ -1105,7 +1075,7 @@
 	};
 	const onCustomDiceRollClosed = () => {
 		customDiceRollNotation = '';
-		customActionInput.value = '';
+		actionInputFormComponent?.clear?.();
 	};
 	const onLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
 		if (aiLevelUp) {
@@ -1229,7 +1199,7 @@
 		gmAnswerStateAsContext?: GameMasterAnswer
 	) => {
 		if (closedByPlayer) {
-			customActionInput.value = '';
+			actionInputFormComponent?.clear?.();
 		}
 		if (gmAnswerStateAsContext) {
 			const context = '\nGM Context:\n' + stringifyPretty(gmAnswerStateAsContext);
@@ -1244,7 +1214,7 @@
 	};
 
 	function handleUtilityAction(actionValue: string) {
-		if(!actionValue) {
+		if (!actionValue) {
 			return;
 		}
 		let text = '';
@@ -1385,7 +1355,7 @@
 
 	async function regenerateActions() {
 		characterActionsState.reset();
-		if (actionsDiv) actionsDiv.innerHTML = '';
+		// legacy actionsDiv cleared
 
 		const { thoughts, actions } = await actionAgent.generateActions(
 			currentGameActionState,
@@ -1409,7 +1379,7 @@
 		);
 		characterActionsState.value = actions;
 		thoughtsState.value.actionsThoughts = thoughts;
-		renderGameState(currentGameActionState, characterActionsState.value);
+		// legacy renderGameState call removed
 	}
 
 	function migrateStates() {
@@ -1511,36 +1481,18 @@
 		resources={getCurrentCharacterGameState()}
 		currentLevel={characterStatsState.value?.level}
 	/>
-	<div id="story" class="mt-4 justify-items-center rounded-lg bg-base-100 p-4 shadow-md">
-		<button onclick={() => showXLastStoryPrgressions++} class="btn-xs w-full"
-			>Show Previous Story
-		</button>
-		{#if currentGameActionState?.story}
-			{#each !latestStoryProgressionState.stream_finished ? [currentGameActionState] : gameActionsState.value.slice(-2 + showXLastStoryPrgressions * -1, -1) as gameActionState (gameActionState.id)}
-				<StoryProgressionWithImage
-					story={gameActionState.story}
-					imagePrompt="{gameActionState.image_prompt} {storyState.value.general_image_prompt}"
-					gameUpdates={getRenderedGameUpdates(gameActionState, playerCharacterIdState)}
-				/>
-				{#if gameActionState['fallbackUsed']}
-					<small class="text-sm text-red-500"> For this action the fallback LLM was used.</small>
-				{/if}
-			{/each}
-		{/if}
-		<StoryProgressionWithImage
-			bind:storyTextRef={latestStoryProgressionTextComponent}
-			story={latestStoryProgressionState.story}
-			imagePrompt={latestStoryProgressionState.imagePrompt}
-			gameUpdates={latestStoryProgressionState.gameUpdates}
-			stream_finished={latestStoryProgressionState.stream_finished}
-		/>
-		{#if latestStoryProgressionState.stream_finished && currentGameActionState['fallbackUsed']}
-			<small class="text-sm text-red-500"> For this action the fallback LLM was used.</small>
-		{/if}
-		{#if isGameEnded.value}
-			<StoryProgressionWithImage story={gameLogic.getGameEndedMessage()} />
-		{/if}
-	</div>
+	<StorySection
+		{currentGameActionState}
+		gameActions={gameActionsState.value}
+		{latestStoryProgressionState}
+		storyState={storyState.value}
+		isGameEnded={isGameEnded.value}
+		{playerCharacterIdState}
+		{getRenderedGameUpdates}
+		showXLastStoryProgressions={showXLastStoryPrgressions}
+		setShowXLastStoryProgressions={(n: number) => (showXLastStoryPrgressions = n)}
+		bind:storyTextRef={latestStoryProgressionTextComponent}
+	/>
 
 	{#if !aiConfigState.value?.disableAudioState && actionsTextForTTS}
 		<div class="mt-4 flex">
@@ -1551,107 +1503,48 @@
 			></TTSComponent>
 		</div>
 	{/if}
-	<div id="actions" bind:this={actionsDiv} class="mt-2 p-4 pb-0 pt-0"></div>
+	<ActionButtons
+		actions={characterActionsState.value}
+		{currentGameActionState}
+		sendAction={(a, roll) => {
+			chosenActionState.value = $state.snapshot(a);
+			sendAction(a, roll);
+		}}
+		isGameEnded={isGameEnded.value}
+		playerResources={playerCharactersGameState[playerCharacterIdState]}
+		inventoryState={inventoryState.value}
+	/>
 	{#if Object.keys(currentGameActionState).length !== 0}
 		{#if !isGameEnded.value}
 			{#if characterActionsState.value?.length === 0}
 				<div class="flex flex-col">
 					<span class="m-auto">Generating next actions...</span>
-					<div class="m-auto">
-						<LoadingIcon />
-					</div>
+					<div class="m-auto"><LoadingIcon /></div>
 				</div>
 			{/if}
-			<div id="static-actions" class="p-4 pb-0 pt-0">
-				<button
-					onclick={() =>
-						sendAction({
-							characterName: characterState.value.name,
-							text: 'Continue The Tale'
-						})}
-					class="text-md btn btn-neutral mb-3 w-full"
-					>Continue The Tale.
-				</button>
-
-				{#if levelUpState.value.buttonEnabled}
-					<button
-						onclick={() => {
-							levelUpClicked(characterState.value.name);
-						}}
-						class="text-md btn btn-success mb-3 w-full"
-						>Level up!
-					</button>
-				{/if}
-
-				{#if !eventEvaluationState.value.character_changed?.aiProcessingComplete}
-					<button
-						onclick={() => {
-							eventEvaluationState.value.character_changed!.showEventConfirmationDialog = true;
-						}}
-						class="text-md btn btn-success mb-3 w-full"
-						>Transform into {eventEvaluationState.value.character_changed?.changed_into}
-					</button>
-				{/if}
-				{#if !eventEvaluationState.value.abilities_learned?.aiProcessingComplete}
-					<button
-						onclick={() =>
-							(eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = true)}
-						class="text-md btn btn-success mb-3 w-full"
-						>Learn new Spells & Abilities
-					</button>
-				{/if}
-				<button
-					onclick={() => {
-						useSpellsAbilitiesModal.showModal();
-					}}
-					class="text-md btn btn-primary w-full"
-					>Spells & Abilities
-				</button>
-				<button
-					onclick={() => {
-						useItemsModal.showModal();
-					}}
-					class="text-md btn btn-primary mt-3 w-full"
-					>Inventory
-				</button>
-				<button
-					onclick={() => {
-						utilityModal.showModal();
-					}}
-					class="text-md btn btn-primary mt-3 w-full"
-					>Utility
-				</button>
-			</div>
+			<StaticActionsPanel
+				levelUpEnabled={levelUpState.value.buttonEnabled}
+				onContinue={() =>
+					sendAction({ characterName: characterState.value.name, text: 'Continue The Tale' })}
+				onLevelUp={() => levelUpClicked(characterState.value.name)}
+				transformPending={!eventEvaluationState.value.character_changed?.aiProcessingComplete}
+				transformLabel={eventEvaluationState.value.character_changed?.changed_into}
+				onTransform={() =>
+					(eventEvaluationState.value.character_changed!.showEventConfirmationDialog = true)}
+				abilitiesPending={!eventEvaluationState.value.abilities_learned?.aiProcessingComplete}
+				onLearnAbilities={() =>
+					(eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = true)}
+				onOpenSpells={() => useSpellsAbilitiesModal.showModal()}
+				onOpenInventory={() => useItemsModal.showModal()}
+				onOpenUtility={() => utilityModal.showModal()}
+				busy={isAiGeneratingState}
+			/>
 		{/if}
-		<form id="input-form" class="p-4 pb-2">
-			<div class="w-full lg:join">
-				<select bind:value={customActionReceiver} class="select select-bordered w-full lg:w-fit">
-					<option selected>Character Action</option>
-					<option>Game Command</option>
-					<option>GM Question</option>
-					<option>Dice Roll</option>
-				</select>
-				<input
-					type="text"
-					bind:this={customActionInput}
-					class="input input-bordered w-full"
-					id="user-input"
-					placeholder={customActionReceiver === 'Character Action'
-						? 'What do you want to do?'
-						: customActionReceiver === 'GM Question'
-							? 'Message to the Game Master'
-							: customActionReceiver === 'Dice Roll'
-								? 'notation like 1d20, 2d6+3'
-								: 'Command without restrictions'}
-				/>
-				<button
-					onclick={() => onCustomActionSubmitted(customActionInput.value)}
-					class="btn btn-neutral w-full lg:w-1/4"
-					id="submit-button"
-					>Submit
-				</button>
-			</div>
-		</form>
+		<ActionInputForm
+			bind:this={actionInputFormComponent}
+			bind:receiver={customActionReceiver}
+			onSubmit={(text, receiver) => onCustomActionSubmitted(text, receiver === 'Character Action')}
+		/>
 	{/if}
 
 	<style>
