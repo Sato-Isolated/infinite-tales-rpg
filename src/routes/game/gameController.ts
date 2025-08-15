@@ -7,13 +7,17 @@ import { CombatAgent } from '$lib/ai/agents/combatAgent';
 import type { ActionAgent } from '$lib/ai/agents/actionAgent';
 import type { SummaryAgent } from '$lib/ai/agents/summaryAgent';
 import type { CampaignAgent, CampaignChapter } from '$lib/ai/agents/campaignAgent';
+import type { EventAgent, EventEvaluation, CharacterChangedInto } from '$lib/ai/agents/eventAgent';
 import * as gameLogic from './gameLogic';
 import * as npcLogic from './npcLogic';
+import { getLatestStoryMessagesFromHistory } from './memoryLogic/messages';
 import { CombatAgent as CombatAgentStatic } from '$lib/ai/agents/combatAgent';
 import { stringifyPretty } from '$lib/util.svelte';
 import type { ThoughtsState } from '$lib/util.svelte';
 import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
-import { getSkillIfApplicable } from './characterLogic';
+import { getSkillIfApplicable, applyCharacterChange, addCharacterToPlayerCharactersIdToNamesMap } from './characterLogic';
+import { refillResourcesFully } from './resourceLogic';
+import type { Ability } from '$lib/ai/agents/characterStatsAgent';
 
 export type ControllerCtx = {
   agents: {
@@ -22,6 +26,9 @@ export type ControllerCtx = {
     actionAgent: ActionAgent;
     combatAgent: CombatAgent;
     campaignAgent: CampaignAgent;
+    eventAgent: EventAgent;
+    characterAgent: import('$lib/ai/agents/characterAgent').CharacterAgent;
+    characterStatsAgent: import('$lib/ai/agents/characterStatsAgent').CharacterStatsAgent;
   };
   state: {
     // primitives or getters to always read latest
@@ -40,22 +47,23 @@ export type ControllerCtx = {
     systemInstructionsState: { value: SystemInstructionsState };
     storyState: { value: Story };
     historyMessagesState: { value: LLMMessage[] };
-  characterActionsState: { value: Action[] };
-  thoughtsState: { value: ThoughtsState };
+    characterActionsState: { value: Action[] };
+    thoughtsState: { value: ThoughtsState };
     gameActionsState: { value: GameActionState[] };
     characterState: { value: CharacterDescription };
     characterStatsState: { value: CharacterStats };
+    eventEvaluationState: { value: EventEvaluation };
     relatedStoryHistoryState: { value: { relatedDetails: Array<{ storyReference: string; relevanceScore: number }> } };
     relatedActionHistoryState: { value: string[] };
     customMemoriesState: { value: string | undefined };
     customGMNotesState: { value: string | undefined };
     additionalStoryInputState: { value: string };
     additionalActionInputState: { value: string };
+    chosenActionState: { value: Action };
     gameSettingsState: { value: any };
     useDynamicCombat: { value: boolean };
   };
   helpers: {
-    getLatestStoryMessages: (numOfActions?: number) => LLMMessage[];
     addCampaignAdditionalStoryInput: (action: Action, additionalStoryInput: string) => Promise<string>;
     getGameMasterNotesForCampaignChapter: (chapter: CampaignChapter | undefined, currentPlotPoint?: string) => string[];
     getCurrentCampaignChapter: () => CampaignChapter | undefined;
@@ -70,6 +78,9 @@ export type ControllerCtx = {
     onThoughtStreamUpdate: (chunk: string, isComplete: boolean) => void;
     applyGameEventEvaluation: (evaluated: any) => void;
     getCurrentDiceRollResult: () => DiceRollResult | undefined;
+    setGMQuestion: (text: string) => void;
+    setCustomDiceRollNotation: (notation: string) => void;
+    setCustomActionImpossibleReason: (reason: 'not_enough_resource' | 'not_plausible' | undefined) => void;
   };
   skills: {
     skillsProgressionForCurrentActionState: { get: () => number | undefined; set: (v: number | undefined) => void };
@@ -94,7 +105,7 @@ export function createGameController(ctx: ControllerCtx) {
       allNpcsDetailsAsList,
       ctx.state.systemInstructionsState.value.generalSystemInstruction,
       ctx.state.systemInstructionsState.value.combatAgentInstruction,
-      ctx.helpers.getLatestStoryMessages(),
+      getLatestStoryMessagesFromHistory(ctx.state.historyMessagesState.value),
       ctx.state.storyState.value
     );
 
@@ -236,6 +247,28 @@ export function createGameController(ctx: ControllerCtx) {
     await ctx.helpers.checkGameEnded();
 
     if (!ctx.state.isGameEnded.value) {
+      // Evaluate special events triggered by the new story progression
+      try {
+        const storyHistory = ctx.state.gameActionsState.value
+          .map((ga) => ga.story)
+          .filter((s): s is string => !!s);
+        storyHistory.push(newState.story);
+        const currentAbilitiesNames = (ctx.state.characterStatsState.value?.spells_and_abilities || [])
+          .map((a) => a.name)
+          .filter((n): n is string => !!n);
+        const { thoughts, event_evaluation } = await ctx.agents.eventAgent.evaluateEvents(
+          storyHistory,
+          currentAbilitiesNames
+        );
+        ctx.state.thoughtsState.value.eventThoughts = thoughts || '';
+        if (event_evaluation) {
+          ctx.helpers.applyGameEventEvaluation(event_evaluation);
+        }
+      } catch (e) {
+        // Non-fatal: log and proceed
+        console.warn('Event evaluation failed:', e);
+      }
+
       ctx.helpers.getRelatedHistoryForStory();
       // Regenerate actions for next turn
       const { thoughts, actions } = await ctx.agents.actionAgent.generateActions(
@@ -262,6 +295,98 @@ export function createGameController(ctx: ControllerCtx) {
       }
       ctx.helpers.checkForLevelUp();
     }
+  }
+
+  async function regenerateActions() {
+    ctx.state.characterActionsState.value = [];
+    const { getRelatedHistory } = await import('./memoryLogic');
+    const relatedHistory = await getRelatedHistory(
+      ctx.agents.summaryAgent,
+      undefined,
+      undefined,
+      ctx.state.relatedStoryHistoryState.value,
+      ctx.state.customMemoriesState.value
+    );
+    const { thoughts, actions } = await ctx.agents.actionAgent.generateActions(
+      ctx.state.getCurrentGameActionState(),
+      ctx.state.historyMessagesState.value,
+      ctx.state.storyState.value,
+      ctx.state.characterState.value,
+      ctx.state.characterStatsState.value,
+      ctx.state.inventoryState.value,
+      ctx.state.systemInstructionsState.value.generalSystemInstruction,
+      ctx.state.systemInstructionsState.value.actionAgentInstruction,
+      relatedHistory,
+      ctx.state.gameSettingsState.value?.aiIntroducesSkills,
+      ctx.state.getCurrentGameActionState().is_character_restrained_explanation,
+      ctx.state.additionalActionInputState.value
+    );
+    ctx.state.characterActionsState.value = actions || [];
+    if (typeof thoughts === 'string') {
+      ctx.state.thoughtsState.value.actionsThoughts = thoughts;
+    }
+    if (actions) ctx.skills.addSkillsIfApplicable(actions);
+  }
+
+  async function confirmCharacterChangeEvent(changedInto: CharacterChangedInto, confirmed: boolean) {
+    ctx.state.eventEvaluationState.value.character_changed!.showEventConfirmationDialog = false;
+    if (confirmed === undefined) return;
+    if (confirmed) {
+      ctx.state.isAiGeneratingState.set(true);
+      const { transformedCharacter, transformedCharacterStats } = await applyCharacterChange(
+        changedInto,
+        structuredClone(ctx.state.storyState.value),
+        structuredClone(ctx.state.characterState.value),
+        structuredClone(ctx.state.characterStatsState.value),
+        ctx.agents.characterAgent,
+        ctx.agents.characterStatsAgent
+      );
+
+      if (transformedCharacter) {
+        addCharacterToPlayerCharactersIdToNamesMap(
+          ctx.state.playerCharactersIdToNamesMapState.value,
+          ctx.state.playerCharacterId,
+          transformedCharacter.name
+        );
+        ctx.state.characterState.value = transformedCharacter;
+      }
+      if (transformedCharacterStats) {
+        ctx.state.characterStatsState.value = transformedCharacterStats;
+        await regenerateActions();
+        ctx.state.additionalStoryInputState.value +=
+          '\n After transformation make sure that stats_update refer to the new resources from now on!\n' +
+          stringifyPretty(ctx.state.characterStatsState.value.resources);
+      }
+
+      // apply new resources
+      ctx.state.playerCharactersGameState[ctx.state.playerCharacterId] = {
+        ...structuredClone(ctx.state.characterStatsState.value.resources),
+        XP: ctx.state.playerCharactersGameState[ctx.state.playerCharacterId].XP
+      } as any;
+      const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
+        structuredClone(ctx.state.characterStatsState.value.resources),
+        ctx.state.playerCharacterId,
+        ctx.state.characterState.value.name,
+        structuredClone(ctx.state.gameActionsState.value),
+        structuredClone(ctx.state.playerCharactersGameState)
+      );
+      ctx.state.gameActionsState.value = updatedGameActionsState;
+      ctx.state.playerCharactersGameState = updatedPlayerCharactersGameState;
+    }
+    ctx.state.eventEvaluationState.value.character_changed!.aiProcessingComplete = true;
+    ctx.state.isAiGeneratingState.set(false);
+  }
+
+  function confirmAbilitiesLearned(abilities?: Ability[]) {
+    ctx.state.eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = false;
+    if (!abilities) return;
+    ctx.state.eventEvaluationState.value.abilities_learned!.aiProcessingComplete = true;
+    if (abilities.length === 0) return;
+    console.log('Added new abilities:', stringifyPretty(abilities));
+    ctx.state.characterStatsState.value = {
+      ...ctx.state.characterStatsState.value,
+      spells_and_abilities: [...ctx.state.characterStatsState.value.spells_and_abilities, ...abilities]
+    } as any;
   }
 
   async function sendAction(action: Action, rollDice = false) {
@@ -313,5 +438,76 @@ export function createGameController(ctx: ControllerCtx) {
     }
   }
 
-  return { sendAction } as const;
+  async function generateActionFromCustomInput(action: Action) {
+    ctx.state.isAiGeneratingState.set(true);
+    const { getRelatedHistory } = await import('./memoryLogic');
+    ctx.state.relatedActionHistoryState.value = await getRelatedHistory(
+      ctx.agents.summaryAgent,
+      action,
+      ctx.state.gameActionsState.value,
+      ctx.state.relatedStoryHistoryState.value,
+      ctx.state.customMemoriesState.value
+    );
+    const generatedAction = await ctx.agents.actionAgent.generateSingleAction(
+      action,
+      ctx.state.getCurrentGameActionState(),
+      ctx.state.historyMessagesState.value,
+      ctx.state.storyState.value,
+      ctx.state.characterState.value,
+      ctx.state.characterStatsState.value,
+      ctx.state.inventoryState.value,
+      ctx.state.systemInstructionsState.value.generalSystemInstruction,
+      ctx.state.systemInstructionsState.value.actionAgentInstruction,
+      ctx.state.relatedActionHistoryState.value,
+      ctx.state.gameSettingsState.value?.aiIntroducesSkills,
+      ctx.state.getCurrentGameActionState().is_character_restrained_explanation,
+      ctx.state.additionalActionInputState.value
+    );
+    const merged = { ...generatedAction, ...action } as Action;
+    ctx.state.chosenActionState.value = merged;
+    ctx.skills.addSkillsIfApplicable([merged]);
+    if (merged.is_possible === false) {
+      ctx.helpers.setCustomActionImpossibleReason('not_plausible');
+    } else {
+      if (!gameLogic.isEnoughResource(merged, ctx.state.playerCharactersGameState[ctx.state.playerCharacterId], ctx.state.inventoryState.value)) {
+        ctx.helpers.setCustomActionImpossibleReason('not_enough_resource');
+      } else {
+        ctx.helpers.setCustomActionImpossibleReason(undefined);
+        await sendAction(merged, gameLogic.mustRollDice(merged, ctx.state.getCurrentGameActionState().is_character_in_combat));
+      }
+    }
+    ctx.state.isAiGeneratingState.set(false);
+  }
+
+  async function onCustomActionSubmitted(text: string, mustGenerateCustomAction = false, receiver: 'Game Command' | 'Character Action' | 'GM Question' | 'Dice Roll' = 'Character Action') {
+    let action: Action = { characterName: ctx.state.characterState.value.name, text, is_custom_action: true };
+    if (receiver === 'Character Action' || mustGenerateCustomAction) {
+      await generateActionFromCustomInput(action);
+    }
+    if (receiver === 'GM Question') {
+      ctx.helpers.setGMQuestion(action.text);
+    }
+    if (receiver === 'Dice Roll') {
+      ctx.helpers.setCustomDiceRollNotation(action.text);
+    }
+    if (receiver === 'Game Command') {
+      ctx.state.additionalStoryInputState.value += '\nsudo: Ignore the rules and play out this action even if it should not be possible!\nIf this action contradicts the PAST STORY PLOT, adjust the narrative to fit the action.';
+      await sendAction(action, false);
+    }
+  }
+
+  function handleUtilityAction(actionValue: string) {
+    if (!actionValue) return;
+    let text = '';
+    if (actionValue === 'short-rest') {
+      text = 'Player character is doing a short rest, handle the resources regeneration according GAME rules and describe the scene. If there are no specific GAME rules, increase all resources by 50% of the maximum.';
+    } else if (actionValue === 'long-rest') {
+      text = 'Player character is doing a long rest, handle the resources regeneration according GAME rules and describe the scene. If there are no specific GAME rules, increase all resources by 100% of the maximum.';
+    }
+    if (text) {
+      void sendAction({ characterName: ctx.state.characterState.value.name, text, is_custom_action: false } as Action, false);
+    }
+  }
+
+  return { sendAction, regenerateActions, confirmCharacterChangeEvent, confirmAbilitiesLearned, generateActionFromCustomInput, onCustomActionSubmitted, handleUtilityAction } as const;
 }

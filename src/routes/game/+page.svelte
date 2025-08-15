@@ -36,10 +36,8 @@
 	import { errorState } from '$lib/state/errorState.svelte';
 	import ErrorDialog from '$lib/components/interaction_modals/ErrorModal.svelte';
 	import * as gameLogic from './gameLogic';
-	import * as npcLogic from './npcLogic';
 	import {
 		ActionDifficulty,
-		applyInventoryUpdate,
 		getEmptyCriticalResourceKeys,
 		isEnoughResource,
 		mustRollDice,
@@ -82,6 +80,7 @@
 		getNextChapterPrompt
 	} from './campaignLogic';
 	import { getRelatedHistory } from './memoryLogic';
+	import { getLatestStoryMessagesFromHistory } from './memoryLogic/messages';
 	import {
 		type CharacterChangedInto,
 		EventAgent,
@@ -90,7 +89,6 @@
 	} from '$lib/ai/agents/eventAgent';
 	import CharacterChangedConfirmationModal from '$lib/components/interaction_modals/CharacterChangedConfirmationModal.svelte';
 	import {
-		applyCharacterChange,
 		getSkillProgressionForDiceRoll,
 		getSkillIfApplicable,
 		getFreeCharacterTechnicalId,
@@ -106,9 +104,7 @@
 	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
 	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
-	import StoryProgressionWithImage, {
-		type StoryProgressionWithImageProps
-	} from '$lib/components/StoryProgressionWithImage.svelte';
+	import { type StoryProgressionWithImageProps } from '$lib/components/StoryProgressionWithImage.svelte';
 	import StorySection from '$lib/components/game/StorySection.svelte';
 	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
@@ -286,7 +282,16 @@
 
 		// Create controller after agents are ready
 		controller = createGameController({
-			agents: { gameAgent, summaryAgent, actionAgent, combatAgent, campaignAgent },
+			agents: {
+				gameAgent,
+				summaryAgent,
+				actionAgent,
+				combatAgent,
+				campaignAgent,
+				eventAgent,
+				characterAgent,
+				characterStatsAgent
+			},
 			state: {
 				getCurrentGameActionState: () => currentGameActionState,
 				isGameEnded,
@@ -313,17 +318,18 @@
 				gameActionsState,
 				characterState,
 				characterStatsState,
+				eventEvaluationState,
 				relatedStoryHistoryState,
 				relatedActionHistoryState,
 				customMemoriesState,
 				customGMNotesState,
 				additionalStoryInputState,
 				additionalActionInputState,
+				chosenActionState,
 				gameSettingsState,
 				useDynamicCombat
 			},
 			helpers: {
-				getLatestStoryMessages,
 				addCampaignAdditionalStoryInput,
 				getGameMasterNotesForCampaignChapter,
 				getCurrentCampaignChapter,
@@ -337,7 +343,10 @@
 				onStoryStreamUpdate,
 				onThoughtStreamUpdate,
 				applyGameEventEvaluation,
-				getCurrentDiceRollResult: () => diceRollDialog?.returnValue
+				getCurrentDiceRollResult: () => diceRollDialog?.returnValue,
+				setGMQuestion: (text: string) => (gmQuestionState = text),
+				setCustomDiceRollNotation: (notation: string) => (customDiceRollNotation = notation),
+				setCustomActionImpossibleReason: (reason) => (customActionImpossibleReasonState = reason)
 			},
 			skills: {
 				skillsProgressionForCurrentActionState: {
@@ -448,89 +457,7 @@
 		checkForLevelUp();
 	}
 
-	async function initializeGame() {
-		await controller!.sendAction({
-			characterName: characterState.value.name,
-			text: GameAgent.getStartingPrompt()
-		});
-		if (gameActionsState.value.length === 0) return;
-		// Initialize all resources when the game is first started.
-
-		const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
-			$state.snapshot(characterStatsState.value.resources),
-			playerCharacterIdState,
-			characterState.value.name,
-			$state.snapshot(gameActionsState.value),
-			$state.snapshot(playerCharactersGameState)
-		);
-		gameActionsState.value = updatedGameActionsState;
-		playerCharactersGameState = updatedPlayerCharactersGameState;
-	}
-
-	//TODO applyGameActionState should not be handled here so it can be externally called
-	async function getActionPromptForCombat(
-		playerAction: Action,
-		currentGameActionState: GameActionState,
-		npcState: NPCState,
-		inventoryState: InventoryState,
-		customSystemInstruction: string,
-		customCombatAgentInstruction: string,
-		latestStoryMessages: LLMMessage[],
-		storyState: Story,
-		playerCharactersGameState: PlayerCharactersGameState,
-		playerCharactersIdToNamesMapState: PlayerCharactersIdToNamesMap,
-		combatAgent: CombatAgent
-	): Promise<{
-		additionalStoryInput: string;
-		determinedActionsAndStatsUpdate: Awaited<
-			ReturnType<typeof combatAgent.generateActionsFromContext>
-		>;
-	}> {
-		// Get details for all NPC targets based on the current game action state.
-		const allNpcsDetailsAsList = gameLogic
-			.getAllTargetsAsList(currentGameActionState.currently_present_npcs)
-			.map((technicalId) => ({
-				technicalId,
-				...npcState[technicalId]
-			}));
-
-		// Compute the determined combat actions and stats update.
-		const determinedActionsAndStatsUpdate = await combatAgent.generateActionsFromContext(
-			playerAction,
-			playerCharactersGameState[playerCharacterIdState],
-			inventoryState,
-			allNpcsDetailsAsList,
-			customSystemInstruction,
-			customCombatAgentInstruction,
-			latestStoryMessages,
-			storyState
-		);
-
-		// Apply the action state update on the playerCharactersGameState (and related states)
-		// by passing a snapshot of the determined update.
-		gameLogic.applyGameActionState(
-			playerCharactersGameState,
-			playerCharactersIdToNamesMapState,
-			npcState,
-			inventoryState,
-			$state.snapshot(determinedActionsAndStatsUpdate)
-		);
-
-		// Filter to find the alive NPCs.
-		const aliveNPCs = allNpcsDetailsAsList
-			.filter((npc) => npc?.resources && npc.resources.current_hp > 0)
-			.map((npc) => npc.technicalId);
-
-		// Generate additional story input based on the combat results.
-		const additionalStoryInput = CombatAgent.getAdditionalStoryInput(
-			determinedActionsAndStatsUpdate.actions,
-			[],
-			aliveNPCs,
-			playerCharactersGameState
-		);
-
-		return { additionalStoryInput, determinedActionsAndStatsUpdate };
-	}
+	// getActionPromptForCombat removed; handled by controller
 
 	const advanceSkillIfApplicable = (skillName: string) =>
 		advanceSkillIfApplicableHelper(
@@ -678,10 +605,6 @@
 		}
 	}
 
-	function updateMessagesHistory(updatedHistoryMessages: Array<LLMMessage>) {
-		historyMessagesState.value = updatedHistoryMessages;
-	}
-
 	async function addCampaignAdditionalStoryInput(action: Action, additionalStoryInput: string) {
 		// If the game is played in campaign mode
 		if (campaignState.value?.chapters?.length > 0) {
@@ -787,17 +710,8 @@
 
 	// addActionButton removed
 
-	function getLatestStoryMessages(numOfActions = 2) {
-		const historyMessages: LLMMessage[] = historyMessagesState.value.slice(numOfActions * -2);
-		return historyMessages.map((message) => {
-			try {
-				return { ...message, content: JSON.parse(message.content).story };
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			} catch (e) {
-				return message;
-			}
-		});
-	}
+	const getLatestStoryMessages = (numOfActions = 2) =>
+		getLatestStoryMessagesFromHistory(historyMessagesState.value, numOfActions);
 
 	const onItemUseChosen = async (item: Action & Item & { item_id: string }) => {
 		itemForSuggestActionsState = item;
@@ -959,26 +873,7 @@
 	};
 
 	const onCustomActionSubmitted = async (text: string, mustGenerateCustomAction = false) => {
-		let action: Action = {
-			characterName: characterState.value.name,
-			text,
-			is_custom_action: true
-		};
-		if (customActionReceiver === 'Character Action' || mustGenerateCustomAction) {
-			await generateActionFromCustomInput(action);
-		}
-		if (customActionReceiver === 'GM Question') {
-			gmQuestionState = action.text;
-		}
-		if (customActionReceiver === 'Dice Roll') {
-			customDiceRollNotation = action.text;
-		}
-		if (customActionReceiver === 'Game Command') {
-			additionalStoryInputState.value +=
-				'\nsudo: Ignore the rules and play out this action even if it should not be possible!\n' +
-				'If this action contradicts the PAST STORY PLOT, adjust the narrative to fit the action.';
-			await controller!.sendAction(action, false);
-		}
+		await controller!.onCustomActionSubmitted(text, mustGenerateCustomAction, customActionReceiver);
 	};
 	const onGMQuestionClosed = (
 		closedByPlayer: boolean,
@@ -999,29 +894,7 @@
 		gmQuestionState = '';
 	};
 
-	function handleUtilityAction(actionValue: string) {
-		if (!actionValue) {
-			return;
-		}
-		let text = '';
-		if (actionValue === 'short-rest') {
-			text =
-				'Player character is doing a short rest, handle the resources regeneration according GAME rules and describe the scene. If there are no specific GAME rules, increase all resources by 50% of the maximum.';
-		} else if (actionValue === 'long-rest') {
-			text =
-				'Player character is doing a long rest, handle the resources regeneration according GAME rules and describe the scene. If there are no specific GAME rules, increase all resources by 100% of the maximum.';
-		}
-		if (text) {
-			controller!.sendAction(
-				{
-					characterName: characterState.value.name,
-					text,
-					is_custom_action: false
-				},
-				false
-			);
-		}
-	}
+	// handleUtilityAction moved to controller
 
 	function onDeleteItem(item_id: string): void {
 		delete inventoryState.value[item_id];
@@ -1047,71 +920,11 @@
 		changedInto: CharacterChangedInto,
 		confirmed: boolean
 	) {
-		eventEvaluationState.value.character_changed!.showEventConfirmationDialog = false;
-		if (confirmed === undefined) {
-			return;
-		}
-		if (confirmed) {
-			isAiGeneratingState = true;
-			const { transformedCharacter, transformedCharacterStats } = await applyCharacterChange(
-				changedInto,
-				$state.snapshot(storyState.value),
-				$state.snapshot(characterState.value),
-				$state.snapshot(characterStatsState.value),
-				characterAgent,
-				characterStatsAgent
-			);
-
-			if (transformedCharacter) {
-				addCharacterToPlayerCharactersIdToNamesMap(
-					playerCharactersIdToNamesMapState.value,
-					playerCharacterIdState,
-					transformedCharacter.name
-				);
-				characterState.value = transformedCharacter;
-			}
-			if (transformedCharacterStats) {
-				characterStatsState.value = transformedCharacterStats;
-				//generate new actions considering resources might have changed
-				regenerateActions();
-				additionalStoryInputState.value +=
-					'\n After transformation make sure that stats_update refer to the new resources from now on!\n' +
-					stringifyPretty(characterStatsState.value.resources);
-			}
-
-			//apply new resources
-			playerCharactersGameState[playerCharacterIdState] = {
-				...$state.snapshot(characterStatsState.value.resources),
-				XP: playerCharactersGameState[playerCharacterIdState].XP
-			};
-			const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
-				$state.snapshot(characterStatsState.value.resources),
-				playerCharacterIdState,
-				characterState.value.name,
-				$state.snapshot(gameActionsState.value),
-				$state.snapshot(playerCharactersGameState)
-			);
-			gameActionsState.value = updatedGameActionsState;
-			playerCharactersGameState = updatedPlayerCharactersGameState;
-		}
-		eventEvaluationState.value.character_changed!.aiProcessingComplete = true;
-		isAiGeneratingState = false;
+		await controller!.confirmCharacterChangeEvent(changedInto, confirmed);
 	}
 
 	const confirmAbilitiesLearned = (abilities?: Ability[]) => {
-		eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = false;
-		if (!abilities) {
-			return;
-		}
-		eventEvaluationState.value.abilities_learned!.aiProcessingComplete = true;
-		if (abilities.length === 0) {
-			return;
-		}
-		console.log('Added new abilities:', stringifyPretty(abilities));
-		characterStatsState.value = {
-			...characterStatsState.value,
-			spells_and_abilities: [...characterStatsState.value.spells_and_abilities, ...abilities]
-		};
+		controller!.confirmAbilitiesLearned(abilities);
 	};
 
 	function onStoryStreamUpdate(storyChunk: string, isComplete: boolean): void {
@@ -1137,35 +950,6 @@
 			console.log('First thought chunk received at:', time);
 		}
 		thoughtsState.value.storyThoughts += thoughtChunk;
-	}
-
-	async function regenerateActions() {
-		characterActionsState.reset();
-		// legacy actionsDiv cleared
-
-		const { thoughts, actions } = await actionAgent.generateActions(
-			currentGameActionState,
-			historyMessagesState.value,
-			storyState.value,
-			characterState.value,
-			characterStatsState.value,
-			inventoryState.value,
-			systemInstructionsState.value.generalSystemInstruction,
-			systemInstructionsState.value.actionAgentInstruction,
-			await getRelatedHistory(
-				summaryAgent,
-				undefined,
-				undefined,
-				relatedStoryHistoryState.value,
-				customMemoriesState.value
-			),
-			gameSettingsState.value?.aiIntroducesSkills,
-			currentGameActionState.is_character_restrained_explanation,
-			additionalActionInputState.value
-		);
-		characterActionsState.value = actions;
-		thoughtsState.value.actionsThoughts = thoughts;
-		// legacy renderGameState call removed
 	}
 
 	function migrateStates() {
@@ -1251,9 +1035,7 @@
 		bind:dialogRef={utilityModal}
 		is_character_in_combat={currentGameActionState.is_character_in_combat}
 		actions={utilityPlayerActions}
-		onclose={(action) => {
-			handleUtilityAction(action);
-		}}
+		onclose={(action) => controller!.handleUtilityAction(action)}
 	/>
 	<DiceRollComponent
 		bind:diceRollDialog

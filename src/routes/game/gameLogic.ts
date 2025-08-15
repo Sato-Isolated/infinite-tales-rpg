@@ -127,12 +127,23 @@ function getColorForStatUpdate(mappedType: string, resources: ResourcesWithCurre
 
 export function renderStatUpdates(
 	statsUpdates: Array<StatsUpdate>,
-	resources: ResourcesWithCurrentValue,
-	playerNames: Array<string>
+	resourcesOrPlayerName: ResourcesWithCurrentValue | string,
+	playerNamesParam?: Array<string> | string
 ): (undefined | RenderedGameUpdate)[] {
 	if (statsUpdates) {
+		// Backward-compatible param handling: tests may call (updates, currentPlayerName)
+		const resources: ResourcesWithCurrentValue =
+			typeof resourcesOrPlayerName === 'string' ? ({} as ResourcesWithCurrentValue) : resourcesOrPlayerName;
+		const playerNames: Array<string> = Array.isArray(playerNamesParam)
+			? playerNamesParam
+			: typeof playerNamesParam === 'string'
+				? [playerNamesParam]
+				: typeof resourcesOrPlayerName === 'string'
+					? [resourcesOrPlayerName]
+					: [];
+		const getTarget = (u: any) => (u?.targetName ?? u?.targetId ?? '') as string;
 		return statsUpdates
-			.toSorted((a, b) => (a.targetName < b.targetName ? -1 : 1))
+			.toSorted((a, b) => (getTarget(a) < getTarget(b) ? -1 : 1))
 			.map(mapStatsUpdateToGameLogic)
 			.map((statsUpdate) => {
 				if (
@@ -144,6 +155,7 @@ export function renderStatUpdates(
 				) {
 					return undefined;
 				}
+				const targetName = (statsUpdate as any).targetName ?? (statsUpdate as any).targetId ?? '';
 				let responseText: string;
 				let resourceText = ('' + statsUpdate.value.result).replaceAll('_', ' ');
 				let changeText = statsUpdate.type?.includes('_gained')
@@ -160,9 +172,9 @@ export function renderStatUpdates(
 						.replaceAll('_', ' ')
 						.toUpperCase() || '';
 
-				const color = getColorForStatUpdate(mappedType, resources);
+				const color = getColorForStatUpdate(mappedType, resources || ({} as ResourcesWithCurrentValue));
 
-				if (playerNames.includes(statsUpdate.targetName)) {
+				if (playerNames.includes(targetName)) {
 					responseText = 'You ';
 					if (!changeText) {
 						//probably unhandled status effect
@@ -180,7 +192,9 @@ export function renderStatUpdates(
 							) || resourceText);
 					}
 				} else {
-					responseText = statsUpdate.targetName.replaceAll('_', ' ').replaceAll('id', '') + ' ';
+					responseText = (targetName || '')
+						.replaceAll('_', ' ')
+						.replaceAll('id', '') + ' ';
 					if (!changeText) {
 						//probably unhandled status effect
 						changeText = 'is';
@@ -236,7 +250,7 @@ function getTakeLessDamageForManyHits(
 		return damage;
 	}
 	const allPlayerHits = stats_update
-		.filter((update) => playerNames.includes(update.targetName))
+		.filter((update: any) => playerNames.includes(update?.targetName ?? update?.targetId))
 		.filter((update) => update.type === 'hp_lost');
 
 	return Math.max(1, Math.round(damage / Math.min(3, allPlayerHits?.length || 1)));
