@@ -178,12 +178,13 @@
 		'playerCharactersIdToNamesMapState',
 		{}
 	);
-	let playerCharactersGameState: PlayerCharactersGameState = $state({});
+	// Use original naming and structure from GitHub
+	const playerCharactersGameState = useLocalStorage<PlayerCharactersGameState>('playerCharactersGameState', {});
+	
+	// Use function format like in original GitHub file  
 	const getCurrentCharacterGameState = () => {
-		return playerCharactersGameState[
-			getCharacterTechnicalId(playerCharactersIdToNamesMapState.value, characterState.value.name) ||
-				''
-		];
+		const characterId = getCharacterTechnicalId(playerCharactersIdToNamesMapState.value, characterState.value.name) || '';
+		return playerCharactersGameState.value[characterId] || undefined;
 	};
 
 	let levelUpState = useLocalStorage<{
@@ -214,7 +215,7 @@
 			)
 			.concat(gameLogic.renderInventoryUpdate($state.snapshot(gameState.inventory_update)));
 
-	let showXLastStoryPrgressions = $state<number>(0);
+	let showXLastStoryProgressions = $state<number>(0);
 	const latestStoryProgressionState = $derived<StoryProgressionWithImageProps>({
 		story: storyChunkState || currentGameActionState.story,
 		gameUpdates: storyChunkState
@@ -304,10 +305,10 @@
 					get: () => didAIProcessActionState,
 					set: (v: boolean) => (didAIProcessActionState = v)
 				},
-				resetShowXLastStoryProgressions: () => (showXLastStoryPrgressions = 0),
+				resetShowXLastStoryProgressions: () => (showXLastStoryProgressions = 0),
 				storyChunkReset: () => (storyChunkState = ''),
 				playerCharacterId: playerCharacterIdState,
-				playerCharactersGameState,
+				playerCharactersGameState, // Use the correct naming from original GitHub
 				playerCharactersIdToNamesMapState,
 				npcState,
 				inventoryState,
@@ -348,6 +349,7 @@
 				setGMQuestion: (text: string) => (gmQuestionState = text),
 				setCustomDiceRollNotation: (notation: string) => (customDiceRollNotation = notation),
 				setCustomActionImpossibleReason: (reason) => (customActionImpossibleReasonState = reason)
+				// Remove complex reactivity callback - not needed with useLocalStorage
 			},
 			skills: {
 				skillsProgressionForCurrentActionState: {
@@ -376,7 +378,7 @@
 			);
 		}
 		// Initialize the player's resource state if it doesn't exist.
-		playerCharactersGameState[characterId] = {
+		playerCharactersGameState.value[characterId] = {
 			...$state.snapshot(characterStatsState.value.resources),
 			XP: { current_value: 0, max_value: 0, game_ends_when_zero: false }
 		};
@@ -396,10 +398,10 @@
 					playerCharacterIdState,
 					characterState.value.name,
 					$state.snapshot(gameActionsState.value),
-					$state.snapshot(playerCharactersGameState)
+					$state.snapshot(playerCharactersGameState.value)
 				);
 				gameActionsState.value = updatedGameActionsState;
-				playerCharactersGameState = updatedPlayerCharactersGameState;
+				playerCharactersGameState.value = updatedPlayerCharactersGameState;
 			}
 		} else {
 			await initializeGameFromSavedState();
@@ -410,7 +412,7 @@
 		// Apply previously saved game actions
 		//TODO what happens when character transformed, if stat existed before damage/heal will be applied
 		gameLogic.applyGameActionStates(
-			playerCharactersGameState,
+			playerCharactersGameState.value,
 			playerCharactersIdToNamesMapState.value,
 			npcState.value,
 			inventoryState.value,
@@ -422,10 +424,10 @@
 				playerCharacterIdState,
 				characterState.value.name,
 				$state.snapshot(gameActionsState.value),
-				$state.snapshot(playerCharactersGameState)
+				$state.snapshot(playerCharactersGameState.value)
 			);
 		gameActionsState.value = updatedGameActionsState;
-		playerCharactersGameState = updatedPlayerCharactersGameState;
+		playerCharactersGameState.value = updatedPlayerCharactersGameState;
 		tick().then(() => document.getElementById('user-input')?.scrollIntoView(false));
 		if (characterActionsState.value.length === 0) {
 			const { thoughts, actions } = await actionAgent.generateActions(
@@ -546,7 +548,7 @@
 	//TODO sendAction should not be handled here so it can be externally called
 	async function checkGameEnded() {
 		const emptyResourceKeys = getEmptyCriticalResourceKeys(
-			playerCharactersGameState[playerCharacterIdState]
+			playerCharactersGameState.value[playerCharacterIdState]
 		);
 		if (!isGameEnded.value && emptyResourceKeys.length > 0) {
 			isGameEnded.value = true;
@@ -602,7 +604,7 @@
 
 		if (
 			neededXP &&
-			playerCharactersGameState[playerCharacterIdState]?.XP.current_value >= neededXP
+			playerCharactersGameState.value[playerCharacterIdState]?.XP.current_value >= neededXP
 		) {
 			levelUpState.value.buttonEnabled = true;
 		}
@@ -705,7 +707,11 @@
 			return;
 		}
 		const buyLevelUpObject = GameAgent.getLevelUpCostObject(xpNeededForLevel, playerName, level);
-		playerCharactersGameState[playerCharacterIdState].XP.current_value -= xpNeededForLevel;
+		// Ensure character state exists before accessing XP
+		if (playerCharactersGameState.value[playerCharacterIdState]?.XP) {
+			playerCharactersGameState.value[playerCharacterIdState].XP.current_value -= xpNeededForLevel;
+		}
+		// No manual reactivity needed with useLocalStorage
 		gameActionsState.value[gameActionsState.value.length - 1].stats_update.push(buyLevelUpObject);
 		levelUpState.value.dialogOpened = true;
 		checkForLevelUp();
@@ -716,11 +722,11 @@
 	const getLatestStoryMessages = (numOfActions = 2) =>
 		getLatestStoryMessagesFromHistory(historyMessagesState.value, numOfActions);
 
-	const onItemUseChosen = async (item: Action & Item & { item_id: string }) => {
+	const handleItemUseChosen = async (item: Action & Item & { item_id: string }) => {
 		itemForSuggestActionsState = item;
 	};
 
-	const onTargetedSpellsOrAbility = async (action: Action, targets: string[]) => {
+	const handleTargetedSpellsOrAbility = async (action: Action, targets: string[]) => {
 		isAiGeneratingState = true;
 		let targetAddition = '';
 		if (targets?.length > 0 && !targets.some((t) => t === undefined)) {
@@ -773,11 +779,11 @@
 		);
 		isAiGeneratingState = false;
 	};
-	const onCustomDiceRollClosed = () => {
+	const handleCustomDiceRollClosed = () => {
 		customDiceRollNotation = '';
 		actionInputFormComponent?.clear?.();
 	};
-	const onLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
+	const handleLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
 		if (aiLevelUp) {
 			characterStatsState.value = applyLevelUp(aiLevelUp, characterStatsState.value);
 		} else {
@@ -793,14 +799,14 @@
 			playerCharacterIdState,
 			characterState.value.name,
 			$state.snapshot(gameActionsState.value),
-			$state.snapshot(playerCharactersGameState)
+			$state.snapshot(playerCharactersGameState.value)
 		);
 		gameActionsState.value = updatedGameActionsState;
-		playerCharactersGameState = updatedPlayerCharactersGameState;
+		playerCharactersGameState.value = updatedPlayerCharactersGameState;
 		checkForLevelUp();
 	};
 
-	const onSuggestItemActionClosed = (action?: Action) => {
+	const handleSuggestItemActionClosed = (action?: Action) => {
 		if (action) {
 			if (action.is_custom_action) {
 				generateActionFromCustomInput(action);
@@ -859,7 +865,7 @@
 			if (
 				!isEnoughResource(
 					action,
-					playerCharactersGameState[playerCharacterIdState],
+					playerCharactersGameState.value[playerCharacterIdState],
 					inventoryState.value
 				)
 			) {
@@ -875,10 +881,10 @@
 		isAiGeneratingState = false;
 	};
 
-	const onCustomActionSubmitted = async (text: string, mustGenerateCustomAction = false) => {
+	const handleCustomActionSubmit = async (text: string, mustGenerateCustomAction = false) => {
 		await controller!.onCustomActionSubmitted(text, mustGenerateCustomAction, customActionReceiver);
 	};
-	const onGMQuestionClosed = (
+	const handleGMQuestionClosed = (
 		closedByPlayer: boolean,
 		gmAnswerStateAsContext?: GameMasterAnswer
 	) => {
@@ -987,9 +993,9 @@
 	{/if}
 	{#if gmQuestionState}
 		<GMQuestionModal
-			onclose={onGMQuestionClosed}
+			onclose={handleGMQuestionClosed}
 			question={gmQuestionState}
-			{playerCharactersGameState}
+			playerCharactersGameState={playerCharactersGameState.value}
 		/>
 	{/if}
 	{#if eventEvaluationState.value.character_changed?.showEventConfirmationDialog && !eventEvaluationState.value.character_changed?.aiProcessingComplete}
@@ -1008,11 +1014,11 @@
 	<UseSpellsAbilitiesModal
 		bind:dialogRef={useSpellsAbilitiesModal}
 		playerName={characterState.value.name}
-		resources={playerCharactersGameState[playerCharacterIdState]}
+		resources={playerCharactersGameState.value[playerCharacterIdState]}
 		abilities={characterStatsState.value?.spells_and_abilities}
 		storyImagePrompt={storyState.value.general_image_prompt}
 		targets={currentGameActionState.currently_present_npcs}
-		onclose={onTargetedSpellsOrAbility}
+		onclose={handleTargetedSpellsOrAbility}
 	></UseSpellsAbilitiesModal>
 	<UseItemsModal
 		bind:dialogRef={useItemsModal}
@@ -1022,21 +1028,21 @@
 		storyImagePrompt={storyState.value.general_image_prompt}
 		oncrafting={(craftingPrompt) => {
 			if (craftingPrompt) {
-				onCustomActionSubmitted(craftingPrompt, true);
+				handleCustomActionSubmit(craftingPrompt, true);
 			}
 		}}
-		onclose={onItemUseChosen}
+		onclose={handleItemUseChosen}
 	></UseItemsModal>
 	{#if itemForSuggestActionsState}
 		<SuggestedActionsModal
-			onclose={onSuggestItemActionClosed}
+			onclose={handleSuggestItemActionClosed}
 			resources={getCurrentCharacterGameState()}
 			{itemForSuggestActionsState}
 			{currentGameActionState}
 		/>
 	{/if}
 	{#if levelUpState.value?.dialogOpened}
-		<LevelUpModal onclose={onLevelUpModalClosed} />
+		<LevelUpModal onclose={handleLevelUpModalClosed} />
 	{/if}
 	<UtilityModal
 		bind:dialogRef={utilityModal}
@@ -1050,7 +1056,7 @@
 		resetState={didAIProcessDiceRollActionState.value}
 	></DiceRollComponent>
 	{#if customDiceRollNotation}
-		<SimpleDiceRoller onClose={onCustomDiceRollClosed} notation={customDiceRollNotation} />
+		<SimpleDiceRoller onClose={handleCustomDiceRollClosed} notation={customDiceRollNotation} />
 	{/if}
 	<ResourcesComponent
 		resources={getCurrentCharacterGameState()}
@@ -1064,8 +1070,8 @@
 		isGameEnded={isGameEnded.value}
 		{playerCharacterIdState}
 		{getRenderedGameUpdates}
-		showXLastStoryProgressions={showXLastStoryPrgressions}
-		setShowXLastStoryProgressions={(n: number) => (showXLastStoryPrgressions = n)}
+		{showXLastStoryProgressions}
+		setShowXLastStoryProgressions={(n: number) => (showXLastStoryProgressions = n)}
 		bind:storyTextRef={latestStoryProgressionTextComponent}
 	/>
 
@@ -1086,7 +1092,7 @@
 			controller!.sendAction(a, roll);
 		}}
 		isGameEnded={isGameEnded.value}
-		playerResources={playerCharactersGameState[playerCharacterIdState]}
+		playerResources={playerCharactersGameState.value[playerCharacterIdState]}
 		inventoryState={inventoryState.value}
 	/>
 	{#if Object.keys(currentGameActionState).length !== 0}
@@ -1122,7 +1128,7 @@
 			bind:this={actionInputFormComponent}
 			bind:receiver={customActionReceiver}
 			handleSubmit={(text, receiver) =>
-				onCustomActionSubmitted(text, receiver === 'Character Action')}
+				handleCustomActionSubmit(text, receiver === 'Character Action')}
 		/>
 	{/if}
 

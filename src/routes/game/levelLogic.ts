@@ -19,9 +19,20 @@ export function getXPNeededForLevel(level: number): number | undefined {
 }
 
 export function mapXP(statsUpdate: StatsUpdate): StatsUpdate {
-	if (statsUpdate.type.toUpperCase().includes('XP')) {
-		statsUpdate.value.result = XP_INCREASING_SCALE[statsUpdate.value.result];
+	if (!statsUpdate?.type?.toUpperCase().includes('XP')) return statsUpdate;
+	const raw = (statsUpdate.value as any)?.result;
+	if (raw === undefined || raw === null) return statsUpdate;
+	if (typeof raw === 'string') {
+		const upper = raw.toUpperCase();
+		if (upper in XP_INCREASING_SCALE) {
+			// Map enum SMALL|MEDIUM|HIGH
+			(statsUpdate.value as any).result = XP_INCREASING_SCALE[upper as keyof typeof XP_INCREASING_SCALE];
+			return statsUpdate;
+		}
+		// If it's a numeric string, keep as-is (applyGameActionState will parseInt)
+		return statsUpdate;
 	}
+	// If it's already a number, keep as-is
 	return statsUpdate;
 }
 

@@ -40,7 +40,7 @@ export type ControllerCtx = {
     storyChunkReset: () => void;
 
     playerCharacterId: string;
-    playerCharactersGameState: PlayerCharactersGameState;
+    playerCharactersGameState: { value: PlayerCharactersGameState };
     playerCharactersIdToNamesMapState: { value: PlayerCharactersIdToNamesMap };
     npcState: { value: NPCState };
     inventoryState: { value: InventoryState };
@@ -81,6 +81,7 @@ export type ControllerCtx = {
     setGMQuestion: (text: string) => void;
     setCustomDiceRollNotation: (notation: string) => void;
     setCustomActionImpossibleReason: (reason: 'not_enough_resource' | 'not_plausible' | undefined) => void;
+    // triggerPlayerResourcesReactivity removed - not needed with useLocalStorage
   };
   skills: {
     skillsProgressionForCurrentActionState: { get: () => number | undefined; set: (v: number | undefined) => void };
@@ -100,7 +101,7 @@ export function createGameController(ctx: ControllerCtx) {
 
     const determinedActionsAndStatsUpdate = await ctx.agents.combatAgent.generateActionsFromContext(
       playerAction,
-      ctx.state.playerCharactersGameState[ctx.state.playerCharacterId],
+      ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId],
       ctx.state.inventoryState.value,
       allNpcsDetailsAsList,
       ctx.state.systemInstructionsState.value.generalSystemInstruction,
@@ -110,12 +111,13 @@ export function createGameController(ctx: ControllerCtx) {
     );
 
     gameLogic.applyGameActionState(
-      ctx.state.playerCharactersGameState,
+      ctx.state.playerCharactersGameState.value,
       ctx.state.playerCharactersIdToNamesMapState.value,
       ctx.state.npcState.value,
       ctx.state.inventoryState.value,
-      structuredClone(determinedActionsAndStatsUpdate)
+      JSON.parse(JSON.stringify(determinedActionsAndStatsUpdate))
     );
+    // No manual reactivity trigger needed with useLocalStorage
 
     const aliveNPCs = allNpcsDetailsAsList
       .filter((npc: any) => npc?.resources && npc.resources.current_hp > 0)
@@ -125,7 +127,7 @@ export function createGameController(ctx: ControllerCtx) {
       determinedActionsAndStatsUpdate.actions,
       [],
       aliveNPCs,
-      ctx.state.playerCharactersGameState
+      ctx.state.playerCharactersGameState.value
     );
 
     return { additionalStoryInput, determinedActionsAndStatsUpdate } as const;
@@ -198,7 +200,7 @@ export function createGameController(ctx: ControllerCtx) {
       ctx.state.historyMessagesState.value,
       ctx.state.storyState.value,
       ctx.state.characterState.value,
-      ctx.state.playerCharactersGameState,
+      ctx.state.playerCharactersGameState.value,
       ctx.state.inventoryState.value,
       relatedHistory,
       ctx.state.gameSettingsState.value
@@ -208,20 +210,20 @@ export function createGameController(ctx: ControllerCtx) {
 
     ctx.helpers.checkForNewNPCs(newState);
     npcLogic.addNPCNamesToState(newState.currently_present_npcs, ctx.state.npcState.value);
+    
     if (combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate) {
       newState.stats_update =
         combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate?.stats_update || newState.stats_update;
       gameLogic.applyInventoryUpdate(ctx.state.inventoryState.value, newState);
     } else {
+      // Apply resources directly to useLocalStorage state - no complex reactivity needed
       gameLogic.applyGameActionState(
-        ctx.state.playerCharactersGameState,
+        ctx.state.playerCharactersGameState.value,
         ctx.state.playerCharactersIdToNamesMapState.value,
         ctx.state.npcState.value,
         ctx.state.inventoryState.value,
-        structuredClone(newState)
+        JSON.parse(JSON.stringify(newState))
       );
-      // Force reactivity after in-place resource mutations
-      ctx.state.playerCharactersGameState = { ...ctx.state.playerCharactersGameState };
     }
     console.log('new state', stringifyPretty(newState));
     ctx.state.historyMessagesState.value = updatedHistoryMessages;
@@ -337,9 +339,9 @@ export function createGameController(ctx: ControllerCtx) {
       ctx.state.isAiGeneratingState.set(true);
       const { transformedCharacter, transformedCharacterStats } = await applyCharacterChange(
         changedInto,
-        structuredClone(ctx.state.storyState.value),
-        structuredClone(ctx.state.characterState.value),
-        structuredClone(ctx.state.characterStatsState.value),
+        JSON.parse(JSON.stringify(ctx.state.storyState.value)),
+        JSON.parse(JSON.stringify(ctx.state.characterState.value)),
+        JSON.parse(JSON.stringify(ctx.state.characterStatsState.value)),
         ctx.agents.characterAgent,
         ctx.agents.characterStatsAgent
       );
@@ -361,19 +363,27 @@ export function createGameController(ctx: ControllerCtx) {
       }
 
       // apply new resources
-      ctx.state.playerCharactersGameState[ctx.state.playerCharacterId] = {
-        ...structuredClone(ctx.state.characterStatsState.value.resources),
-        XP: ctx.state.playerCharactersGameState[ctx.state.playerCharacterId].XP
+      // Ensure character state exists before accessing XP
+      if (!ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId]) {
+        ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId] = {
+          ...JSON.parse(JSON.stringify(ctx.state.characterStatsState.value.resources)),
+          XP: { current_value: 0, max_value: 0, game_ends_when_zero: false }
+        } as any;
+      }
+      
+      ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId] = {
+        ...JSON.parse(JSON.stringify(ctx.state.characterStatsState.value.resources)),
+        XP: ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId].XP
       } as any;
       const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
-        structuredClone(ctx.state.characterStatsState.value.resources),
+        JSON.parse(JSON.stringify(ctx.state.characterStatsState.value.resources)),
         ctx.state.playerCharacterId,
         ctx.state.characterState.value.name,
-        structuredClone(ctx.state.gameActionsState.value),
-        structuredClone(ctx.state.playerCharactersGameState)
+        JSON.parse(JSON.stringify(ctx.state.gameActionsState.value)),
+        JSON.parse(JSON.stringify(ctx.state.playerCharactersGameState.value))
       );
       ctx.state.gameActionsState.value = updatedGameActionsState;
-      ctx.state.playerCharactersGameState = updatedPlayerCharactersGameState;
+      ctx.state.playerCharactersGameState.value = updatedPlayerCharactersGameState;
     }
     ctx.state.eventEvaluationState.value.character_changed!.aiProcessingComplete = true;
     ctx.state.isAiGeneratingState.set(false);
@@ -471,7 +481,7 @@ export function createGameController(ctx: ControllerCtx) {
     if (merged.is_possible === false) {
       ctx.helpers.setCustomActionImpossibleReason('not_plausible');
     } else {
-      if (!gameLogic.isEnoughResource(merged, ctx.state.playerCharactersGameState[ctx.state.playerCharacterId], ctx.state.inventoryState.value)) {
+      if (!gameLogic.isEnoughResource(merged, ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId], ctx.state.inventoryState.value)) {
         ctx.helpers.setCustomActionImpossibleReason('not_enough_resource');
       } else {
         ctx.helpers.setCustomActionImpossibleReason(undefined);

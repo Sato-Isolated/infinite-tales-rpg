@@ -98,10 +98,35 @@ export function formatItemId(item_id: string) {
 export type RenderedGameUpdate = { text: string; resourceText: string; color: string };
 
 export function mapStatsUpdateToGameLogic(statsUpdate: StatsUpdate): StatsUpdate {
+	if (!statsUpdate?.type) return statsUpdate;
+	// Normalize common LLM typos and casing to keep engine tolerant
+	let normalized = ('' + statsUpdate.type).trim().toLowerCase();
+	// frequent typo in LLM outputs: "loose" instead of "lost"
+	normalized = normalized.replaceAll('loose', 'lost');
+	// handle alternative wording
+	normalized = normalized.replaceAll('_loss', '_lost');
+	statsUpdate.type = normalized;
+
 	if (statsUpdate.type.toUpperCase().includes('XP')) {
 		mapXP(statsUpdate);
 	}
 	return statsUpdate;
+}
+
+/**
+ * Create a canonical representation of resource keys to allow tolerant matching.
+ * - Removes diacritics and decomposes ligatures (e.g., Æ -> AE)
+ * - Replaces any sequence of non-alphanumeric characters with a single underscore
+ * - Trims leading/trailing underscores and uppercases for stable comparison
+ */
+function canonicalizeKey(input: string | undefined): string {
+	if (!input) return '';
+	return input
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^a-zA-Z0-9]+/g, '_')
+		.replace(/^_+|_+$/g, '')
+		.toUpperCase();
 }
 
 function getColorForStatUpdate(mappedType: string, resources: ResourcesWithCurrentValue) {
@@ -161,7 +186,7 @@ export function renderStatUpdates(
 				let changeText = statsUpdate.type?.includes('_gained')
 					? 'gain'
 					: statsUpdate.type?.includes('_lost')
-						? 'loose'
+						? 'lose'
 						: undefined;
 
 				const mappedType =
@@ -265,11 +290,14 @@ export function applyGameActionState(
 	prohibitNPCChange = false
 ) {
 	function getResourceIfPresent(resources: ResourcesWithCurrentValue, key: string) {
-		let resource = resources[key];
-		if (!resource) {
-			resource = resources[key.toUpperCase()];
-		}
-		return resource;
+		if (!key) return undefined;
+		// Fast path: direct and simple case-insensitive lookups
+		let resource = resources[key] || resources[key.toUpperCase()];
+		if (resource) return resource;
+		// Tolerant path: compare canonicalized keys (handles accents, ligatures, spaces vs underscores)
+		const wanted = canonicalizeKey(key);
+		const matchKey = Object.keys(resources).find((k) => canonicalizeKey(k) === wanted);
+		return matchKey ? resources[matchKey] : undefined;
 	}
 
 	for (const statUpdate of state?.stats_update?.map(mapStatsUpdateToGameLogic) || []) {
@@ -282,8 +310,12 @@ export function applyGameActionState(
 				continue;
 			}
 			if (statUpdate.type === 'xp_gained') {
-				playerCharactersGameState[characterId].XP.current_value +=
-					Number.parseInt(statUpdate.value.result) || 0;
+				// Support both enum and numbers; mapXP already normalized enums to numbers when possible
+				const xpValue = Number.parseInt(statUpdate.value.result) || 0;
+				playerCharactersGameState[characterId].XP.current_value += xpValue;
+			} else if (statUpdate.type === 'xp_lost') {
+				const xpValue = Number.parseInt(statUpdate.value.result) || 0;
+				playerCharactersGameState[characterId].XP.current_value -= xpValue;
 			} else {
 				if (statUpdate.type.includes('_gained')) {
 					const resource: string = statUpdate.type.replace('_gained', '');
@@ -386,13 +418,14 @@ export function isEnoughResource(
 	if (cost === 0) {
 		return true;
 	}
+	const wanted = canonicalizeKey(action.resource_cost?.resource_key || '');
 	const resourceKey = Object.keys(resources).find(
-		(key) => key.toLowerCase() === action.resource_cost?.resource_key?.toLowerCase()
+		(key) => canonicalizeKey(key) === wanted
 	);
 	let inventoryKey: string | undefined = undefined;
 	if (!resourceKey) {
 		inventoryKey = Object.keys(inventory).find(
-			(key) => key.toLowerCase() === action.resource_cost?.resource_key?.toLowerCase()
+			(key) => canonicalizeKey(key) === wanted
 		);
 		return !!inventoryKey;
 	}

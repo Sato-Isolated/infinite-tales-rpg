@@ -77,14 +77,27 @@ export function initializeMissingResources(
 		)
 		.reduce((acc, [resourceKey, resource]) => ({ ...acc, [resourceKey]: resource }), {});
 	if (Object.keys(missingResources).length > 0) {
-		const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
-			missingResources,
-			playerId,
-			playerCharacterName,
-			gameActionsState,
-			playerCharactersGameState
-		);
-		return { updatedGameActionsState, updatedPlayerCharactersGameState };
+		// On reload/initialization we should NOT append stats_update to history,
+		// just ensure the player's resources have proper current_value set.
+		const currentPlayerResources = playerCharactersGameState[playerId];
+		const filledResources: any = {};
+		for (const key in missingResources) {
+			const refillValue = GameAgent.getRefillValue(missingResources[key]);
+			filledResources[key] = {
+				...missingResources[key],
+				current_value: refillValue
+			};
+		}
+
+		const updatedPlayerResources = {
+			...currentPlayerResources,
+			...filledResources
+		};
+		const updatedPlayerCharactersGameState = {
+			...playerCharactersGameState,
+			[playerId]: updatedPlayerResources
+		};
+		return { updatedGameActionsState: gameActionsState, updatedPlayerCharactersGameState };
 	}
 	return {
 		updatedGameActionsState: gameActionsState,
