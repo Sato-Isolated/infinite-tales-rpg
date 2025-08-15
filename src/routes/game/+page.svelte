@@ -48,6 +48,12 @@
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import {
+		getCurrentCharacterGameState,
+		getRenderedGameUpdates,
+		canLevelUp
+	} from './gameStateUtils';
+	import GameModals from '$lib/components/game/GameModals.svelte';
+	import {
 		initialSystemInstructionsState,
 		type LLMMessage,
 		type SystemInstructionsState
@@ -104,8 +110,18 @@
 	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
 	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
-	import { type StoryProgressionWithImageProps } from '$lib/components/StoryProgressionWithImage.svelte';
+	import StoryProgressionWithImage from '$lib/components/StoryProgressionWithImage.svelte';
 	import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
+	import type { RenderedGameUpdate } from './gameLogic';
+
+	// Local type definition matching StoryProgressionWithImage component
+	type StoryProgressionWithImageProps = {
+		storyTextRef?: HTMLElement;
+		story: string;
+		gameUpdates?: Array<RenderedGameUpdate | undefined>;
+		imagePrompt?: string;
+		stream_finished?: boolean;
+	};
 	import StorySection from '$lib/components/game/StorySection.svelte';
 	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
@@ -180,12 +196,6 @@
 	);
 	// Use original naming and structure from GitHub
 	const playerCharactersGameState = useLocalStorage<PlayerCharactersGameState>('playerCharactersGameState', {});
-	
-	// Use function format like in original GitHub file  
-	const getCurrentCharacterGameState = () => {
-		const characterId = getCharacterTechnicalId(playerCharactersIdToNamesMapState.value, characterState.value.name) || '';
-		return playerCharactersGameState.value[characterId] || undefined;
-	};
 
 	let levelUpState = useLocalStorage<{
 		buttonEnabled: boolean;
@@ -205,28 +215,33 @@
 		getCharacterTechnicalId(playerCharactersIdToNamesMapState.value, characterState.value.name) ||
 			''
 	);
-	const getRenderedGameUpdates = (gameState: GameActionState, playerId: string) =>
-		gameState &&
-		gameLogic
-			.renderStatUpdates(
-				$state.snapshot(gameState.stats_update),
-				getCurrentCharacterGameState(),
-				playerCharactersIdToNamesMapState.value[playerId]
-			)
-			.concat(gameLogic.renderInventoryUpdate($state.snapshot(gameState.inventory_update)));
 
 	let showXLastStoryProgressions = $state<number>(0);
 	const latestStoryProgressionState = $derived<StoryProgressionWithImageProps>({
 		story: storyChunkState || currentGameActionState.story,
 		gameUpdates: storyChunkState
 			? []
-			: getRenderedGameUpdates(currentGameActionState, playerCharacterIdState),
+			: getRenderedGameUpdates(
+				currentGameActionState, 
+				playerCharactersGameState.value,
+				playerCharactersIdToNamesMapState.value,
+				playerCharacterIdState
+			),
 		imagePrompt: storyChunkState
 			? ''
 			: [currentGameActionState.image_prompt, storyState.value.general_image_prompt].join(' '),
 		stream_finished: !storyChunkState
 	});
 	let latestStoryProgressionTextComponent = $state<HTMLElement | undefined>();
+
+	// Wrapper function to match StorySection component signature
+	const getRenderedGameUpdatesWrapper = (gameState: GameActionState, playerId: string) =>
+		getRenderedGameUpdates(
+			gameState,
+			playerCharactersGameState.value,
+			playerCharactersIdToNamesMapState.value,
+			playerId
+		);
 
 	let actionsTextForTTS = $derived(
 		(characterActionsState.value || []).map((a) => getTextForActionButton(a)).join(' ')
@@ -842,84 +857,41 @@
 </script>
 
 <div id="game-container" class="container mx-auto p-4">
-	{#if isAiGeneratingState}
-		<LoadingModal></LoadingModal>
-	{/if}
-	{#if errorState.userMessage && errorState.code != 'memory_retrieval'}
-		<ErrorDialog onclose={handleAIError} />
-	{/if}
-	{#if modalManager.hasCustomActionImpossibleReason}
-		<ImpossibleActionModal action={chosenActionState.value} onclose={handleImpossibleAction} />
-	{/if}
-	{#if modalManager.hasGMQuestion}
-		<GMQuestionModal
-			onclose={handleGMQuestionClosed}
-			question={modalManager.gmQuestionState}
-			playerCharactersGameState={playerCharactersGameState.value}
-		/>
-	{/if}
-	{#if eventEvaluationState.value.character_changed?.showEventConfirmationDialog && !eventEvaluationState.value.character_changed?.aiProcessingComplete}
-		<CharacterChangedConfirmationModal
-			onclose={(confirmed) =>
-				confirmCharacterChangeEvent(eventEvaluationState.value.character_changed!, confirmed)}
-			eventToConfirm={getEventToConfirm(eventEvaluationState.value.character_changed)}
-		/>
-	{/if}
-	{#if eventEvaluationState.value.abilities_learned?.showEventConfirmationDialog && !eventEvaluationState.value.abilities_learned?.aiProcessingComplete}
-		<NewAbilitiesConfirmatonModal
-			spells_abilities={eventEvaluationState.value.abilities_learned?.abilities || []}
-			onclose={(confirmedAbilities?: Ability[]) => confirmAbilitiesLearned(confirmedAbilities)}
-		/>
-	{/if}
-	<UseSpellsAbilitiesModal
-		bind:dialogRef={modalManager.useSpellsAbilitiesModal}
-		playerName={characterState.value.name}
-		resources={playerCharactersGameState.value[playerCharacterIdState]}
-		abilities={characterStatsState.value?.spells_and_abilities}
-		storyImagePrompt={storyState.value.general_image_prompt}
-		targets={currentGameActionState.currently_present_npcs}
-		onclose={handleTargetedSpellsOrAbility}
-	></UseSpellsAbilitiesModal>
-	<UseItemsModal
-		bind:dialogRef={modalManager.useItemsModal}
-		{onDeleteItem}
-		playerName={characterState.value.name}
+	<GameModals
+		{isAiGeneratingState}
+		{modalManager}
+		{currentGameActionState}
+		playerCharactersGameState={playerCharactersGameState.value}
+		{playerCharactersIdToNamesMapState}
+		characterName={characterState.value.name}
+		characterStatsState={characterStatsState.value}
 		inventoryState={inventoryState.value}
-		storyImagePrompt={storyState.value.general_image_prompt}
-		oncrafting={(craftingPrompt) => {
-			if (craftingPrompt) {
-				handleCustomActionSubmit(craftingPrompt, true);
-			}
-		}}
-		onclose={handleItemUseChosen}
-	></UseItemsModal>
-	{#if modalManager.hasItemSuggestions && modalManager.itemForSuggestActionsState}
-		<SuggestedActionsModal
-			onclose={handleSuggestItemActionClosed}
-			resources={getCurrentCharacterGameState()}
-			itemForSuggestActionsState={modalManager.itemForSuggestActionsState}
-			{currentGameActionState}
-		/>
-	{/if}
-	{#if modalManager.shouldShowLevelUpDialog}
-		<LevelUpModal onclose={handleLevelUpModalClosed} />
-	{/if}
-	<UtilityModal
-		bind:dialogRef={modalManager.utilityModal}
-		is_character_in_combat={currentGameActionState.is_character_in_combat}
-		actions={utilityPlayerActions}
-		onclose={(action) => controller!.handleUtilityAction(action)}
+		storyState={storyState.value}
+		eventEvaluationState={eventEvaluationState.value}
+		chosenActionState={chosenActionState.value}
+		didAIProcessDiceRollActionState={didAIProcessDiceRollActionState.value}
+		{handleAIError}
+		{handleImpossibleAction}
+		{handleGMQuestionClosed}
+		{confirmCharacterChangeEvent}
+		{confirmAbilitiesLearned}
+		handleTargetedSpellsOrAbility={(action, targets) => controller!.handleTargetedSpellsOrAbility(action, targets || [])}
+		{onDeleteItem}
+		{handleCustomActionSubmit}
+		handleItemUseChosen={(item) => controller!.handleItemUseChosen(item)}
+		handleSuggestItemActionClosed={() => controller!.handleSuggestItemActionClosed()}
+		handleLevelUpModalClosed={(levelUp) => controller!.handleLevelUpModalClosed(levelUp)}
+		handleUtilityAction={(action) => controller!.handleUtilityAction(action)}
+		{handleCustomDiceRollClosed}
+		getEventToConfirm={(event) => controller!.getEventToConfirm(event)}
 	/>
-	<DiceRollComponent
-		bind:diceRollDialog={modalManager.diceRollDialog}
-		action={chosenActionState.value}
-		resetState={didAIProcessDiceRollActionState.value}
-	></DiceRollComponent>
-	{#if modalManager.hasCustomDiceRoll}
-		<SimpleDiceRoller onClose={handleCustomDiceRollClosed} notation={modalManager.customDiceRollNotation} />
-	{/if}
+
 	<ResourcesComponent
-		resources={getCurrentCharacterGameState()}
+		resources={getCurrentCharacterGameState(
+			playerCharactersGameState.value,
+			playerCharactersIdToNamesMapState.value,
+			characterState.value.name
+		)}
 		currentLevel={characterStatsState.value?.level}
 	/>
 	<StorySection
@@ -929,7 +901,7 @@
 		storyState={storyState.value}
 		isGameEnded={isGameEnded.value}
 		{playerCharacterIdState}
-		{getRenderedGameUpdates}
+		getRenderedGameUpdates={getRenderedGameUpdatesWrapper}
 		{showXLastStoryProgressions}
 		setShowXLastStoryProgressions={(n: number) => (showXLastStoryProgressions = n)}
 		bind:storyTextRef={latestStoryProgressionTextComponent}
