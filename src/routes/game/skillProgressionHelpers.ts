@@ -1,29 +1,39 @@
-import type { Action, GameActionState } from '$lib/ai/agents/gameAgent';
+import type { Action } from '$lib/ai/agents/gameAgent';
 import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent';
-import { getRequiredSkillProgression, isNewSkill, getSkillProgressionForDifficulty, getSkillIfApplicable } from './characterLogic';
+import {
+  getRequiredSkillProgression,
+  getSkillProgressionForDifficulty,
+  isNewSkill
+} from './characterLogic';
 
-export const addSkillProgression = (skillsProgressionState: any, skillName: string, skillProgression: number) => {
-  if (skillProgression) {
-    if (!skillsProgressionState.value[skillName]) {
-      skillsProgressionState.value[skillName] = 0;
-    }
-    skillsProgressionState.value[skillName] += skillProgression;
+export const addSkillProgression = (
+  skillsProgressionState: { value: SkillsProgression },
+  skillName: string,
+  skillProgression: number
+) => {
+  if (!skillProgression) return;
+  if (!skillsProgressionState.value[skillName]) {
+    skillsProgressionState.value[skillName] = 0;
   }
+  skillsProgressionState.value[skillName] += skillProgression;
 };
 
 export const advanceSkillIfApplicable = (
   skillName: string,
-  characterStatsState: any,
-  skillsProgressionState: any,
+  characterStatsState: { value: CharacterStats },
+  skillsProgressionState: { value: SkillsProgression },
   characterName: string,
-  gameActionsState: any
+  gameActionsState: { value: Array<any> }
 ) => {
-  const requiredSkillProgression = getRequiredSkillProgression(skillName, characterStatsState.value);
-  if (requiredSkillProgression) {
-    if (skillsProgressionState.value[skillName] >= requiredSkillProgression) {
-      characterStatsState.value.skills[skillName] += 1;
-      skillsProgressionState.value[skillName] = 0;
-      gameActionsState.value[gameActionsState.value.length].stats_update.push({
+  const required = getRequiredSkillProgression(skillName, characterStatsState.value);
+  if (!required) return;
+  if ((skillsProgressionState.value[skillName] || 0) >= required) {
+    characterStatsState.value.skills[skillName] += 1;
+    skillsProgressionState.value[skillName] = 0;
+    const last = gameActionsState.value[gameActionsState.value.length - 1];
+    if (last) {
+      last.stats_update = last.stats_update || [];
+      last.stats_update.push({
         sourceName: characterName,
         targetName: characterName,
         value: { result: skillName },
@@ -36,21 +46,21 @@ export const advanceSkillIfApplicable = (
 export const addSkillsIfApplicable = (
   actions: Action[],
   gameSettingsIntroduces: boolean,
-  characterStatsState: any
+  characterStatsState: { value: CharacterStats }
 ) => {
-  if (gameSettingsIntroduces) {
-    actions.forEach((action: Action) => {
-      const skill = isNewSkill(characterStatsState.value, action);
-      if (skill) {
-        characterStatsState.value.skills[skill] = 0;
-      }
-    });
-  }
+  if (!gameSettingsIntroduces) return;
+  actions.forEach((action: Action) => {
+    const skill = isNewSkill(characterStatsState.value, action);
+    if (skill && characterStatsState.value.skills[skill] === undefined) {
+      characterStatsState.value.skills[skill] = 0;
+    }
+  });
 };
 
-export const determineProgressionForAction = (action: Action, existingProgression: number | undefined) => {
+export const determineProgressionForAction = (
+  action: Action,
+  existingProgression: number | undefined
+) => {
   if (existingProgression !== undefined) return existingProgression;
   return getSkillProgressionForDifficulty(action.action_difficulty);
 };
-
-export const getSkillNameForAction = (characterStats: CharacterStats, action: Action) => getSkillIfApplicable(characterStats, action);

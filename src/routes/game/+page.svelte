@@ -91,15 +91,18 @@
 	import CharacterChangedConfirmationModal from '$lib/components/interaction_modals/CharacterChangedConfirmationModal.svelte';
 	import {
 		applyCharacterChange,
-		getRequiredSkillProgression,
-		isNewSkill,
 		getSkillProgressionForDiceRoll,
-		getSkillProgressionForDifficulty,
 		getSkillIfApplicable,
 		getFreeCharacterTechnicalId,
 		getCharacterTechnicalId,
 		addCharacterToPlayerCharactersIdToNamesMap
 	} from './characterLogic';
+	import {
+		addSkillProgression as addSkillProgressionHelper,
+		advanceSkillIfApplicable as advanceSkillIfApplicableHelper,
+		addSkillsIfApplicable as addSkillsIfApplicableHelper,
+		determineProgressionForAction
+	} from './skillProgressionHelpers';
 	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
 	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
@@ -444,48 +447,24 @@
 		return { additionalStoryInput, determinedActionsAndStatsUpdate };
 	}
 
-	const advanceSkillIfApplicable = (skillName: string) => {
-		const requiredSkillProgression = getRequiredSkillProgression(
+	const advanceSkillIfApplicable = (skillName: string) =>
+		advanceSkillIfApplicableHelper(
 			skillName,
-			characterStatsState.value
+			characterStatsState,
+			skillsProgressionState,
+			characterState.value.name,
+			gameActionsState
 		);
-		if (requiredSkillProgression) {
-			if (skillsProgressionState.value[skillName] >= requiredSkillProgression) {
-				console.log('Advancing skill ' + skillName + ' by 1');
-				characterStatsState.value.skills[skillName] += 1;
-				skillsProgressionState.value[skillName] = 0;
-				gameActionsState.value[gameActionsState.value.length].stats_update.push({
-					sourceName: characterState.value.name,
-					targetName: characterState.value.name,
-					value: { result: skillName },
-					type: 'skill_increased'
-				});
-			}
-		} else {
-			console.log('No required skill progression found for skill: ' + skillName);
-		}
-	};
 
-	const addSkillProgression = (skillName: string, skillProgression: number) => {
-		if (skillProgression) {
-			if (!skillsProgressionState.value[skillName]) {
-				skillsProgressionState.value[skillName] = 0;
-			}
-			console.log('Adding skill progression for ' + skillName + ': ' + skillProgression);
-			skillsProgressionState.value[skillName] += skillProgression;
-		}
-	};
+	const addSkillProgression = (skillName: string, skillProgression: number) =>
+		addSkillProgressionHelper(skillsProgressionState, skillName, skillProgression);
 
-	const addSkillsIfApplicable = (actions: Action[]) => {
-		if (gameSettingsState.value?.aiIntroducesSkills) {
-			actions.forEach((action: Action) => {
-				const skill = isNewSkill($state.snapshot(characterStatsState.value), action);
-				if (skill) {
-					characterStatsState.value.skills[skill] = 0;
-				}
-			});
-		}
-	};
+	const addSkillsIfApplicable = (actions: Action[]) =>
+		addSkillsIfApplicableHelper(
+			actions,
+			!!gameSettingsState.value?.aiIntroducesSkills,
+			characterStatsState
+		);
 
 	function openDiceRollDialog() {
 		//TODO showModal can not be used because it hides the dice roll
@@ -854,8 +833,9 @@
 			if (skillName) {
 				//if no dice was rolled, use difficulty
 				if (skillsProgressionForCurrentActionState === undefined) {
-					skillsProgressionForCurrentActionState = getSkillProgressionForDifficulty(
-						action.action_difficulty
+					skillsProgressionForCurrentActionState = determineProgressionForAction(
+						action,
+						skillsProgressionForCurrentActionState
 					);
 				}
 				addSkillProgression(skillName, skillsProgressionForCurrentActionState);
@@ -1524,26 +1504,27 @@
 			{/if}
 			<StaticActionsPanel
 				levelUpEnabled={levelUpState.value.buttonEnabled}
-				onContinue={() =>
+				handleContinue={() =>
 					sendAction({ characterName: characterState.value.name, text: 'Continue The Tale' })}
-				onLevelUp={() => levelUpClicked(characterState.value.name)}
+				handleLevelUp={() => levelUpClicked(characterState.value.name)}
 				transformPending={!eventEvaluationState.value.character_changed?.aiProcessingComplete}
 				transformLabel={eventEvaluationState.value.character_changed?.changed_into}
-				onTransform={() =>
+				handleTransform={() =>
 					(eventEvaluationState.value.character_changed!.showEventConfirmationDialog = true)}
 				abilitiesPending={!eventEvaluationState.value.abilities_learned?.aiProcessingComplete}
-				onLearnAbilities={() =>
+				handleLearnAbilities={() =>
 					(eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = true)}
-				onOpenSpells={() => useSpellsAbilitiesModal.showModal()}
-				onOpenInventory={() => useItemsModal.showModal()}
-				onOpenUtility={() => utilityModal.showModal()}
+				handleOpenSpells={() => useSpellsAbilitiesModal.showModal()}
+				handleOpenInventory={() => useItemsModal.showModal()}
+				handleOpenUtility={() => utilityModal.showModal()}
 				busy={isAiGeneratingState}
 			/>
 		{/if}
 		<ActionInputForm
 			bind:this={actionInputFormComponent}
 			bind:receiver={customActionReceiver}
-			onSubmit={(text, receiver) => onCustomActionSubmitted(text, receiver === 'Character Action')}
+			handleSubmit={(text, receiver) =>
+				onCustomActionSubmitted(text, receiver === 'Character Action')}
 		/>
 	{/if}
 

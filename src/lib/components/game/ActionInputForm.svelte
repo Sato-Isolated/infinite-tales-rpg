@@ -4,15 +4,15 @@
 
 <script lang="ts">
 	export let receiver: Receiver = 'Character Action';
-	export let onSubmit: (text: string, receiver: Receiver) => void;
+	export let handleSubmit: (text: string, receiver: Receiver) => void;
 	let inputRef: HTMLInputElement;
 	export function clear() {
 		if (inputRef) inputRef.value = '';
 	}
-	const handleSubmit = (e: Event) => {
+	const onFormSubmit = (e: Event) => {
 		e.preventDefault();
 		if (!inputRef?.value) return;
-		onSubmit(inputRef.value, receiver);
+		handleSubmit(inputRef.value, receiver);
 		clear();
 	};
 
@@ -24,7 +24,7 @@
 	};
 </script>
 
-<form id="input-form" class="p-4 pb-2" onsubmit={handleSubmit}>
+<form id="input-form" class="p-4 pb-2" onsubmit={onFormSubmit}>
 	<div class="w-full lg:join">
 		<select bind:value={receiver} class="select select-bordered w-full lg:w-fit">
 			<option>Character Action</option>

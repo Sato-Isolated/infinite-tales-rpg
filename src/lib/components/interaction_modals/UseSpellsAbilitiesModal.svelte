@@ -25,8 +25,8 @@
 	} = $props();
 
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	// eslint-disable-next-line svelte/valid-compile
-	let targetModalRef;
+	// dialog ref is mutated at runtime; make it reactive
+	let targetModalRef = $state<any>();
 	let abilityActionState = $state({} as Action);
 
 	function mapAbilityToAction(ability: Ability) {
