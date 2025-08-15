@@ -115,6 +115,7 @@
 	import ActionInputForm from '$lib/components/game/ActionInputForm.svelte';
 	// (refactor note) skill progression helpers kept inline for now; extraction deferred
 	import UtilityModal from '$lib/components/interaction_modals/UtilityModal.svelte';
+	import { createGameController } from './gameController';
 	// Element/component refs (dialogs, child components)
 	let diceRollDialog = $state<any>(),
 		useSpellsAbilitiesModal = $state<any>(),
@@ -248,6 +249,9 @@
 		initialEventEvaluationState
 	);
 
+	// Controller instance
+	let controller: ReturnType<typeof createGameController> | undefined;
+
 	//feature toggles
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 	let useDynamicCombat = useLocalStorage('useDynamicCombat', false);
@@ -280,6 +284,73 @@
 		eventAgent = new EventAgent(llm);
 		characterAgent = new CharacterAgent(llm);
 
+		// Create controller after agents are ready
+		controller = createGameController({
+			agents: { gameAgent, summaryAgent, actionAgent, combatAgent, campaignAgent },
+			state: {
+				getCurrentGameActionState: () => currentGameActionState,
+				isGameEnded,
+				isAiGeneratingState: {
+					get: () => isAiGeneratingState,
+					set: (v: boolean) => (isAiGeneratingState = v)
+				},
+				didAIProcessActionState: {
+					get: () => didAIProcessActionState,
+					set: (v: boolean) => (didAIProcessActionState = v)
+				},
+				resetShowXLastStoryProgressions: () => (showXLastStoryPrgressions = 0),
+				storyChunkReset: () => (storyChunkState = ''),
+				playerCharacterId: playerCharacterIdState,
+				playerCharactersGameState,
+				playerCharactersIdToNamesMapState,
+				npcState,
+				inventoryState,
+				systemInstructionsState,
+				storyState,
+				historyMessagesState,
+				characterActionsState,
+				thoughtsState,
+				gameActionsState,
+				characterState,
+				characterStatsState,
+				relatedStoryHistoryState,
+				relatedActionHistoryState,
+				customMemoriesState,
+				customGMNotesState,
+				additionalStoryInputState,
+				additionalActionInputState,
+				gameSettingsState,
+				useDynamicCombat
+			},
+			helpers: {
+				getLatestStoryMessages,
+				addCampaignAdditionalStoryInput,
+				getGameMasterNotesForCampaignChapter,
+				getCurrentCampaignChapter,
+				openDiceRollDialog,
+				handleError,
+				resetStatesAfterActionProcessed,
+				checkGameEnded,
+				getRelatedHistoryForStory,
+				checkForNewNPCs,
+				checkForLevelUp,
+				onStoryStreamUpdate,
+				onThoughtStreamUpdate,
+				applyGameEventEvaluation,
+				getCurrentDiceRollResult: () => diceRollDialog?.returnValue
+			},
+			skills: {
+				skillsProgressionForCurrentActionState: {
+					get: () => skillsProgressionForCurrentActionState,
+					set: (v) => (skillsProgressionForCurrentActionState = v)
+				},
+				addSkillProgression,
+				advanceSkillIfApplicable,
+				determineProgressionForAction,
+				addSkillsIfApplicable
+			}
+		});
+
 		migrateStates();
 		const currentCharacterName = characterState.value.name;
 		let characterId = getCharacterTechnicalId(
@@ -305,7 +376,21 @@
 
 		// Start game when not already started
 		if (!currentGameActionState?.story) {
-			await initializeGame();
+			await controller!.sendAction({
+				characterName: characterState.value.name,
+				text: GameAgent.getStartingPrompt()
+			});
+			if (gameActionsState.value.length > 0) {
+				const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
+					$state.snapshot(characterStatsState.value.resources),
+					playerCharacterIdState,
+					characterState.value.name,
+					$state.snapshot(gameActionsState.value),
+					$state.snapshot(playerCharactersGameState)
+				);
+				gameActionsState.value = updatedGameActionsState;
+				playerCharactersGameState = updatedPlayerCharactersGameState;
+			}
 		} else {
 			await initializeGameFromSavedState();
 		}
@@ -364,7 +449,7 @@
 	}
 
 	async function initializeGame() {
-		await sendAction({
+		await controller!.sendAction({
 			characterName: characterState.value.name,
 			text: GameAgent.getStartingPrompt()
 		});
@@ -481,7 +566,7 @@
 
 			additionalStoryInputState.value =
 				getDiceRollPromptAddition(result) + '\n' + (additionalStoryInputState.value || '');
-			sendAction(chosenActionState.value, false);
+			controller!.sendAction(chosenActionState.value, false);
 		});
 	}
 
@@ -519,60 +604,14 @@
 				costString = `\n${chosenActionState.value.resource_cost?.resource_key} cost: 0`;
 			}
 			additionalStoryInputState.value += costString;
-			await sendAction(chosenActionState.value, true);
+			await controller!.sendAction(chosenActionState.value, true);
 		}
 		actionInputFormComponent?.clear?.();
 		customActionImpossibleReasonState = undefined;
 	}
 
 	//TODO depends on getActionPromptForCombat
-	async function getCombatAndNPCState(
-		action: Action,
-		isGameEnded: boolean,
-		currentGameActionState: GameActionState,
-		npcState: NPCState,
-		inventoryState: InventoryState,
-		customSystemInstruction: string,
-		customCombatAgentInstruction: string,
-		latestStoryMessages: LLMMessage[],
-		storyState: Story,
-		playerCharactersGameState: PlayerCharactersGameState,
-		playerCharactersIdToNamesMapState: PlayerCharactersIdToNamesMap,
-		combatAgent: CombatAgent,
-		useDynamicCombat: boolean
-	): Promise<{
-		additionalStoryInput: string;
-		allCombatDeterminedActionsAndStatsUpdate?: Awaited<
-			ReturnType<typeof combatAgent.generateActionsFromContext>
-		>;
-	}> {
-		let deadNPCs: string[] = [];
-		let additionalStoryInput = '';
-		let allCombatDeterminedActionsAndStatsUpdate;
-		if (!isGameEnded && currentGameActionState.is_character_in_combat) {
-			if (useDynamicCombat) {
-				const combatObject = await getActionPromptForCombat(
-					action,
-					currentGameActionState,
-					npcState,
-					inventoryState,
-					customSystemInstruction,
-					customCombatAgentInstruction,
-					latestStoryMessages,
-					storyState,
-					playerCharactersGameState,
-					playerCharactersIdToNamesMapState,
-					combatAgent
-				);
-				//dynamic combat already handled the getNPCsHealthStatePrompt
-				additionalStoryInput += combatObject.additionalStoryInput;
-				allCombatDeterminedActionsAndStatsUpdate = combatObject.determinedActionsAndStatsUpdate;
-			}
-		}
-		deadNPCs = npcLogic.removeDeadNPCs(npcState);
-		additionalStoryInput += CombatAgent.getNPCsHealthStatePrompt(deadNPCs);
-		return { additionalStoryInput, allCombatDeterminedActionsAndStatsUpdate };
-	}
+	// getCombatAndNPCState extracted into controller
 
 	//TODO sendAction should not be handled here so it can be externally called
 	async function checkGameEnded() {
@@ -581,7 +620,7 @@
 		);
 		if (!isGameEnded.value && emptyResourceKeys.length > 0) {
 			isGameEnded.value = true;
-			await sendAction({
+			await controller!.sendAction({
 				characterName: characterState.value.name,
 				text: GameAgent.getGameEndedPrompt(emptyResourceKeys)
 			});
@@ -676,72 +715,7 @@
 	}
 
 	// Helper to prepare additional story input by incorporating combat prompts
-	async function prepareAdditionalStoryInput(
-		action: Action,
-		initialAdditionalStoryInput: string
-	): Promise<{
-		finalAdditionalStoryInput: string;
-		combatAndNPCState: {
-			additionalStoryInput: string;
-			allCombatDeterminedActionsAndStatsUpdate?: Awaited<
-				ReturnType<typeof combatAgent.generateActionsFromContext>
-			>;
-		};
-	}> {
-		let additionalStoryInput = initialAdditionalStoryInput || '';
-
-		// Retrieve combat and NPC-related story additions.
-		const combatAndNPCState = await getCombatAndNPCState(
-			action,
-			isGameEnded.value,
-			currentGameActionState,
-			npcState.value,
-			inventoryState.value,
-			systemInstructionsState.value.generalSystemInstruction,
-			systemInstructionsState.value.combatAgentInstruction,
-			getLatestStoryMessages(),
-			storyState.value,
-			playerCharactersGameState,
-			playerCharactersIdToNamesMapState.value,
-			combatAgent,
-			useDynamicCombat.value
-		);
-		// Combine combat-related additional story input.
-		additionalStoryInput += combatAndNPCState.additionalStoryInput;
-
-		additionalStoryInput = await addCampaignAdditionalStoryInput(action, additionalStoryInput);
-
-		const gmNotes = getGameMasterNotesForCampaignChapter(
-			getCurrentCampaignChapter(),
-			currentGameActionState.currentPlotPoint
-		);
-		if (customGMNotesState.value) {
-			gmNotes.unshift(customGMNotesState.value);
-		}
-		additionalStoryInput += GameAgent.getPromptForGameMasterNotes(gmNotes);
-
-		if (action.type?.toLowerCase() === 'crafting') {
-			additionalStoryInput += GameAgent.getCraftingPrompt();
-		}
-		// Add any extra side effects that should modify the story input.
-		additionalStoryInput = gameLogic.addAdditionsFromActionSideeffects(
-			action,
-			additionalStoryInput,
-			gameSettingsState.value.randomEventsHandling,
-			currentGameActionState.is_character_in_combat,
-			diceRollDialog.returnValue //TODO better way to pass the result ?, its string here
-		);
-		if (!additionalStoryInput.includes('sudo')) {
-			additionalStoryInput +=
-				'\n\n' +
-				'Before responding always review the system instructions and apply the given rules.';
-		}
-
-		// Update the store for additional story input.
-		additionalStoryInputState.value = additionalStoryInput;
-
-		return { finalAdditionalStoryInput: additionalStoryInput, combatAndNPCState };
-	}
+	// prepareAdditionalStoryInput extracted into controller
 
 	const applyGameEventEvaluation = (evaluated: EventEvaluation) => {
 		if (!evaluated) {
@@ -777,129 +751,7 @@
 	};
 
 	// Helper to process the AI story progression and update game state accordingly.
-	async function processStoryProgression(
-		action: Action,
-		additionalStoryInput: string,
-		relatedHistory: string[],
-		isCharacterInCombat: boolean,
-		combatAndNPCState: {
-			additionalStoryInput: string;
-			allCombatDeterminedActionsAndStatsUpdate?: Awaited<
-				ReturnType<typeof combatAgent.generateActionsFromContext>
-			>;
-		}
-	) {
-		thoughtsState.value.storyThoughts = '';
-		const { newState, updatedHistoryMessages } = await gameAgent.generateStoryProgression(
-			onStoryStreamUpdate,
-			onThoughtStreamUpdate,
-			action,
-			additionalStoryInput,
-			systemInstructionsState.value.generalSystemInstruction,
-			systemInstructionsState.value.storyAgentInstruction,
-			isCharacterInCombat ? systemInstructionsState.value.combatAgentInstruction : '',
-			historyMessagesState.value,
-			storyState.value,
-			characterState.value,
-			playerCharactersGameState,
-			inventoryState.value,
-			relatedHistory,
-			gameSettingsState.value
-		);
-
-		if (newState?.story) {
-			checkForNewNPCs(newState);
-			npcLogic.addNPCNamesToState(newState.currently_present_npcs, npcState.value);
-			// If combat provided a specific stat update, use it.
-			if (combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate) {
-				newState.stats_update =
-					combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate?.stats_update ||
-					newState.stats_update;
-				applyInventoryUpdate(inventoryState.value, newState);
-			} else {
-				// Otherwise, apply the new state to the game state.
-				gameLogic.applyGameActionState(
-					playerCharactersGameState,
-					playerCharactersIdToNamesMapState.value,
-					npcState.value,
-					inventoryState.value,
-					$state.snapshot(newState)
-				);
-			}
-			console.log('new state', stringifyPretty(newState));
-			updateMessagesHistory(updatedHistoryMessages);
-			const skillName = getSkillIfApplicable(characterStatsState.value, action);
-			console.log('skillName to improve', skillName);
-			if (skillName) {
-				//if no dice was rolled, use difficulty
-				if (skillsProgressionForCurrentActionState === undefined) {
-					skillsProgressionForCurrentActionState = determineProgressionForAction(
-						action,
-						skillsProgressionForCurrentActionState
-					);
-				}
-				addSkillProgression(skillName, skillsProgressionForCurrentActionState);
-				advanceSkillIfApplicable(skillName);
-			}
-
-			resetStatesAfterActionProcessed();
-
-			// Let the summary agent shorten the history, if needed.
-			const { newHistory } = await summaryAgent.summarizeStoryIfTooLong(historyMessagesState.value);
-			historyMessagesState.value = newHistory;
-			// Append the new game state to the game actions.
-			gameActionsState.value = [
-				...gameActionsState.value,
-				{
-					...newState,
-					id: gameActionsState.value.length
-				}
-			];
-			const time = new Date().toLocaleTimeString();
-			console.log('Complete parsing:', time);
-			storyChunkState = '';
-			await checkGameEnded();
-
-			if (!isGameEnded.value) {
-				getRelatedHistoryForStory();
-				eventAgent
-					.evaluateEvents(
-						historyMessagesState.value.slice(-6).map((m) => m.content),
-						characterStatsState.value.spells_and_abilities.map((a) => a.name)
-					)
-					.then((evaluation) => {
-						applyGameEventEvaluation(evaluation.event_evaluation);
-						thoughtsState.value.eventThoughts = evaluation.thoughts;
-					});
-				// Generate the next set of actions.
-				actionAgent
-					.generateActions(
-						currentGameActionState,
-						historyMessagesState.value,
-						storyState.value,
-						characterState.value,
-						characterStatsState.value,
-						inventoryState.value,
-						systemInstructionsState.value.generalSystemInstruction,
-						systemInstructionsState.value.actionAgentInstruction,
-						relatedHistory,
-						gameSettingsState.value?.aiIntroducesSkills,
-						newState.is_character_restrained_explanation,
-						additionalActionInputState.value
-					)
-					.then(({ thoughts, actions }) => {
-						if (actions) {
-							console.log(stringifyPretty(actions));
-							characterActionsState.value = actions;
-							// legacy renderGameState call removed
-							addSkillsIfApplicable(actions);
-						}
-						thoughtsState.value.actionsThoughts = thoughts;
-					});
-				checkForLevelUp();
-			}
-		}
-	}
+	// processStoryProgression extracted into controller
 
 	function getRelatedHistoryForStory() {
 		summaryAgent
@@ -914,56 +766,7 @@
 	}
 
 	// Main sendAction function that orchestrates the action processing.
-	async function sendAction(action: Action, rollDice = false) {
-		try {
-			if (rollDice) {
-				if (relatedActionHistoryState.value.length === 0) {
-					getRelatedHistory(
-						summaryAgent,
-						action,
-						gameActionsState.value,
-						$state.snapshot(relatedStoryHistoryState.value),
-						$state.snapshot(customMemoriesState.value)
-					).then((relatedHistory) => {
-						relatedActionHistoryState.value = relatedHistory;
-					});
-				}
-				openDiceRollDialog();
-			} else {
-				showXLastStoryPrgressions = 0;
-				isAiGeneratingState = true;
-
-				// Prepare the additional story input (including combat and chapter info)
-				const { finalAdditionalStoryInput, combatAndNPCState } = await prepareAdditionalStoryInput(
-					action,
-					additionalStoryInputState.value
-				);
-				if (relatedActionHistoryState.value.length === 0) {
-					relatedActionHistoryState.value = await getRelatedHistory(
-						summaryAgent,
-						action,
-						gameActionsState.value,
-						$state.snapshot(relatedStoryHistoryState.value),
-						$state.snapshot(customMemoriesState.value)
-					);
-				}
-				// Process the AI story progression and update game state
-				didAIProcessActionState = false;
-				await processStoryProgression(
-					action,
-					finalAdditionalStoryInput,
-					relatedActionHistoryState.value,
-					currentGameActionState.is_character_in_combat,
-					combatAndNPCState
-				);
-				didAIProcessActionState = true;
-				isAiGeneratingState = false;
-			}
-		} catch (e) {
-			isAiGeneratingState = false;
-			handleError(e as string);
-		}
-	}
+	// sendAction extracted into controller
 
 	// renderGameState removed; replaced by declarative components
 
@@ -1047,7 +850,7 @@
 
 		additionalStoryInputState.value =
 			targetAddition + abilityAddition + (additionalStoryInputState.value || '');
-		await sendAction(
+		await controller!.sendAction(
 			action,
 			gameLogic.mustRollDice(action, currentGameActionState.is_character_in_combat)
 		);
@@ -1087,7 +890,10 @@
 			} else {
 				chosenActionState.value = $state.snapshot(action);
 				addSkillsIfApplicable([action]);
-				sendAction(action, mustRollDice(action, currentGameActionState.is_character_in_combat));
+				controller!.sendAction(
+					action,
+					mustRollDice(action, currentGameActionState.is_character_in_combat)
+				);
 			}
 		}
 		itemForSuggestActionsState = undefined;
@@ -1143,7 +949,7 @@
 				customActionImpossibleReasonState = 'not_enough_resource';
 			} else {
 				customActionImpossibleReasonState = undefined;
-				await sendAction(
+				await controller!.sendAction(
 					action,
 					gameLogic.mustRollDice(action, currentGameActionState.is_character_in_combat)
 				);
@@ -1171,7 +977,7 @@
 			additionalStoryInputState.value +=
 				'\nsudo: Ignore the rules and play out this action even if it should not be possible!\n' +
 				'If this action contradicts the PAST STORY PLOT, adjust the narrative to fit the action.';
-			await sendAction(action, false);
+			await controller!.sendAction(action, false);
 		}
 	};
 	const onGMQuestionClosed = (
@@ -1206,7 +1012,7 @@
 				'Player character is doing a long rest, handle the resources regeneration according GAME rules and describe the scene. If there are no specific GAME rules, increase all resources by 100% of the maximum.';
 		}
 		if (text) {
-			sendAction(
+			controller!.sendAction(
 				{
 					characterName: characterState.value.name,
 					text,
@@ -1488,7 +1294,7 @@
 		{currentGameActionState}
 		sendAction={(a, roll) => {
 			chosenActionState.value = $state.snapshot(a);
-			sendAction(a, roll);
+			controller!.sendAction(a, roll);
 		}}
 		isGameEnded={isGameEnded.value}
 		playerResources={playerCharactersGameState[playerCharacterIdState]}
@@ -1505,7 +1311,10 @@
 			<StaticActionsPanel
 				levelUpEnabled={levelUpState.value.buttonEnabled}
 				handleContinue={() =>
-					sendAction({ characterName: characterState.value.name, text: 'Continue The Tale' })}
+					controller!.sendAction({
+						characterName: characterState.value.name,
+						text: 'Continue The Tale'
+					})}
 				handleLevelUp={() => levelUpClicked(characterState.value.name)}
 				transformPending={!eventEvaluationState.value.character_changed?.aiProcessingComplete}
 				transformLabel={eventEvaluationState.value.character_changed?.changed_into}
