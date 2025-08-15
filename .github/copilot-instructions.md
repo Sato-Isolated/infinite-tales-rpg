@@ -1,210 +1,187 @@
+## Infinite Tales RPG – Copilot Project Instructions
+
+These instructions guide AI assistants (GitHub Copilot, Chat models) to produce code consistent with this repository. Keep responses concise but complete. Always start complex answers with a short pseudocode / plan, then implement.
+
 ---
-description:
-globs:
-alwaysApply: true
+### 1. Base Standards (Keep & Enforce)
+Simplicity • Readability • Maintainability • Testability • Reusability • Reasonable Performance.
+Use early returns. Use Tailwind + DaisyUI only for styling (no inline style attributes, no raw CSS unless @apply in rare shared utility layers). Prefer `class:active={isActive}` style toggles over ternaries when possible.
+
+Accessibility: interactive elements need semantic tags or `role`, `aria-label`, keyboard focus (`tabindex="0"` if non-native). Handlers are prefixed with `handle` (e.g., `handleClick`).
+
+Svelte 5 runes: import from `svelte` and use `$state`, `$derived`, `$effect`. Do not use legacy `$:` reactive labels.
+
 ---
+### 2. Tech Stack
+SvelteKit 2 (Svelte 5 runes) • TypeScript 5 • Vite 5 • TailwindCSS + DaisyUI • Vitest (unit) • Playwright (E2E) • Vercel deploy • AI Providers (Gemini, Pollinations) • Local state persistence via custom `useLocalStorage`.
 
-Modible Project Standards
+---
+### 3. High-Level Architecture
+Layers:
+1. UI Pages & Components (`src/routes`, `src/lib/components`).
+2. AI Agents (`src/lib/ai/agents/*`) orchestrating prompts & structured JSON outputs.
+3. Game Logic Helpers (`src/routes/game/*Logic.ts`).
+4. State Persistence (`src/lib/state/*` + `useLocalStorage`).
+5. LLM Providers (`src/lib/ai/*Provider.ts`, `llm.ts`).
 
-Version Numbers
+Data Flow Loop (simplified): UI action -> prepare context -> call appropriate Agent(s) -> stream thoughts/story -> parse & update local states -> summarization & memory retrieval -> regenerate actions -> UI refresh.
 
-SvelteKit: 2.x (which uses Svelte 5.x)
-TypeScript: 5.x
-Vite: 5.x
+---
+### 4. Core AI Agents (Responsibilities)
+Files under `src/lib/ai/agents/`:
+| Agent | Purpose |
+|-------|---------|
+| `gameAgent.ts` | Main story progression (narrative text + structured JSON: stats, inventory, xp, image prompt, plot hints). |
+| `actionAgent.ts` | Generates next possible actions (list + enriched metadata). |
+| `characterAgent.ts` | Character narrative description & image prompt. |
+| `characterStatsAgent.ts` | Initialize/update character numerical & categorical stats/resources. |
+| `combatAgent.ts` | Combat resolution & combat-oriented JSON updates. |
+| `campaignAgent.ts` | Multi-chapter campaign generation & chapter advancement support. |
+| `eventAgent.ts` | Detect & emit special events (abilities unlock, transformations). |
+| `summaryAgent.ts` | Story/history summarization & retrieval of related details (context pruning). |
+| `jsonFixingInterceptorAgent.ts` | Attempts to repair malformed JSON from LLM before parsing. |
+| `storyAgent.ts` | (If present) Additional story-focused tasks / legacy naming. |
+| `mappers.ts` | Helper mappers / type conversions for agent outputs. |
 
-As a Senior Frontend Developer, you are now tasked with providing expert answers related to Svelte, SvelteKit, JavaScript, TypeScript, TailwindCSS, DaisyUI, HTML, and CSS. When responding to questions, follow the Chain of Thought method. First, outline a detailed pseudocode plan step by step, then confirm it, and proceed to write the code.
+Never silently change JSON contracts. If modifying: update prompt, parsing code, tests, and this file.
 
-Remember the following important mindset when providing code:
+---
+### 5. LLM Providers
+`geminiProvider.ts` handles streaming (story & thoughts), safety settings, fallback logic. `pollinationsProvider.ts` builds image prompts & retrieves image. `llmProvider.ts` centralizes provider selection. `llm.ts` defines shared prompt fragments (e.g. `LANGUAGE_PROMPT`).
 
-Simplicity
-Readability
-Performance
-Maintainability
-Testability
-Reusability
+Streaming callbacks (expected shapes) must remain stable: `onStoryStreamUpdate(partialText)`, `onThoughtStreamUpdate(kind, partialThought)`.
 
-Adhere to the following guidelines in your code:
+---
+### 6. State Management
+Pattern: `const someState = useLocalStorage<Type>('stateKey', initialValue);` All principal keys:
+`characterState`, `characterStatsState`, `storyState`, `campaignState`, `currentChapterState`, `gameActionsState`, `historyMessagesState`, `characterActionsState`, `npcState`, `inventoryState`, `relatedStoryHistoryState`, `relatedActionHistoryState`, `customMemoriesState`, `thoughtsState`, `gameSettingsState`, `aiConfigState`, `eventEvaluationState`, `levelUpState`, `skillsProgressionState`, `isGameEnded`, `dice`, `ttsVoiceState`.
 
-Utilize early returns for code readability.
-Use Tailwind classes and DaisyUI for styling HTML elements instead of CSS or <style> tags.
-Prefer "class:" instead of the tertiary operator in class tags when possible.
-Employ descriptive variable and function/const names, and prefix event functions with "handle," such as "handleClick" for onClick and "handleKeyDown" for onKeyDown.
-Implement accessibility features on elements, including tabindex="0", aria-label, and similar attributes for tags like <button>.
-Use consts instead of functions, and define a type if possible.
+Use snapshots before deep mutations when required: `$state.snapshot(variable.value)`.
 
-Your responses should focus on providing correct, best practice, DRY principle (Don't Repeat Yourself), bug-free, fully functional, and working code aligned with the listed rules above. Prioritize easy and readable code over performance and fully implement all requested functionality. Ensure that the code is complete and thoroughly verified, including all required imports and proper naming of key components. Be prepared to answer questions specifically about Svelte, SvelteKit, JavaScript, TypeScript, TailwindCSS, DaisyUI, HTML, and CSS. Your responses should align with the provided coding environment and implementation guidelines.
+---
+### 7. Gameplay Flow
+1. Creation (tale/campaign/character) -> initial agents invoked for baseline state.
+2. On `game/+page.svelte`, `sendAction()` triggers Action or Story flow.
+3. `actionAgent` proposes candidate actions.
+4. Player selects or inputs custom action; may trigger dice roll (combat/skill gating) via `gameLogic.ts`.
+5. Context is enriched (campaign advancement, combat, memory retrieval) -> `gameAgent.generateStoryProgression`.
+6. Streaming updates UI; on completion, structured JSON parsed & local states updated.
+7. Summarization if thresholds exceeded (`summaryAgent`).
+8. Event evaluation (`eventAgent`).
+9. Regenerate actions -> repeat.
 
-Preferred Syntax and Patterns
+---
+### 8. JSON Contracts (Do Not Break)
+Story Progression JSON (gameAgent): keys include `story`, `xp_gain`, `inventory_update`, `stats_update`, `image_prompt`, `plotPointAdvancingNudgeExplanation`, etc. Campaign JSON: chapters list with plot points metadata. Summary JSON: `{ keyDetails: string[], story: string }`. Related history retrieval JSON: `{ relatedDetails: Array<{ storyReference: string; relevanceScore: number }> }`. Combat/stat update JSON: defined in combat & character stats prompts (enums uppercase). Maintain stable casing & enumeration values.
 
-Svelte Components
+If adding a field: 1) extend type/interface, 2) adjust prompt instructions, 3) add parser & safe default, 4) write test, 5) document here.
 
-Use .svelte extension for Svelte components
-Use TypeScript syntax in <script> tags:
-svelteCopy
+---
+### 9. Coding Conventions (Project-Specific)
+Svelte 5 runes only for reactivity. Handlers: `handleX`. Prefer `const` arrow functions over `function` declarations. Tailwind + DaisyUI classes only; use semantic HTML. Derive computed values using `$derived`. Use `$effect` for side-effects; keep side-effects idempotent. Avoid complex logic in components—extract into logic or agent files.
 
-<script lang="ts">
-  // TypeScript code here
-</script>
+Error handling: central utility (e.g., `handleError`) & console debug through prettified JSON (`stringifyPretty`). Always catch JSON parse errors with fallback path.
 
-State Management
+---
+### 10. Testing Strategy
+Unit (Vitest): pure logic (`*Logic.ts`, parsers, mappers). Write at least one happy path + one edge case when altering logic. E2E (Playwright): key user flows (start game, choose action, progression streaming). Add tests alongside code or under `tests/`. Keep tests deterministic; mock LLM outputs where possible.
 
-I have a function useLocalStorage for global state that needs to be persisted:
-typescriptCopy
-const myVariableState = useLocalStorage<type>('myVariableState', initialValue);
+---
+### 11. Performance & Streaming
+Minimize token usage: rely on summaries (`summaryAgent`) & related retrieval. Avoid sending entire raw history; include only recent actions, summarized story, and related details. Lazy-load heavy components (import on demand) if they are not part of initial above-the-fold game screen.
 
-Typing
+---
+### 12. Memory & Context
+`summaryAgent` compresses long histories; `retrieveRelatedHistory` fetches targeted context slices. Custom player memories override summarization omission—always include them if relevant. When building prompts: order context from most to least recent/relevant.
 
-Use TypeScript for type definitions
-Create interfaces or types for component props:
-typescriptCopy
-interface MyComponentProps {
-someValue: string;
-optionalValue?: number;
-}
+---
+### 13. Dice & Skill Checks
+`gameLogic.ts` determines if dice roll required (`mustRollDice`). On success/failure, inject side-effect additions using `addAdditionsFromActionSideeffects`. Include outcome descriptors in story context to keep narrative coherent.
 
-Imports
+---
+### 14. Campaign Progression
+Use `campaignLogic.ts` functions (`advanceChapterIfApplicable`, `getNextChapterPrompt`) to transition chapters. Keep chapter transitions explicit in story JSON to help LLM maintain continuity.
 
-Use aliased imports where applicable (as defined in svelte.config.js):
-typescriptCopy
-import SomeComponent from '$lib/components/SomeComponent.svelte';
-import { someUtil } from '$lib/utils';
+---
+### 15. Skills & Level Progression
+Increment skills via progression utilities (e.g., `advanceSkillIfApplicable`). Level thresholds defined in `levelLogic.ts`; ensure xp gains feed into that logic before UI updates.
 
-Async Operations
+---
+### 16. Events & Abilities
+`eventAgent` evaluates triggers post-story update. If new ability added, ensure UI surfaces it and state persisted. Document new ability schema here if structure changes.
 
-Prefer async/await syntax over .then() chains
-Use onMount for component initialization that requires async operations
+---
+### 17. Error Handling & Fallback
+If primary provider unstable, fallback path in providers chooses alternative (e.g., Pollinations for images, alternate LLM if configured). Keep retry counts bounded to avoid infinite loops. Always surface a user-friendly message + log raw error.
 
-Styling
+---
+### 18. Adding / Modifying Features Checklist
+Before coding:
+1. Identify affected Agent(s) or Logic file.
+2. Assess JSON contract change? If yes, follow Section 8 procedure.
+3. Need new persisted key? Add via `useLocalStorage` with clear name.
+4. UI: create reusable component under `src/lib/components` (single responsibility).
+5. Add accessibility attributes.
+6. Update tests (logic &/or E2E stub). Ensure coverage of new branches / error paths.
+7. Consider summarization & context size impact.
+8. Update this instructions file if any Agent/contract changes.
+9. Run lint + tests locally.
+10. Keep code minimal, explicit, with early returns.
 
-Use Tailwind CSS and DaisyUI for styling
-Utilize Tailwind's utility classes directly in the markup
-For complex components, consider using Tailwind's @apply directive in a scoped <style> block
-Use dynamic classes with template literals when necessary:
-svelteCopy
+---
+### 19. Common Pitfalls
+Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting snapshots before deep object mutation (breaks reactivity). Expanding prompt context too broadly (token bloat). Altering enum casing. Adding blocking heavy computations inside `$effect` causing UI jank.
 
-<div class={`bg-blue-500 p-4 ${isActive ? 'opacity-100' : 'opacity-50'}`}></div>
+---
+### 20. Quick Reference Links
+`game/+page.svelte` • `gameAgent.ts` • `actionAgent.ts` • `summaryAgent.ts` • `campaignAgent.ts` • `combatAgent.ts` • `characterStatsAgent.ts` • `eventAgent.ts` • `memoryLogic.ts` • `gameLogic.ts` • `campaignLogic.ts` • `llm.ts` • `geminiProvider.ts` • `pollinationsProvider.ts` • `useLocalStorage.svelte.ts` (state util).
 
-File Structure
+---
+### 21. When Generating Code (AI Assistant Rules)
+Always:
+* Start with a brief plan/pseudocode.
+* Provide full component or module (with imports) — no ellipses unless user asks.
+* Preserve JSON contracts & types.
+* Use `handleX` naming for events.
+* Use Tailwind/DaisyUI classes only.
+* Add minimal JSDoc for complex functions.
+* Avoid repetition (extract helpers).
 
-Group related components in subdirectories under src/lib/components/
-Keep pages in src/routes/
-Use +page.svelte for page components and +layout.svelte for layouts
-Place reusable utility functions in src/lib/utils/
-Store types and interfaces in src/lib/types/
+Return only what user requested; avoid unsolicited large rewrites.
 
-Component Design
+---
+### 22. Extension Guidelines (If Creating New Agent)
+Structure:
+```ts
+// src/lib/ai/agents/newCoolAgent.ts
+import { someSharedPrompt } from '../llm';
+import type { AIProvider } from '../llmProvider';
 
-Follow the single responsibility principle
-Create small, reusable components
-Use props for component configuration
-Utilize Svelte's slot system for flexible component composition
+export interface NewCoolResult { /* ... */ }
 
-Performance Optimization
-
-Lazy load components and modules when possible
-Use Svelte's transition API for smooth UI animations
-Implement proper caching strategies for API requests
-
-Testing
-
-Write unit tests for utility functions and complex logic
-Create component tests using a testing library compatible with Svelte (e.g., Svelte Testing Library)
-Implement end-to-end tests for critical user flows
-
-Accessibility
-
-Ensure proper semantic HTML structure
-Use ARIA attributes when necessary
-Implement keyboard navigation for interactive elements
-Maintain sufficient color contrast ratios
-
-Code Quality
-
-Use ESLint with the recommended Svelte and TypeScript configurations
-Implement Prettier for consistent code formatting
-Conduct regular code reviews to maintain code quality and consistency
-
-Documentation
-
-Maintain up-to-date README files for the project and major components
-Use JSDoc comments for functions and complex logic
-Keep inline comments concise and meaningful
-
-I'm using svelte 5 instead of svelte 4 here is an overview of the changes.
-
-# .cursorrunes for Svelte 5
-
-## Overview of Changes
-
-Svelte 5 introduces runes, a set of advanced primitives for controlling reactivity. The runes replace certain non-runes features and provide more explicit control over state and effects.
-
-Snippets, along with render tags, help create reusable chunks of markup inside your components, reducing duplication and enhancing maintainability.
-
-## Event Handlers in Svelte 5
-
-In Svelte 5, event handlers are treated as standard HTML properties rather than Svelte-specific directives, simplifying their use and integrating them more closely with the rest of the properties in the component.
-
-### Svelte 4 vs. Svelte 5:
-
-**Before (Svelte 4):**
-
-```html
-<script>
-	let count = 0;
-	$: double = count * 2;
-	$: {
-		if (count > 10) alert('Too high!');
-	}
-</script>
-<button on:click="{()" ="">count++}> {count} / {double}</button>
+export const newCoolAgent = (provider: AIProvider) => {
+	const generate = async (input: { context: string }) : Promise<NewCoolResult> => {
+		// build prompt pieces (summary, related, recent actions)
+		// call provider.generateJSON or streaming method
+		// parse & validate JSON (try/catch + fallback)
+		return { /* parsed safe object */ };
+	};
+	return { generate };
+};
 ```
 
-**After (Svelte 5):**
+Add tests: `newCoolAgent.test.ts` covering parse success + malformed JSON fallback.
 
-```html
-<script>
-	import { $state, $effect, $derived } from 'svelte';
+---
+### 23. Contribution Quality Gate
+Before opening PR:
+1. `npm run lint` passes.
+2. `npm test` passes (unit + integration subset).
+3. No type errors (`tsc --noEmit`).
+4. Story flow manual smoke: start new tale -> choose action -> see streamed story.
 
-	// Define state with runes
-	let count = $state(0);
+---
+### 24. Recap for Copilot
+If user asks for change: gather context → outline plan → confirm assumptions (max 1 sentence) → produce code → brief explanation. Respect sections above.
 
-	// Option 1: Using $derived for computed values
-	let double = $derived(count * 2);
-
-	// Reactive effects using runes
-	$effect(() => {
-		if (count > 10) alert('Too high!');
-	});
-</script>
-
-<!-- Standard HTML event attributes instead of Svelte directives -->
-<button onclick="{()" ="">count++}> {count} / {double}</button>
-
-<!-- Alternatively, you can compute values inline -->
-<!-- <button onclick={() => count++}>
-  {count} / {count * 2}
-</button> -->
-```
-
-## Key Differences:
-
-1. **Reactivity is Explicit**:
-
-   - Svelte 5 uses `$state()` to explicitly mark reactive variables
-   - `$derived()` replaces `$:` for computed values
-   - `$effect()` replaces `$: {}` blocks for side effects
-
-2. **Event Handling is Standardized**:
-
-   - Svelte 4: `on:click={handler}`
-   - Svelte 5: `onclick={handler}`
-
-3. **Import Runes**:
-
-   - All runes must be imported from 'svelte': `import { $state, $effect, $derived, $props, $slots } from 'svelte';`
-
-4. **No More Event Modifiers**:
-   - Svelte 4: `on:click|preventDefault={handler}`
-   - Svelte 5: `onclick={e => { e.preventDefault(); handler(e); }}`
-
-This creates clearer, more maintainable components compared to Svelte 4's previous syntax by making reactivity explicit and using standardized web platform features.
+End of Instructions.
