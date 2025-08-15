@@ -113,12 +113,12 @@
 	// (refactor note) skill progression helpers kept inline for now; extraction deferred
 	import UtilityModal from '$lib/components/interaction_modals/UtilityModal.svelte';
 	import { createGameController } from './gameController';
+	import { createModalManager } from './modalManager.svelte';
 	// Element/component refs (dialogs, child components)
-	let diceRollDialog = $state<HTMLDialogElement>(),
-		useSpellsAbilitiesModal = $state<any>(),
-		useItemsModal = $state<any>(),
-		utilityModal = $state<any>(),
-		actionInputFormComponent = $state<{ clear?: () => void }>();
+	let actionInputFormComponent = $state<{ clear?: () => void }>();
+
+	// Create modal manager
+	const modalManager = createModalManager();
 
 	//ai state
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
@@ -236,12 +236,6 @@
 	//);
 	let customActionReceiver: 'Game Command' | 'Character Action' | 'GM Question' | 'Dice Roll' =
 		$state('Character Action');
-	let customActionImpossibleReasonState: 'not_enough_resource' | 'not_plausible' | undefined =
-		$state(undefined);
-
-	let gmQuestionState: string = $state('');
-	let customDiceRollNotation: string = $state('');
-	let itemForSuggestActionsState: (Item & { item_id: string }) | undefined = $state();
 	const eventEvaluationState = useLocalStorage<EventEvaluation>(
 		'eventEvaluationState',
 		initialEventEvaluationState
@@ -294,6 +288,7 @@
 				characterAgent,
 				characterStatsAgent
 			},
+			modals: modalManager,
 			state: {
 				getCurrentGameActionState: () => currentGameActionState,
 				isGameEnded,
@@ -345,12 +340,16 @@
 				onStoryStreamUpdate,
 				onThoughtStreamUpdate,
 				applyGameEventEvaluation,
-				getCurrentDiceRollResult: () => diceRollDialog?.returnValue as DiceRollResult | undefined,
-				setGMQuestion: (text: string) => (gmQuestionState = text),
-				setCustomDiceRollNotation: (notation: string) => (customDiceRollNotation = notation),
-				setCustomActionImpossibleReason: (reason) => (customActionImpossibleReasonState = reason),
-				setItemForSuggestActions: (item: any) => (itemForSuggestActionsState = item),
-				setLevelUpState: (state) => (levelUpState.value = state)
+				getCurrentDiceRollResult: () => modalManager.diceRollDialog?.returnValue as DiceRollResult | undefined,
+				setGMQuestion: (text: string) => modalManager.setGMQuestion(text),
+				setCustomDiceRollNotation: (notation: string) => modalManager.setCustomDiceRollNotation(notation),
+				setCustomActionImpossibleReason: (reason) => modalManager.setCustomActionImpossibleReason(reason),
+				setItemForSuggestActions: (item: any) => modalManager.setItemForSuggestActions(item),
+				setLevelUpState: (state) => {
+					modalManager.setLevelUpDialogOpened(state.dialogOpened);
+					modalManager.setLevelUpPlayerName(state.playerName);
+					modalManager.setLevelUpButtonEnabled(state.buttonEnabled);
+				}
 				// Remove complex reactivity callback - not needed with useLocalStorage
 			},
 			skills: {
@@ -486,12 +485,12 @@
 	function openDiceRollDialog() {
 		//TODO showModal can not be used because it hides the dice roll
 		didAIProcessDiceRollActionState.value = false;
-		if (!diceRollDialog) return;
-		diceRollDialog.show();
-		diceRollDialog.addEventListener('close', function sendWithManuallyRolled() {
-			if (!diceRollDialog) return;
-			diceRollDialog.removeEventListener('close', sendWithManuallyRolled);
-			const result = diceRollDialog.returnValue as DiceRollResult | undefined;
+		if (!modalManager.diceRollDialog) return;
+		modalManager.diceRollDialog.show();
+		modalManager.diceRollDialog.addEventListener('close', function sendWithManuallyRolled() {
+			if (!modalManager.diceRollDialog) return;
+			modalManager.diceRollDialog.removeEventListener('close', sendWithManuallyRolled);
+			const result = modalManager.diceRollDialog.returnValue as DiceRollResult | undefined;
 
 			const skillName = getSkillIfApplicable(characterStatsState.value, chosenActionState.value);
 			if (skillName) {
@@ -512,7 +511,7 @@
 
 	async function handleImpossibleAction(tryAnyway: boolean) {
 		if (tryAnyway) {
-			if (customActionImpossibleReasonState === 'not_enough_resource') {
+			if (modalManager.customActionImpossibleReasonState === 'not_enough_resource') {
 				chosenActionState.value = {
 					...chosenActionState.value,
 					action_difficulty:
@@ -541,7 +540,7 @@
 			await controller!.sendAction(chosenActionState.value, true);
 		}
 		actionInputFormComponent?.clear?.();
-		customActionImpossibleReasonState = undefined;
+		modalManager.setCustomActionImpossibleReason(undefined);
 	}
 
 	//TODO depends on getActionPromptForCombat
@@ -701,10 +700,9 @@
 	// renderGameState removed; replaced by declarative components
 
 	function levelUpClicked(playerName: string) {
-		levelUpState.value.playerName = playerName;
 		const shouldOpenDialog = controller!.levelUpClicked(playerName);
 		if (shouldOpenDialog) {
-			levelUpState.value.dialogOpened = true;
+			modalManager.setLevelUpDialogOpened(true);
 		}
 	}
 
@@ -714,7 +712,7 @@
 		getLatestStoryMessagesFromHistory(historyMessagesState.value, numOfActions);
 
 	const handleItemUseChosen = async (item: Action & Item & { item_id: string }) => {
-		itemForSuggestActionsState = controller!.handleItemUseChosen(item);
+		modalManager.setItemForSuggestActions(controller!.handleItemUseChosen(item));
 	};
 
 	const handleTargetedSpellsOrAbility = async (action: Action, targets: string[]) => {
@@ -723,18 +721,18 @@
 
 	const handleCustomDiceRollClosed = () => {
 		controller!.handleCustomDiceRollClosed();
-		customDiceRollNotation = '';
+		modalManager.setCustomDiceRollNotation('');
 		actionInputFormComponent?.clear?.();
 	};
 
 	const handleLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
 		controller!.handleLevelUpModalClosed(aiLevelUp);
-		levelUpState.reset();
+		modalManager.resetLevelUpState();
 	};
 
 	const handleSuggestItemActionClosed = (action?: Action) => {
 		controller!.handleSuggestItemActionClosed(action);
-		itemForSuggestActionsState = undefined;
+		modalManager.setItemForSuggestActions(undefined);
 	};
 
 	const getCurrentCampaignChapter = (): CampaignChapter | undefined =>
@@ -765,7 +763,7 @@
 				content: stringifyPretty(gmAnswerStateAsContext)
 			});
 		}
-		gmQuestionState = '';
+		modalManager.resetGMQuestion();
 	};
 
 	// handleUtilityAction moved to controller
@@ -850,13 +848,13 @@
 	{#if errorState.userMessage && errorState.code != 'memory_retrieval'}
 		<ErrorDialog onclose={handleAIError} />
 	{/if}
-	{#if customActionImpossibleReasonState}
+	{#if modalManager.hasCustomActionImpossibleReason}
 		<ImpossibleActionModal action={chosenActionState.value} onclose={handleImpossibleAction} />
 	{/if}
-	{#if gmQuestionState}
+	{#if modalManager.hasGMQuestion}
 		<GMQuestionModal
 			onclose={handleGMQuestionClosed}
-			question={gmQuestionState}
+			question={modalManager.gmQuestionState}
 			playerCharactersGameState={playerCharactersGameState.value}
 		/>
 	{/if}
@@ -874,7 +872,7 @@
 		/>
 	{/if}
 	<UseSpellsAbilitiesModal
-		bind:dialogRef={useSpellsAbilitiesModal}
+		bind:dialogRef={modalManager.useSpellsAbilitiesModal}
 		playerName={characterState.value.name}
 		resources={playerCharactersGameState.value[playerCharacterIdState]}
 		abilities={characterStatsState.value?.spells_and_abilities}
@@ -883,7 +881,7 @@
 		onclose={handleTargetedSpellsOrAbility}
 	></UseSpellsAbilitiesModal>
 	<UseItemsModal
-		bind:dialogRef={useItemsModal}
+		bind:dialogRef={modalManager.useItemsModal}
 		{onDeleteItem}
 		playerName={characterState.value.name}
 		inventoryState={inventoryState.value}
@@ -895,30 +893,30 @@
 		}}
 		onclose={handleItemUseChosen}
 	></UseItemsModal>
-	{#if itemForSuggestActionsState}
+	{#if modalManager.hasItemSuggestions && modalManager.itemForSuggestActionsState}
 		<SuggestedActionsModal
 			onclose={handleSuggestItemActionClosed}
 			resources={getCurrentCharacterGameState()}
-			{itemForSuggestActionsState}
+			itemForSuggestActionsState={modalManager.itemForSuggestActionsState}
 			{currentGameActionState}
 		/>
 	{/if}
-	{#if levelUpState.value?.dialogOpened}
+	{#if modalManager.shouldShowLevelUpDialog}
 		<LevelUpModal onclose={handleLevelUpModalClosed} />
 	{/if}
 	<UtilityModal
-		bind:dialogRef={utilityModal}
+		bind:dialogRef={modalManager.utilityModal}
 		is_character_in_combat={currentGameActionState.is_character_in_combat}
 		actions={utilityPlayerActions}
 		onclose={(action) => controller!.handleUtilityAction(action)}
 	/>
 	<DiceRollComponent
-		bind:diceRollDialog
+		bind:diceRollDialog={modalManager.diceRollDialog}
 		action={chosenActionState.value}
 		resetState={didAIProcessDiceRollActionState.value}
 	></DiceRollComponent>
-	{#if customDiceRollNotation}
-		<SimpleDiceRoller onClose={handleCustomDiceRollClosed} notation={customDiceRollNotation} />
+	{#if modalManager.hasCustomDiceRoll}
+		<SimpleDiceRoller onClose={handleCustomDiceRollClosed} notation={modalManager.customDiceRollNotation} />
 	{/if}
 	<ResourcesComponent
 		resources={getCurrentCharacterGameState()}
@@ -980,9 +978,9 @@
 				abilitiesPending={!eventEvaluationState.value.abilities_learned?.aiProcessingComplete}
 				handleLearnAbilities={() =>
 					(eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = true)}
-				handleOpenSpells={() => useSpellsAbilitiesModal.showModal()}
-				handleOpenInventory={() => useItemsModal.showModal()}
-				handleOpenUtility={() => utilityModal.showModal()}
+				handleOpenSpells={() => modalManager.openUseSpellsAbilitiesModal()}
+				handleOpenInventory={() => modalManager.openUseItemsModal()}
+				handleOpenUtility={() => modalManager.openUtilityModal()}
 				busy={isAiGeneratingState}
 			/>
 		{/if}

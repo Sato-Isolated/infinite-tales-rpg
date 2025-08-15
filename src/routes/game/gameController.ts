@@ -19,6 +19,7 @@ import { getSkillIfApplicable, applyCharacterChange, addCharacterToPlayerCharact
 import { getXPNeededForLevel, applyLevelUp } from './levelLogic';
 import { refillResourcesFully } from './resourceLogic';
 import type { AiLevelUp, Ability } from '$lib/ai/agents/characterStatsAgent';
+import type { ModalManager } from './modalManager.svelte';
 
 export type ControllerCtx = {
   agents: {
@@ -64,6 +65,7 @@ export type ControllerCtx = {
     gameSettingsState: { value: any };
     useDynamicCombat: { value: boolean };
   };
+  modals: ModalManager;
   helpers: {
     addCampaignAdditionalStoryInput: (action: Action, additionalStoryInput: string) => Promise<string>;
     getGameMasterNotesForCampaignChapter: (chapter: CampaignChapter | undefined, currentPlotPoint?: string) => string[];
@@ -84,7 +86,6 @@ export type ControllerCtx = {
     setCustomActionImpossibleReason: (reason: 'not_enough_resource' | 'not_plausible' | undefined) => void;
     setItemForSuggestActions: (item: any) => void;
     setLevelUpState: (state: { buttonEnabled: boolean; dialogOpened: boolean; playerName: string }) => void;
-    // triggerPlayerResourcesReactivity removed - not needed with useLocalStorage
   };
   skills: {
     skillsProgressionForCurrentActionState: { get: () => number | undefined; set: (v: number | undefined) => void };
@@ -482,12 +483,12 @@ export function createGameController(ctx: ControllerCtx) {
     ctx.state.chosenActionState.value = merged;
     ctx.skills.addSkillsIfApplicable([merged]);
     if (merged.is_possible === false) {
-      ctx.helpers.setCustomActionImpossibleReason('not_plausible');
+      ctx.modals.setCustomActionImpossibleReason('not_plausible');
     } else {
       if (!gameLogic.isEnoughResource(merged, ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId], ctx.state.inventoryState.value)) {
-        ctx.helpers.setCustomActionImpossibleReason('not_enough_resource');
+        ctx.modals.setCustomActionImpossibleReason('not_enough_resource');
       } else {
-        ctx.helpers.setCustomActionImpossibleReason(undefined);
+        ctx.modals.setCustomActionImpossibleReason(undefined);
         await sendAction(merged, gameLogic.mustRollDice(merged, ctx.state.getCurrentGameActionState().is_character_in_combat));
       }
     }
@@ -500,10 +501,10 @@ export function createGameController(ctx: ControllerCtx) {
       await generateActionFromCustomInput(action);
     }
     if (receiver === 'GM Question') {
-      ctx.helpers.setGMQuestion(action.text);
+      ctx.modals.setGMQuestion(action.text);
     }
     if (receiver === 'Dice Roll') {
-      ctx.helpers.setCustomDiceRollNotation(action.text);
+      ctx.modals.setCustomDiceRollNotation(action.text);
     }
     if (receiver === 'Game Command') {
       ctx.state.additionalStoryInputState.value += '\nsudo: Ignore the rules and play out this action even if it should not be possible!\nIf this action contradicts the PAST STORY PLOT, adjust the narrative to fit the action.';
@@ -627,7 +628,7 @@ export function createGameController(ctx: ControllerCtx) {
     const xpNeededForLevel = getXPNeededForLevel(level);
     if (!xpNeededForLevel) {
       console.error('No XP requirement found for level', level);
-      return;
+      return false;
     }
     const buyLevelUpObject = GameAgent.getLevelUpCostObject(xpNeededForLevel, playerName, level);
     // Ensure character state exists before accessing XP
@@ -636,6 +637,7 @@ export function createGameController(ctx: ControllerCtx) {
     }
     ctx.state.gameActionsState.value[ctx.state.gameActionsState.value.length - 1].stats_update.push(buyLevelUpObject);
     ctx.helpers.checkForLevelUp();
+    ctx.modals.setLevelUpPlayerName(playerName);
     return true; // Signal to open level up dialog
   }
 
