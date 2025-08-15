@@ -5,7 +5,8 @@ import {
 	type LLMconfig,
 	type LLMMessage,
 	type LLMRequest,
-	LANGUAGE_PROMPT
+	LANGUAGE_PROMPT,
+	type ContentWithThoughts
 } from '$lib/ai/llm';
 import isPlainObject from 'lodash.isplainobject';
 import type { GenerateContentConfig } from '@google/genai';
@@ -39,12 +40,13 @@ export class PollinationsProvider extends LLM {
 
 	generateContentStream(
 		request: LLMRequest,
-		storyUpdateCallback: (storyChunk: string, isComplete: boolean) => void
+		storyUpdateCallback: (storyChunk: string, isComplete: boolean) => void,
+		_thoughtUpdateCallback?: (thoughtChunk: string, isComplete: boolean) => void
 	): Promise<object | undefined> {
 		throw new Error('Method not implemented.' + request + storyUpdateCallback);
 	}
 
-	async generateContent(request: LLMRequest): Promise<object | undefined> {
+	async generateContent(request: LLMRequest): Promise<ContentWithThoughts | undefined> {
 		const contents = this.buildContentsFormat(request.userMessage, request.historyMessages || []);
 		const systemInstructions = this.buildSystemInstruction(
 			request.systemInstruction || this.llmConfig.systemInstruction
@@ -68,7 +70,7 @@ export class PollinationsProvider extends LLM {
 		if (this.model !== 'gemini-thinking' && this.model !== 'openai-reasoning') {
 			body.response_format = { type: 'json_object' };
 		}
-		let result;
+		let result: Response | undefined;
 		try {
 			const response = await fetch(url, {
 				method: 'POST',
@@ -91,7 +93,9 @@ export class PollinationsProvider extends LLM {
 					handleError(e as unknown as string);
 				} else {
 					if (this.model === 'openai') {
-						fallbackResult['fallbackUsed'] = true;
+						if ((request.returnFallbackProperty || this.llmConfig.returnFallbackProperty) && fallbackResult.content) {
+							(fallbackResult.content as any)['fallbackUsed'] = true;
+						}
 					}
 				}
 				return fallbackResult;
@@ -101,12 +105,13 @@ export class PollinationsProvider extends LLM {
 			}
 		}
 		try {
-			const response: Response = result;
+			const response: Response = result!;
 			const autoFixJSON =
 				((request.tryAutoFixJSONError || request.tryAutoFixJSONError === undefined) &&
 					this.llmConfig.tryAutoFixJSONError) ||
 				false;
-			return this.parseContentByModel(this.model, response, autoFixJSON);
+			const parsed = await this.parseContentByModel(this.model, response, autoFixJSON);
+			return parsed ? { thoughts: '', content: parsed } : undefined;
 		} catch (e) {
 			handleError(e as string);
 		}

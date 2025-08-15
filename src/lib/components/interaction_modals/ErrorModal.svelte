@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { errorState } from '$lib/state/errorState.svelte';
-	let dialog;
-	let { onclose } = $props();
+
+	interface Props {
+		onclose: () => void;
+	}
+
+	let dialog: HTMLDialogElement;
+	let { onclose }: Props = $props();
 </script>
 
 <dialog

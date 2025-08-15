@@ -195,7 +195,7 @@
 			<button
 				class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 				onclick={() => {
-					storyState.resetProperty(stateValue);
+					storyState.resetProperty(stateValue as keyof Story);
 					delete storyStateOverwrites[stateValue];
 				}}
 			>

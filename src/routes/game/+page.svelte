@@ -21,7 +21,6 @@
 		stringifyPretty,
 		type ThoughtsState
 	} from '$lib/util.svelte';
-	import LoadingModal from '$lib/components/LoadingModal.svelte';
 	import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
 	import { SummaryAgent } from '$lib/ai/agents/summaryAgent';
 	import {
@@ -33,24 +32,17 @@
 		type NPCState,
 		type SkillsProgression
 	} from '$lib/ai/agents/characterStatsAgent';
-	import { errorState } from '$lib/state/errorState.svelte';
-	import ErrorDialog from '$lib/components/interaction_modals/ErrorModal.svelte';
 	import * as gameLogic from './gameLogic';
 	import {
 		ActionDifficulty,
 		getEmptyCriticalResourceKeys,
-		isEnoughResource,
-		mustRollDice,
-		utilityPlayerActions
 	} from './gameLogic';
 	import * as combatLogic from './combatLogic';
-	import UseSpellsAbilitiesModal from '$lib/components/interaction_modals/UseSpellsAbilitiesModal.svelte';
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import {
 		getCurrentCharacterGameState,
 		getRenderedGameUpdates,
-		canLevelUp
 	} from './gameStateUtils';
 	import GameModals from '$lib/components/game/GameModals.svelte';
 	import {
@@ -64,18 +56,12 @@
 		type CharacterDescription,
 		initialCharacterState
 	} from '$lib/ai/agents/characterAgent';
-	import DiceRollComponent from '$lib/components/interaction_modals/dice/DiceRollComponent.svelte';
-	import UseItemsModal from '$lib/components/interaction_modals/UseItemsModal.svelte';
 	import { type Campaign, CampaignAgent, type CampaignChapter } from '$lib/ai/agents/campaignAgent';
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
 	import TTSComponent from '$lib/components/TTSComponent.svelte';
-	import { applyLevelUp, getXPNeededForLevel } from './levelLogic';
-	import LevelUpModal from '$lib/components/interaction_modals/LevelUpModal.svelte';
+	import {  getXPNeededForLevel } from './levelLogic';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
-	import ImpossibleActionModal from '$lib/components/interaction_modals/ImpossibleActionModal.svelte';
-	import GMQuestionModal from '$lib/components/interaction_modals/GMQuestionModal.svelte';
-	import SuggestedActionsModal from '$lib/components/interaction_modals/SuggestedActionsModal.svelte';
 	import type { AIConfig } from '$lib';
 	import ResourcesComponent from '$lib/components/ResourcesComponent.svelte';
 
@@ -93,7 +79,6 @@
 		type EventEvaluation,
 		initialEventEvaluationState
 	} from '$lib/ai/agents/eventAgent';
-	import CharacterChangedConfirmationModal from '$lib/components/interaction_modals/CharacterChangedConfirmationModal.svelte';
 	import {
 		getSkillProgressionForDiceRoll,
 		getSkillIfApplicable,
@@ -108,10 +93,7 @@
 		determineProgressionForAction
 	} from './skillProgressionHelpers';
 	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
-	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
-	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
-	import StoryProgressionWithImage from '$lib/components/StoryProgressionWithImage.svelte';
-	import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
+  import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import type { RenderedGameUpdate } from './gameLogic';
 
 	// Local type definition matching StoryProgressionWithImage component
@@ -126,8 +108,6 @@
 	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
 	import ActionInputForm from '$lib/components/game/ActionInputForm.svelte';
-	// (refactor note) skill progression helpers kept inline for now; extraction deferred
-	import UtilityModal from '$lib/components/interaction_modals/UtilityModal.svelte';
 	import { createGameController } from './gameController';
 	import { createModalManager } from './modalManager.svelte';
 	// Element/component refs (dialogs, child components)
@@ -195,7 +175,10 @@
 		{}
 	);
 	// Use original naming and structure from GitHub
-	const playerCharactersGameState = useLocalStorage<PlayerCharactersGameState>('playerCharactersGameState', {});
+	const playerCharactersGameState = useLocalStorage<PlayerCharactersGameState>(
+		'playerCharactersGameState',
+		{}
+	);
 
 	let levelUpState = useLocalStorage<{
 		buttonEnabled: boolean;
@@ -222,11 +205,11 @@
 		gameUpdates: storyChunkState
 			? []
 			: getRenderedGameUpdates(
-				currentGameActionState, 
-				playerCharactersGameState.value,
-				playerCharactersIdToNamesMapState.value,
-				playerCharacterIdState
-			),
+					currentGameActionState,
+					playerCharactersGameState.value,
+					playerCharactersIdToNamesMapState.value,
+					playerCharacterIdState
+				),
 		imagePrompt: storyChunkState
 			? ''
 			: [currentGameActionState.image_prompt, storyState.value.general_image_prompt].join(' '),
@@ -355,10 +338,13 @@
 				onStoryStreamUpdate,
 				onThoughtStreamUpdate,
 				applyGameEventEvaluation,
-				getCurrentDiceRollResult: () => modalManager.diceRollDialog?.returnValue as DiceRollResult | undefined,
+				getCurrentDiceRollResult: () =>
+					modalManager.diceRollDialog?.returnValue as DiceRollResult | undefined,
 				setGMQuestion: (text: string) => modalManager.setGMQuestion(text),
-				setCustomDiceRollNotation: (notation: string) => modalManager.setCustomDiceRollNotation(notation),
-				setCustomActionImpossibleReason: (reason) => modalManager.setCustomActionImpossibleReason(reason),
+				setCustomDiceRollNotation: (notation: string) =>
+					modalManager.setCustomDiceRollNotation(notation),
+				setCustomActionImpossibleReason: (reason) =>
+					modalManager.setCustomActionImpossibleReason(reason),
 				setItemForSuggestActions: (item: any) => modalManager.setItemForSuggestActions(item),
 				setLevelUpState: (state) => {
 					modalManager.setLevelUpDialogOpened(state.dialogOpened);
@@ -508,7 +494,7 @@
 			const result = modalManager.diceRollDialog.returnValue as DiceRollResult | undefined;
 
 			const skillName = getSkillIfApplicable(characterStatsState.value, chosenActionState.value);
-			if (skillName) {
+			if (skillName && result) {
 				skillsProgressionForCurrentActionState = getSkillProgressionForDiceRoll(result);
 			}
 
@@ -875,7 +861,8 @@
 		{handleGMQuestionClosed}
 		{confirmCharacterChangeEvent}
 		{confirmAbilitiesLearned}
-		handleTargetedSpellsOrAbility={(action, targets) => controller!.handleTargetedSpellsOrAbility(action, targets || [])}
+		handleTargetedSpellsOrAbility={(action, targets) =>
+			controller!.handleTargetedSpellsOrAbility(action, targets || [])}
 		{onDeleteItem}
 		{handleCustomActionSubmit}
 		handleItemUseChosen={(item) => controller!.handleItemUseChosen(item)}

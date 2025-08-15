@@ -3,7 +3,7 @@ import { createGameController, type ControllerCtx } from './gameController';
 
 // Minimal helpers to build a ControllerCtx with spies/mocks
 function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
-  const noop = () => {};
+  const noop = () => { };
   const getFalse = () => false;
   const getUndefined = () => undefined as any;
 
@@ -46,7 +46,7 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
       characterStatsState: { value: { resources: {}, spells_and_abilities: [] } as any },
       eventEvaluationState: { value: {} as any },
       relatedStoryHistoryState: { value: { relatedDetails: [] } },
-  relatedActionHistoryState: { value: ['stub'] },
+      relatedActionHistoryState: { value: ['stub'] },
       customMemoriesState: { value: undefined },
       customGMNotesState: { value: undefined },
       additionalStoryInputState: { value: '' },
@@ -55,6 +55,14 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
       gameSettingsState: { value: { aiIntroducesSkills: false, randomEventsHandling: 'none' } },
       useDynamicCombat: { value: false }
     },
+    modals: {
+      // Mock modal manager
+      setCustomActionImpossibleReason: vi.fn(),
+      setGMQuestion: vi.fn(),
+      setCustomDiceRollNotation: vi.fn(),
+      setItemForSuggestActions: vi.fn(),
+      setLevelUpState: vi.fn()
+    } as any,
     helpers: {
       addCampaignAdditionalStoryInput: vi.fn(async (_a: any, v: string) => v),
       getGameMasterNotesForCampaignChapter: vi.fn(() => []),
@@ -62,7 +70,7 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
       openDiceRollDialog: vi.fn(),
       handleError: vi.fn(),
       resetStatesAfterActionProcessed: vi.fn(),
-      checkGameEnded: vi.fn(async () => {}),
+      checkGameEnded: vi.fn(async () => { }),
       getRelatedHistoryForStory: vi.fn(),
       checkForNewNPCs: vi.fn(),
       checkForLevelUp: vi.fn(),
@@ -72,7 +80,9 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
       getCurrentDiceRollResult: vi.fn(() => 'regular_success' as any),
       setGMQuestion: vi.fn(),
       setCustomDiceRollNotation: vi.fn(),
-      setCustomActionImpossibleReason: vi.fn()
+      setCustomActionImpossibleReason: vi.fn(),
+      setItemForSuggestActions: vi.fn(),
+      setLevelUpState: vi.fn()
     },
     skills: {
       skillsProgressionForCurrentActionState: { get: getUndefined, set: vi.fn() },
@@ -107,9 +117,9 @@ describe('gameController smoke', () => {
     await controller.onCustomActionSubmitted('Do something impossible', false, 'Game Command');
 
     expect(ctx.state.additionalStoryInputState.value).toContain('sudo:');
-  // sendAction is closed over; assert via side-effects
-  expect(ctx.state.isAiGeneratingState.set).toHaveBeenCalledWith(true);
-  expect(ctx.helpers.handleError).not.toHaveBeenCalled();
+    // sendAction is closed over; assert via side-effects
+    expect(ctx.state.isAiGeneratingState.set).toHaveBeenCalledWith(true);
+    expect(ctx.helpers.handleError).not.toHaveBeenCalled();
   });
 
   it('handleUtilityAction: short rest routes to sendAction', async () => {
@@ -117,8 +127,8 @@ describe('gameController smoke', () => {
 
     controller.handleUtilityAction('short-rest');
 
-  expect(ctx.state.isAiGeneratingState.set).toHaveBeenCalledWith(true);
-  expect(ctx.helpers.handleError).not.toHaveBeenCalled();
+    expect(ctx.state.isAiGeneratingState.set).toHaveBeenCalledWith(true);
+    expect(ctx.helpers.handleError).not.toHaveBeenCalled();
   });
 
   it('handleUtilityAction: long rest routes to sendAction', async () => {
@@ -126,7 +136,7 @@ describe('gameController smoke', () => {
 
     controller.handleUtilityAction('long-rest');
 
-  expect(ctx.state.isAiGeneratingState.set).toHaveBeenCalledWith(true);
-  expect(ctx.helpers.handleError).not.toHaveBeenCalled();
+    expect(ctx.state.isAiGeneratingState.set).toHaveBeenCalledWith(true);
+    expect(ctx.helpers.handleError).not.toHaveBeenCalled();
   });
 });

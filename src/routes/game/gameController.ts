@@ -214,7 +214,7 @@ export function createGameController(ctx: ControllerCtx) {
 
     ctx.helpers.checkForNewNPCs(newState);
     npcLogic.addNPCNamesToState(newState.currently_present_npcs, ctx.state.npcState.value);
-    
+
     if (combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate) {
       newState.stats_update =
         combatAndNPCState.allCombatDeterminedActionsAndStatsUpdate?.stats_update || newState.stats_update;
@@ -374,7 +374,7 @@ export function createGameController(ctx: ControllerCtx) {
           XP: { current_value: 0, max_value: 0, game_ends_when_zero: false }
         } as any;
       }
-      
+
       ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId] = {
         ...JSON.parse(JSON.stringify(ctx.state.characterStatsState.value.resources)),
         XP: ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId].XP
@@ -641,13 +641,13 @@ export function createGameController(ctx: ControllerCtx) {
     return true; // Signal to open level up dialog
   }
 
-  return { 
-    sendAction, 
-    regenerateActions, 
-    confirmCharacterChangeEvent, 
-    confirmAbilitiesLearned, 
-    generateActionFromCustomInput, 
-    onCustomActionSubmitted, 
+  return {
+    sendAction,
+    regenerateActions,
+    confirmCharacterChangeEvent,
+    confirmAbilitiesLearned,
+    generateActionFromCustomInput,
+    onCustomActionSubmitted,
     handleUtilityAction,
     handleTargetedSpellsOrAbility,
     handleItemUseChosen,

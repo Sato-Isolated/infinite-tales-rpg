@@ -9,181 +9,181 @@ import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
  */
 
 export interface ModalState {
-	// Dialog references
-	diceRollDialog?: HTMLDialogElement;
-	useSpellsAbilitiesModal?: any;
-	useItemsModal?: any;
-	utilityModal?: any;
-	
-	// Modal state
-	customActionImpossibleReasonState: 'not_enough_resource' | 'not_plausible' | undefined;
-	gmQuestionState: string;
-	customDiceRollNotation: string;
-	itemForSuggestActionsState?: (Item & { item_id: string });
-	levelUpState: {
-		buttonEnabled: boolean;
-		dialogOpened: boolean;
-		playerName: string;
-	};
+  // Dialog references
+  diceRollDialog?: HTMLDialogElement;
+  useSpellsAbilitiesModal?: any;
+  useItemsModal?: any;
+  utilityModal?: any;
+
+  // Modal state
+  customActionImpossibleReasonState: 'not_enough_resource' | 'not_plausible' | undefined;
+  gmQuestionState: string;
+  customDiceRollNotation: string;
+  itemForSuggestActionsState?: (Item & { item_id: string });
+  levelUpState: {
+    buttonEnabled: boolean;
+    dialogOpened: boolean;
+    playerName: string;
+  };
 }
 
 export function createModalManager() {
-	// Reactive state
-	let customActionImpossibleReasonState = $state<'not_enough_resource' | 'not_plausible' | undefined>(undefined);
-	let gmQuestionState = $state<string>('');
-	let customDiceRollNotation = $state<string>('');
-	let itemForSuggestActionsState = $state<(Item & { item_id: string }) | undefined>();
-	
-	const levelUpState = useLocalStorage<{
-		buttonEnabled: boolean;
-		dialogOpened: boolean;
-		playerName: string;
-	}>('levelUpState', {
-		buttonEnabled: false,
-		dialogOpened: false,
-		playerName: ''
-	});
+  // Reactive state
+  let customActionImpossibleReasonState = $state<'not_enough_resource' | 'not_plausible' | undefined>(undefined);
+  let gmQuestionState = $state<string>('');
+  let customDiceRollNotation = $state<string>('');
+  let itemForSuggestActionsState = $state<(Item & { item_id: string }) | undefined>();
 
-	// Dialog references
-	let diceRollDialog = $state<HTMLDialogElement>();
-	let useSpellsAbilitiesModal = $state<any>();
-	let useItemsModal = $state<any>();
-	let utilityModal = $state<any>();
+  const levelUpState = useLocalStorage<{
+    buttonEnabled: boolean;
+    dialogOpened: boolean;
+    playerName: string;
+  }>('levelUpState', {
+    buttonEnabled: false,
+    dialogOpened: false,
+    playerName: ''
+  });
 
-	// Modal actions
-	const openDiceRollDialog = () => {
-		if (!diceRollDialog) return;
-		diceRollDialog.show();
-	};
+  // Dialog references
+  let diceRollDialog = $state<HTMLDialogElement>();
+  let useSpellsAbilitiesModal = $state<any>();
+  let useItemsModal = $state<any>();
+  let utilityModal = $state<any>();
 
-	const closeDiceRollDialog = () => {
-		if (!diceRollDialog) return;
-		diceRollDialog.close();
-	};
+  // Modal actions
+  const openDiceRollDialog = () => {
+    if (!diceRollDialog) return;
+    diceRollDialog.show();
+  };
 
-	const openUseSpellsAbilitiesModal = () => {
-		if (useSpellsAbilitiesModal?.showModal) {
-			useSpellsAbilitiesModal.showModal();
-		}
-	};
+  const closeDiceRollDialog = () => {
+    if (!diceRollDialog) return;
+    diceRollDialog.close();
+  };
 
-	const openUseItemsModal = () => {
-		if (useItemsModal?.showModal) {
-			useItemsModal.showModal();
-		}
-	};
+  const openUseSpellsAbilitiesModal = () => {
+    if (useSpellsAbilitiesModal?.showModal) {
+      useSpellsAbilitiesModal.showModal();
+    }
+  };
 
-	const openUtilityModal = () => {
-		if (utilityModal?.showModal) {
-			utilityModal.showModal();
-		}
-	};
+  const openUseItemsModal = () => {
+    if (useItemsModal?.showModal) {
+      useItemsModal.showModal();
+    }
+  };
 
-	// State setters
-	const setCustomActionImpossibleReason = (reason: 'not_enough_resource' | 'not_plausible' | undefined) => {
-		customActionImpossibleReasonState = reason;
-	};
+  const openUtilityModal = () => {
+    if (utilityModal?.showModal) {
+      utilityModal.showModal();
+    }
+  };
 
-	const setGMQuestion = (question: string) => {
-		gmQuestionState = question;
-	};
+  // State setters
+  const setCustomActionImpossibleReason = (reason: 'not_enough_resource' | 'not_plausible' | undefined) => {
+    customActionImpossibleReasonState = reason;
+  };
 
-	const setCustomDiceRollNotation = (notation: string) => {
-		customDiceRollNotation = notation;
-	};
+  const setGMQuestion = (question: string) => {
+    gmQuestionState = question;
+  };
 
-	const setItemForSuggestActions = (item: (Item & { item_id: string }) | undefined) => {
-		itemForSuggestActionsState = item;
-	};
+  const setCustomDiceRollNotation = (notation: string) => {
+    customDiceRollNotation = notation;
+  };
 
-	const setLevelUpDialogOpened = (opened: boolean) => {
-		levelUpState.value = { ...levelUpState.value, dialogOpened: opened };
-	};
+  const setItemForSuggestActions = (item: (Item & { item_id: string }) | undefined) => {
+    itemForSuggestActionsState = item;
+  };
 
-	const setLevelUpPlayerName = (playerName: string) => {
-		levelUpState.value = { ...levelUpState.value, playerName };
-	};
+  const setLevelUpDialogOpened = (opened: boolean) => {
+    levelUpState.value = { ...levelUpState.value, dialogOpened: opened };
+  };
 
-	const setLevelUpButtonEnabled = (enabled: boolean) => {
-		levelUpState.value = { ...levelUpState.value, buttonEnabled: enabled };
-	};
+  const setLevelUpPlayerName = (playerName: string) => {
+    levelUpState.value = { ...levelUpState.value, playerName };
+  };
 
-	// Reset functions
-	const resetCustomActionStates = () => {
-		customActionImpossibleReasonState = undefined;
-		customDiceRollNotation = '';
-	};
+  const setLevelUpButtonEnabled = (enabled: boolean) => {
+    levelUpState.value = { ...levelUpState.value, buttonEnabled: enabled };
+  };
 
-	const resetGMQuestion = () => {
-		gmQuestionState = '';
-	};
+  // Reset functions
+  const resetCustomActionStates = () => {
+    customActionImpossibleReasonState = undefined;
+    customDiceRollNotation = '';
+  };
 
-	const resetItemSuggestions = () => {
-		itemForSuggestActionsState = undefined;
-	};
+  const resetGMQuestion = () => {
+    gmQuestionState = '';
+  };
 
-	const resetLevelUpState = () => {
-		levelUpState.value = {
-			buttonEnabled: false,
-			dialogOpened: false,
-			playerName: ''
-		};
-	};
+  const resetItemSuggestions = () => {
+    itemForSuggestActionsState = undefined;
+  };
 
-	// Computed states for UI
-	const hasCustomActionImpossibleReason = $derived(!!customActionImpossibleReasonState);
-	const hasGMQuestion = $derived(!!gmQuestionState);
-	const hasCustomDiceRoll = $derived(!!customDiceRollNotation);
-	const hasItemSuggestions = $derived(!!itemForSuggestActionsState);
-	const shouldShowLevelUpDialog = $derived(levelUpState.value.dialogOpened);
+  const resetLevelUpState = () => {
+    levelUpState.value = {
+      buttonEnabled: false,
+      dialogOpened: false,
+      playerName: ''
+    };
+  };
 
-	return {
-		// State getters
-		get customActionImpossibleReasonState() { return customActionImpossibleReasonState; },
-		get gmQuestionState() { return gmQuestionState; },
-		get customDiceRollNotation() { return customDiceRollNotation; },
-		get itemForSuggestActionsState() { return itemForSuggestActionsState; },
-		get levelUpState() { return levelUpState.value; },
+  // Computed states for UI
+  const hasCustomActionImpossibleReason = $derived(!!customActionImpossibleReasonState);
+  const hasGMQuestion = $derived(!!gmQuestionState);
+  const hasCustomDiceRoll = $derived(!!customDiceRollNotation);
+  const hasItemSuggestions = $derived(!!itemForSuggestActionsState);
+  const shouldShowLevelUpDialog = $derived(levelUpState.value.dialogOpened);
 
-		// Dialog refs
-		get diceRollDialog() { return diceRollDialog; },
-		set diceRollDialog(dialog: HTMLDialogElement | undefined) { diceRollDialog = dialog; },
-		get useSpellsAbilitiesModal() { return useSpellsAbilitiesModal; },
-		set useSpellsAbilitiesModal(modal: any) { useSpellsAbilitiesModal = modal; },
-		get useItemsModal() { return useItemsModal; },
-		set useItemsModal(modal: any) { useItemsModal = modal; },
-		get utilityModal() { return utilityModal; },
-		set utilityModal(modal: any) { utilityModal = modal; },
+  return {
+    // State getters
+    get customActionImpossibleReasonState() { return customActionImpossibleReasonState; },
+    get gmQuestionState() { return gmQuestionState; },
+    get customDiceRollNotation() { return customDiceRollNotation; },
+    get itemForSuggestActionsState() { return itemForSuggestActionsState; },
+    get levelUpState() { return levelUpState.value; },
 
-		// Actions
-		openDiceRollDialog,
-		closeDiceRollDialog,
-		openUseSpellsAbilitiesModal,
-		openUseItemsModal,
-		openUtilityModal,
+    // Dialog refs
+    get diceRollDialog() { return diceRollDialog; },
+    set diceRollDialog(dialog: HTMLDialogElement | undefined) { diceRollDialog = dialog; },
+    get useSpellsAbilitiesModal() { return useSpellsAbilitiesModal; },
+    set useSpellsAbilitiesModal(modal: any) { useSpellsAbilitiesModal = modal; },
+    get useItemsModal() { return useItemsModal; },
+    set useItemsModal(modal: any) { useItemsModal = modal; },
+    get utilityModal() { return utilityModal; },
+    set utilityModal(modal: any) { utilityModal = modal; },
 
-		// State setters
-		setCustomActionImpossibleReason,
-		setGMQuestion,
-		setCustomDiceRollNotation,
-		setItemForSuggestActions,
-		setLevelUpDialogOpened,
-		setLevelUpPlayerName,
-		setLevelUpButtonEnabled,
+    // Actions
+    openDiceRollDialog,
+    closeDiceRollDialog,
+    openUseSpellsAbilitiesModal,
+    openUseItemsModal,
+    openUtilityModal,
 
-		// Reset functions
-		resetCustomActionStates,
-		resetGMQuestion,
-		resetItemSuggestions,
-		resetLevelUpState,
+    // State setters
+    setCustomActionImpossibleReason,
+    setGMQuestion,
+    setCustomDiceRollNotation,
+    setItemForSuggestActions,
+    setLevelUpDialogOpened,
+    setLevelUpPlayerName,
+    setLevelUpButtonEnabled,
 
-		// Computed states
-		hasCustomActionImpossibleReason,
-		hasGMQuestion,
-		hasCustomDiceRoll,
-		hasItemSuggestions,
-		shouldShowLevelUpDialog
-	};
+    // Reset functions
+    resetCustomActionStates,
+    resetGMQuestion,
+    resetItemSuggestions,
+    resetLevelUpState,
+
+    // Computed states
+    hasCustomActionImpossibleReason,
+    hasGMQuestion,
+    hasCustomDiceRoll,
+    hasItemSuggestions,
+    shouldShowLevelUpDialog
+  };
 }
 
 export type ModalManager = ReturnType<typeof createModalManager>;

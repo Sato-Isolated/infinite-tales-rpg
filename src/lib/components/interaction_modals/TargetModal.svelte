@@ -14,12 +14,15 @@
 		dialogRef;
 	} = $props();
 
-	let targetForm;
+	let targetForm: HTMLFormElement;
 	let customTargetState = $state<string>();
 
 	function mapTargets(): string[] {
 		const mappedTargets = Array.from(targetForm.elements)
-			.filter((elm) => elm.checked && elm.value)
+			.filter(
+				(elm): elm is HTMLInputElement =>
+					elm instanceof HTMLInputElement && elm.checked && !!elm.value
+			)
 			.map((elm) => {
 				elm.checked = false;
 				return elm.value as string;

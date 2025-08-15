@@ -1,15 +1,11 @@
 <script lang="ts">
 	import type { ModalManager } from '../../../routes/game/modalManager.svelte';
-	import type { 
-		GameActionState, 
+	import type {
+		GameActionState,
 		PlayerCharactersGameState,
 		InventoryState
 	} from '$lib/ai/agents/gameAgent';
-	import type { 
-		Ability, 
-		CharacterStats, 
-		NPCState 
-	} from '$lib/ai/agents/characterStatsAgent';
+	import type { Ability, CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 	import type { EventEvaluation } from '$lib/ai/agents/eventAgent';
 	import type { Action } from '$lib/ai/agents/gameAgent';
 	import { errorState } from '$lib/state/errorState.svelte';
@@ -185,5 +181,8 @@
 ></DiceRollComponent>
 
 {#if modalManager.hasCustomDiceRoll}
-	<SimpleDiceRoller onClose={handleCustomDiceRollClosed} notation={modalManager.customDiceRollNotation} />
+	<SimpleDiceRoller
+		onClose={handleCustomDiceRollClosed}
+		notation={modalManager.customDiceRollNotation}
+	/>
 {/if}

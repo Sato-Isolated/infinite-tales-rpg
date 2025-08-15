@@ -1,18 +1,23 @@
-<script lang="ts">
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
-	import { marked } from 'marked';
+<script module lang="ts">
 	import type { RenderedGameUpdate } from '../../routes/game/gameLogic';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
-	import TTSComponent from '$lib/components/TTSComponent.svelte';
-	import type { AIConfig } from '$lib';
 
-	export type StoryProgressionWithImageProps = {
+	// Export the type properly so it can be imported by other components
+	export interface StoryProgressionWithImageProps {
 		storyTextRef?: HTMLElement;
 		story: string;
 		gameUpdates?: Array<RenderedGameUpdate | undefined>;
 		imagePrompt?: string;
 		stream_finished?: boolean;
-	};
+	}
+</script>
+
+<script lang="ts">
+	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
+	import { marked } from 'marked';
+	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import TTSComponent from '$lib/components/TTSComponent.svelte';
+	import type { AIConfig } from '$lib';
+
 	let {
 		storyTextRef = $bindable(),
 		story,
@@ -57,9 +62,11 @@
 	</div>
 	<div id="gameUpdates mt-2">
 		{#each gameUpdates as gameUpdate}
-			<p class="m-1 text-center text-sm capitalize">
-				{gameUpdate.text} <span class={gameUpdate.color}>{gameUpdate.resourceText}</span>
-			</p>
+			{#if gameUpdate}
+				<p class="m-1 text-center text-sm capitalize">
+					{gameUpdate.text} <span class={gameUpdate.color}>{gameUpdate.resourceText}</span>
+				</p>
+			{/if}
 		{/each}
 	</div>
 </article>

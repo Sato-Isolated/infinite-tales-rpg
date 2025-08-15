@@ -156,8 +156,8 @@
 						{
 							level: 1,
 							resources: {
-								HP: { max_value: 0, game_ends_when_zero: true },
-								MP: { max_value: 0, game_ends_when_zero: false }
+								HP: { max_value: 0, start_value: 0, game_ends_when_zero: true },
+								MP: { max_value: 0, start_value: 0, game_ends_when_zero: false }
 							}
 						},
 						true
@@ -173,7 +173,7 @@
 			isGeneratingState = false;
 		} catch (e) {
 			isGeneratingState = false;
-			handleError(e);
+			handleError(e as string);
 		}
 	}
 
