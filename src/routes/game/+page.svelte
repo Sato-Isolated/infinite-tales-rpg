@@ -848,7 +848,7 @@
 		{modalManager}
 		{currentGameActionState}
 		playerCharactersGameState={playerCharactersGameState.value}
-		{playerCharactersIdToNamesMapState}
+		playerCharactersIdToNamesMapState={playerCharactersIdToNamesMapState.value}
 		characterName={characterState.value.name}
 		characterStatsState={characterStatsState.value}
 		inventoryState={inventoryState.value}
@@ -865,8 +865,8 @@
 			controller!.handleTargetedSpellsOrAbility(action, targets || [])}
 		{onDeleteItem}
 		{handleCustomActionSubmit}
-		handleItemUseChosen={(item) => controller!.handleItemUseChosen(item)}
-		handleSuggestItemActionClosed={() => controller!.handleSuggestItemActionClosed()}
+		handleItemUseChosen={handleItemUseChosen}
+		handleSuggestItemActionClosed={handleSuggestItemActionClosed}
 		handleLevelUpModalClosed={(levelUp) => controller!.handleLevelUpModalClosed(levelUp)}
 		handleUtilityAction={(action) => controller!.handleUtilityAction(action)}
 		{handleCustomDiceRollClosed}

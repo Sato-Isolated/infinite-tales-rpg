@@ -177,12 +177,12 @@ export function createModalManager() {
     resetItemSuggestions,
     resetLevelUpState,
 
-    // Computed states
-    hasCustomActionImpossibleReason,
-    hasGMQuestion,
-    hasCustomDiceRoll,
-    hasItemSuggestions,
-    shouldShowLevelUpDialog
+  // Computed states (getters to preserve reactivity outside this module)
+  get hasCustomActionImpossibleReason() { return hasCustomActionImpossibleReason; },
+  get hasGMQuestion() { return hasGMQuestion; },
+  get hasCustomDiceRoll() { return hasCustomDiceRoll; },
+  get hasItemSuggestions() { return hasItemSuggestions; },
+  get shouldShowLevelUpDialog() { return shouldShowLevelUpDialog; }
   };
 }
 
