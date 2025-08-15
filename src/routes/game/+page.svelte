@@ -105,6 +105,7 @@
 	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
 	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
 	import { type StoryProgressionWithImageProps } from '$lib/components/StoryProgressionWithImage.svelte';
+	import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import StorySection from '$lib/components/game/StorySection.svelte';
 	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
@@ -113,7 +114,7 @@
 	import UtilityModal from '$lib/components/interaction_modals/UtilityModal.svelte';
 	import { createGameController } from './gameController';
 	// Element/component refs (dialogs, child components)
-	let diceRollDialog = $state<any>(),
+	let diceRollDialog = $state<HTMLDialogElement>(),
 		useSpellsAbilitiesModal = $state<any>(),
 		useItemsModal = $state<any>(),
 		utilityModal = $state<any>(),
@@ -250,7 +251,7 @@
 
 	//feature toggles
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	let useDynamicCombat = useLocalStorage('useDynamicCombat', false);
+	let useDynamicCombat = useLocalStorage<boolean>('useDynamicCombat', false);
 	let gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState', defaultGameSettings());
 	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
 
@@ -343,7 +344,7 @@
 				onStoryStreamUpdate,
 				onThoughtStreamUpdate,
 				applyGameEventEvaluation,
-				getCurrentDiceRollResult: () => diceRollDialog?.returnValue,
+				getCurrentDiceRollResult: () => diceRollDialog?.returnValue as DiceRollResult | undefined,
 				setGMQuestion: (text: string) => (gmQuestionState = text),
 				setCustomDiceRollNotation: (notation: string) => (customDiceRollNotation = notation),
 				setCustomActionImpossibleReason: (reason) => (customActionImpossibleReasonState = reason)
@@ -481,10 +482,12 @@
 	function openDiceRollDialog() {
 		//TODO showModal can not be used because it hides the dice roll
 		didAIProcessDiceRollActionState.value = false;
+		if (!diceRollDialog) return;
 		diceRollDialog.show();
 		diceRollDialog.addEventListener('close', function sendWithManuallyRolled() {
+			if (!diceRollDialog) return;
 			diceRollDialog.removeEventListener('close', sendWithManuallyRolled);
-			const result = diceRollDialog.returnValue;
+			const result = diceRollDialog.returnValue as DiceRollResult | undefined;
 
 			const skillName = getSkillIfApplicable(characterStatsState.value, chosenActionState.value);
 			if (skillName) {
@@ -948,6 +951,10 @@
 		if (!thoughtsState.value.storyThoughts && !isComplete) {
 			const time = new Date().toLocaleTimeString();
 			console.log('First thought chunk received at:', time);
+		}
+		// Ensure we always append to a defined string
+		if (!thoughtsState.value.storyThoughts) {
+			thoughtsState.value.storyThoughts = '';
 		}
 		thoughtsState.value.storyThoughts += thoughtChunk;
 	}

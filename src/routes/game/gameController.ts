@@ -220,6 +220,8 @@ export function createGameController(ctx: ControllerCtx) {
         ctx.state.inventoryState.value,
         structuredClone(newState)
       );
+      // Force reactivity after in-place resource mutations
+      ctx.state.playerCharactersGameState = { ...ctx.state.playerCharactersGameState };
     }
     console.log('new state', stringifyPretty(newState));
     ctx.state.historyMessagesState.value = updatedHistoryMessages;
