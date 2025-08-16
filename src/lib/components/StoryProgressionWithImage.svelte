@@ -32,7 +32,7 @@
 	 */
 	const cleanAIGeneratedHTML = (rawStory: string): string => {
 		if (!rawStory) return '';
-		
+
 		return rawStory
 			.replaceAll('\\n', '')
 			.replaceAll('```html', '')
@@ -58,12 +58,12 @@
 	<article class="prose prose-lg max-w-none">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html cleanedStory}
-		
+
 		{#if !stream_finished}
-			<span class="loading loading-dots loading-sm text-primary ml-2"></span>
+			<span class="loading loading-dots loading-sm ml-2 text-primary"></span>
 		{/if}
 	</article>
-	
+
 	<!-- Game updates - keep simple styling for gameplay info -->
 	<div class="mt-4">
 		{#each gameUpdates as gameUpdate}
