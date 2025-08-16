@@ -93,6 +93,19 @@ export type GameActionState = {
 	is_character_restrained_explanation?: string;
 	currently_present_npcs: Targets;
 	story_memory_explanation: string;
+	time_passed_minutes?: number;
+	time_passed_explanation?: string;
+	initial_game_time?: {
+		day: number;
+		dayName: string;
+		month: number;
+		monthName: string;
+		year: number;
+		hour: number;
+		minute: number;
+		timeOfDay: string;
+		explanation?: string;
+	};
 };
 export type GameMasterAnswer = {
 	answerToPlayer: string;
@@ -137,7 +150,8 @@ export class GameAgent {
 		playerCharactersGameState: PlayerCharactersGameState,
 		inventoryState: InventoryState,
 		relatedHistory: string[],
-		gameSettings: GameSettings
+		gameSettings: GameSettings,
+		currentGameTime?: import('$lib/types/gameTime').GameTime | null
 	): Promise<{ newState: GameActionState; updatedHistoryMessages: Array<LLMMessage> }> {
 		let playerActionText = action.characterName + ': ' + action.text;
 		const cost = parseInt(action.resource_cost?.cost as unknown as string) || 0;
@@ -151,6 +165,19 @@ export class GameAgent {
 		if (relatedHistory.length > 0) {
 			combinedText += PAST_STORY_PLOT_RULE + relatedHistory.join('\n');
 		}
+
+		// Ajouter le contexte temporel de l'historique pour la cohérence
+		const temporalContext = GameAgent.extractTemporalContext(historyMessages);
+		if (temporalContext) {
+			combinedText += temporalContext;
+		}
+
+		// Ajouter le temps actuel au prompt
+		if (currentGameTime) {
+			const timeStr = `${currentGameTime.dayName} ${currentGameTime.day} ${currentGameTime.monthName} ${currentGameTime.year}, ${currentGameTime.hour}:${currentGameTime.minute.toString().padStart(2, '0')} (${currentGameTime.timeOfDay})`;
+			combinedText += `\n\nTEMPS ACTUEL DANS LE JEU:\nIl est actuellement ${timeStr}.\nAssure-toi que ta narration respecte ce moment de la journée (luminosité, activités des NPCs, etc.).\n\nDétermine aussi combien de temps s'est écoulé pour cette action selon ces exemples (adaptables) :\n- Conversations/dialogues : e.g. 1-5 minutes\n- Se déplacer dans zone : e.g. 2-10 minutes\n- Voyager entre zones : e.g. 15 minutes - 2 heures\n- Combat simple : e.g. 2-15 minutes\n- Combat boss/épique : e.g. 30 minutes - 3 heures\n- Repos : e.g. 10-30 minutes (court) ou 6-8 heures (long)\n- Activités complexes : e.g. 30 minutes - 3 heures\n`;
+		}
+
 		const gameAgent = this.getGameAgentSystemInstructionsFromStates(
 			storyState,
 			characterState,
@@ -179,7 +206,8 @@ export class GameAgent {
 		)) as GameActionState;
 		const { userMessage, modelMessage } = this.buildHistoryMessages(
 			playerActionTextForHistory,
-			newState
+			newState,
+			currentGameTime
 		);
 		const updatedHistoryMessages = [...historyMessages, userMessage, modelMessage];
 		mapGameState(newState);
@@ -204,14 +232,14 @@ export class GameAgent {
 	): Promise<{ thoughts?: string; answer: GameMasterAnswer }> {
 		const gameAgent = [
 			'You are Reviewer Agent, your task is to answer a players question.\n' +
-				'You can refer to the internal state, rules and previous messages that the Game Master has considered',
+			'You can refer to the internal state, rules and previous messages that the Game Master has considered',
 			'The following is the internal state of the NPCs.' + '\n' + stringifyPretty(npcState)
 		];
 		if (campaignChapterState) {
 			gameAgent.push(
 				'The following is the state of the current campaign chapter.' +
-					'\n' +
-					stringifyPretty(campaignChapterState)
+				'\n' +
+				stringifyPretty(campaignChapterState)
 			);
 		}
 		if (customGmNotes) {
@@ -222,8 +250,8 @@ export class GameAgent {
 		if (thoughtsState.storyThoughts) {
 			gameAgent.push(
 				'The following are thoughts of the Game Master regarding how to progress the story.' +
-					'\n' +
-					JSON.stringify(thoughtsState)
+				'\n' +
+				JSON.stringify(thoughtsState)
 			);
 		}
 		if (relatedHistory.length > 0) {
@@ -276,12 +304,12 @@ export class GameAgent {
 			systemBehaviour(gameSettings),
 			stringifyPretty(storyState),
 			'The following is a description of the player character, always refer to it when considering appearance, reasoning, motives etc.' +
-				'\n' +
-				stringifyPretty(characterState),
+			'\n' +
+			stringifyPretty(characterState),
 			"The following are the character's CURRENT resources, consider it in your response\n" +
-				stringifyPretty(Object.values(playerCharactersGameState)),
+			stringifyPretty(Object.values(playerCharactersGameState)),
 			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.\n" +
-				stringifyPretty(inventoryState)
+			stringifyPretty(inventoryState)
 		];
 		if (customSystemInstruction) {
 			gameAgent.push('Following instructions overrule all others: ' + customSystemInstruction);
@@ -304,13 +332,27 @@ export class GameAgent {
 			'Begin the story by setting the scene in a vivid and detailed manner, describing the environment and atmosphere with rich sensory details.' +
 			'\nAt the beginning do not disclose story secrets, which are meant to be discovered by the player later into the story.' +
 			'\nIf the player character is accompanied by party members, give them names and add them to currently_present_npcs' +
-			'\nCHARACTER starts with some random items.'
+			'\nCHARACTER starts with some random items.' +
+			'\n\nIMPORTANT: This is the INITIAL story setup. You must also generate an appropriate starting time in the initial_game_time field that fits the story context, setting, and opening scene.'
 		);
 	}
 
-	buildHistoryMessages = function (userText: string, modelStateObject: GameActionState) {
+	buildHistoryMessages = function (userText: string, modelStateObject: GameActionState, gameTime?: import('$lib/types/gameTime').GameTime | null) {
 		const userMessage: LLMMessage = { role: 'user', content: userText };
-		const modelMessage: LLMMessage = { role: 'model', content: stringifyPretty(modelStateObject) };
+		
+		// Ajouter le contexte temporel caché dans l'historique pour améliorer la cohérence narrative
+		const storyWithTimeContext = gameTime 
+			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay}${modelStateObject.time_passed_minutes ? ` | Action duration: ${modelStateObject.time_passed_minutes}min` : ''}]\n${modelStateObject.story}`
+			: modelStateObject.story;
+
+		const modelMessage: LLMMessage = { 
+			role: 'model', 
+			content: stringifyPretty({
+				...modelStateObject,
+				story: storyWithTimeContext
+			})
+		};
+		
 		return { userMessage, modelMessage };
 	};
 
@@ -318,6 +360,31 @@ export class GameAgent {
 		return maxResource.max_value === maxResource.start_value
 			? maxResource.max_value
 			: maxResource.start_value;
+	}
+
+	/**
+	 * Helper to extract and format temporal context from history messages for better AI context awareness
+	 */
+	static extractTemporalContext(historyMessages: Array<LLMMessage>): string {
+		const timeMarkers: string[] = [];
+		
+		historyMessages.forEach((message, index) => {
+			if (message.role === 'model' && message.content) {
+				try {
+					const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+					const timeMatch = content.match(/\[Time: ([^\]]+)\]/);
+					if (timeMatch) {
+						timeMarkers.push(`Step ${index + 1}: ${timeMatch[1]}`);
+					}
+				} catch {
+					// Ignore parsing errors
+				}
+			}
+		});
+
+		if (timeMarkers.length === 0) return '';
+		
+		return `\n\nTEMPORAL CONTEXT FROM RECENT HISTORY:\n${timeMarkers.slice(-5).join('\n')}\nMaintain chronological consistency with this timeline.`;
 	}
 
 	static getRefillResourcesUpdateObject(
@@ -443,6 +510,9 @@ const jsonSystemInstructionForGameAgent = (
   "story_memory_explanation": "Explanation if story progression has Long-term Impact: Remember events that significantly influence character arcs, plot direction, or the game world in ways that persist or resurface later; Format: {explanation} LONG_TERM_IMPACT: LOW, MEDIUM, HIGH",
   "image_prompt": "Create a prompt for an image generating ai that describes the scene of the story progression, do not use character names but appearance description. Always include the gender. Keep the prompt similar to previous prompts to maintain image consistency. When describing CHARACTER, always refer to appearance variable. Always use the format: {sceneDetailed} {adjective} {charactersDetailed}",
   "xpGainedExplanation": "Explain why or why nor the CHARACTER gains xp in this situation",
+  "time_passed_minutes": "Number of minutes that have passed during this action (use the time examples provided earlier)",
+  "time_passed_explanation": "Brief explanation of why this amount of time passed",
+  "initial_game_time": "ONLY FOR INITIAL STORY SETUP: Generate appropriate starting date and time that fits the story context. Format: {\"day\": number 1-30, \"dayName\": \"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\", \"month\": number 1-12, \"monthName\": \"January|February|March|April|May|June|July|August|September|October|November|December\", \"year\": number, \"hour\": number 0-23, \"minute\": number 0-59, \"timeOfDay\": \"dawn|morning|midday|afternoon|evening|night|deep_night\", \"explanation\": \"Brief explanation of why this time fits the story\"}. Omit this field for non-initial story progressions.",
   ${statsUpdatePromptObject},
   "inventory_update": [
         #Add this to the JSON if the story implies that an item is added or removed from the character's inventory
@@ -474,3 +544,69 @@ const jsonSystemInstructionForPlayerQuestion = `Important Instruction! You must 
   "rules_considered": String Array; Identify the relevant Game Master's rules that are related to the question; Include the exact text of a rule,
   "answerToPlayer": Answer outside of character, do not describe the story, but give an explanation
 }`;
+
+/**
+ * Generate an appropriate initial game time based on the story context
+ */
+export async function generateInitialGameTime(
+	llm: LLM,
+	storyState: Story,
+	characterState: CharacterDescription,
+	gameSettings: GameSettings
+): Promise<import('$lib/types/gameTime').GameTime> {
+	console.log('generateInitialGameTime starting with story:', storyState.game, 'character:', characterState.name);
+	
+	const agent = [
+		'You are a Time Generation Agent for a RPG adventure. Your task is to generate an appropriate starting date and time that fits the story context.',
+		'Consider the story setting, theme, character background, and narrative tone to determine:',
+		'1. What time of day would create the most engaging opening scene',
+		'2. What season/month would fit the story theme',
+		'3. What day of the week might be narratively interesting',
+		'4. What year fits the setting (medieval fantasy typically 800-1200, modern fantasy 1900-2100, etc.)',
+		'',
+		'Story context:',
+		stringifyPretty(storyState),
+		'',
+		'Character context:',
+		stringifyPretty(characterState),
+		'',
+		'IMPORTANT: Respond with following JSON format:',
+		'{"day": number 1-30, "dayName": "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday", "month": number 1-12, "monthName": "January|February|March|April|May|June|July|August|September|October|November|December", "year": number, "hour": number 0-23, "minute": number 0-59, "timeOfDay": "dawn|morning|midday|afternoon|evening|night|deep_night", "explanation": "Brief explanation of why this time fits the story"}'
+	];
+
+	const request: LLMRequest = {
+		userMessage: 'Generate an appropriate initial game time for this story and character. Consider what time would create the most dramatic and engaging opening scene.',
+		systemInstruction: agent,
+		temperature: 0.8
+	};
+
+	console.log('Making LLM request for time generation...');
+	try {
+		const response = await llm.generateContent(request);
+		console.log('LLM response received:', response);
+		const timeData = response?.content as any;
+		
+		if (timeData && timeData.day && timeData.hour !== undefined) {
+			console.log('Valid time data received:', timeData);
+			return {
+				day: timeData.day,
+				dayName: timeData.dayName,
+				month: timeData.month,
+				monthName: timeData.monthName,
+				year: timeData.year,
+				hour: timeData.hour,
+				minute: timeData.minute || 0,
+				timeOfDay: timeData.timeOfDay
+			};
+		} else {
+			console.warn('Invalid time data received from LLM:', timeData);
+		}
+	} catch (error) {
+		console.error('LLM request failed in generateInitialGameTime:', error);
+	}
+
+	// Fallback to default time if generation fails
+	console.log('Falling back to default time');
+	const { createDefaultTime } = await import('$lib/types/gameTime');
+	return createDefaultTime();
+}

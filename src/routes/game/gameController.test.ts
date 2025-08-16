@@ -53,6 +53,7 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
       additionalActionInputState: { value: '' },
       chosenActionState: { value: {} as any },
       gameSettingsState: { value: { aiIntroducesSkills: false, randomEventsHandling: 'none' } },
+      gameTimeState: { value: { day: 1, dayName: 'Moonday', month: 1, monthName: 'Firstfall', year: 1000, hour: 12, minute: 0, timeOfDay: 'midday' } as any },
       useDynamicCombat: { value: false }
     },
     modals: {

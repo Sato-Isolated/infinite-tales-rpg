@@ -23,6 +23,7 @@
 	} from '$lib/ai/agents/eventAgent';
 	import type { CharacterChangedInto, EventEvaluation } from '$lib/ai/agents/eventAgent';
 	import type { PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
+	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
 	import AiGenerationSettings from '$lib/components/interaction_modals/settings/AiGenerationSettings.svelte';
 	import OutputFeaturesModal from '$lib/components/interaction_modals/settings/OutputFeaturesModal.svelte';
 	import SystemPromptsModal from '$lib/components/interaction_modals/settings/SystemPromptsModal.svelte';
@@ -74,6 +75,7 @@
 		'playerCharactersIdToNamesMapState',
 		{}
 	);
+	const gameTimeState = useLocalStorage<GameTime | null>('gameTimeState', null);
 
 	let isGeneratingState = $state(false);
 	let quickstartModalOpen = $state(false);
@@ -128,6 +130,7 @@
 		skillsProgressionState.reset();
 		eventEvaluationState.reset();
 		playerCharactersIdToNamesMapState.reset();
+		gameTimeState.reset();
 	}
 
 	async function onQuickstartNew(story: string | Story | undefined) {

@@ -5,13 +5,27 @@
 	import type { Campaign } from '$lib/ai/agents/campaignAgent';
 	import GameSettingsModal from '$lib/components/interaction_modals/settings/GameSettingsModal.svelte';
 	import AiGameSettingsModal from '$lib/components/interaction_modals/settings/AiGameSettings.svelte';
+	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
+	import { generateStoryAppropriateTime } from '../timeLogic';
+	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
+	import type { Story } from '$lib/ai/agents/storyAgent';
+	import type { GameSettings } from '$lib/ai/agents/gameAgent';
+	import type { AIConfig } from '$lib';
 
 	let showGameSettingsModal = $state<boolean>(false);
 	let showAiGameSettingsModal = $state<boolean>(false);
+	let isRegeneratingTime = $state<boolean>(false);
 
 	const campaignState = useLocalStorage<Campaign>('campaignState');
 	const customMemoriesState = useLocalStorage<string>('customMemoriesState');
 	const customGMNotesState = useLocalStorage<string>('customGMNotesState');
+	const gameTimeState = useLocalStorage<GameTime>('gameTimeState', createDefaultTime());
+	const storyState = useLocalStorage<Story>('storyState');
+	const characterState = useLocalStorage<CharacterDescription>('characterState');
+	const gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState');
+	const apiKeyState = useLocalStorage<string>('apiKeyState');
+	const aiLanguage = useLocalStorage<string>('aiLanguage');
+	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 	//TODO migrate all settings that can be changed during game here
 
 	const taleSettingsClicked = () => {
@@ -19,6 +33,32 @@
 			navigate('/new/campaign');
 		} else {
 			navigate('/new/tale');
+		}
+	};
+
+	const regenerateGameTime = async () => {
+		if (!storyState.value || !characterState.value || !apiKeyState.value) {
+			alert('Missing story, character or API key configuration');
+			return;
+		}
+
+		isRegeneratingTime = true;
+		try {
+			const newGameTime = await generateStoryAppropriateTime(
+				storyState.value,
+				characterState.value,
+				gameSettingsState.value,
+				apiKeyState.value,
+				aiLanguage.value,
+				aiConfigState.value?.useFallbackLlmState
+			);
+			gameTimeState.value = newGameTime;
+			alert(`New game time generated: ${newGameTime.dayName} ${newGameTime.day} ${newGameTime.monthName} ${newGameTime.year}, ${newGameTime.hour}:${newGameTime.minute.toString().padStart(2, '0')} (${newGameTime.timeOfDay})`);
+		} catch (error) {
+			console.error('Failed to regenerate time:', error);
+			alert('Failed to regenerate time. Check console for details.');
+		} finally {
+			isRegeneratingTime = false;
 		}
 	};
 </script>
@@ -57,6 +97,13 @@
 	</ImportExportSaveGame>
 	<button class="btn btn-neutral mt-2 w-3/4 sm:w-1/2" onclick={taleSettingsClicked}>
 		View Tale Settings
+	</button>
+	<button 
+		class="btn btn-secondary mt-2 w-3/4 sm:w-1/2" 
+		onclick={regenerateGameTime}
+		disabled={isRegeneratingTime}
+	>
+		{isRegeneratingTime ? 'Generating...' : 'Regenerate Game Time (AI)'}
 	</button>
 	<label class="form-control mt-2 w-full">
 		<p>Custom Tale Memories</p>

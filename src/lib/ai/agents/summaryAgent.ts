@@ -32,7 +32,9 @@ export class SummaryAgent {
 			'You are a Summary Agent for a RPG adventure, who is responsible for summarizing the most important bits of a continuous story.' +
 			' Summarize the story so the most important events, which have a long term impact on the story, and characters are included.\n' +
 			' Emphasize on the most important events, and include their details.\n' +
-			'Always respond with following JSON! {"keyDetails": string array, "story": ""}';
+			' IMPORTANT: Preserve temporal context and chronological order in your summary. Include time references (day/night, duration, sequence) when mentioned in the story.' +
+			' If you see [Time: ...] markers in the content, extract and incorporate the temporal flow into your narrative summary.' +
+			' Always respond with following JSON! {"keyDetails": string array, "story": "", "timelineEvents": [{"event": "", "timeContext": ""}]}';
 
 		const toSummarize = historyMessages.slice(2, (numOfLastActions + 1) * -1);
 		console.log('toSummarize', toSummarize);
@@ -44,6 +46,7 @@ export class SummaryAgent {
 		};
 		const response = (await this.llm.generateContent(request))?.content as {
 			story: string;
+			timelineEvents?: { event: string; timeContext: string }[];
 		};
 		console.log('Summary returned ' + stringifyPretty(response));
 		if (!response) {

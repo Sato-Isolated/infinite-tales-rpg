@@ -33,17 +33,11 @@
 		type SkillsProgression
 	} from '$lib/ai/agents/characterStatsAgent';
 	import * as gameLogic from './gameLogic';
-	import {
-		ActionDifficulty,
-		getEmptyCriticalResourceKeys,
-	} from './gameLogic';
+	import { ActionDifficulty, getEmptyCriticalResourceKeys } from './gameLogic';
 	import * as combatLogic from './combatLogic';
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import {
-		getCurrentCharacterGameState,
-		getRenderedGameUpdates,
-	} from './gameStateUtils';
+	import { getCurrentCharacterGameState, getRenderedGameUpdates } from './gameStateUtils';
 	import GameModals from '$lib/components/game/GameModals.svelte';
 	import {
 		initialSystemInstructionsState,
@@ -60,7 +54,7 @@
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
 	import TTSComponent from '$lib/components/TTSComponent.svelte';
-	import {  getXPNeededForLevel } from './levelLogic';
+	import { getXPNeededForLevel } from './levelLogic';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
 	import type { AIConfig } from '$lib';
 	import ResourcesComponent from '$lib/components/ResourcesComponent.svelte';
@@ -93,7 +87,7 @@
 		determineProgressionForAction
 	} from './skillProgressionHelpers';
 	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
-  import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
+	import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import type { RenderedGameUpdate } from './gameLogic';
 
 	// Local type definition matching StoryProgressionWithImage component
@@ -110,11 +104,12 @@
 	import ActionInputForm from '$lib/components/game/ActionInputForm.svelte';
 	import { createGameController } from './gameController';
 	import { createModalManager } from './modalManager.svelte';
+	import TimeWidget from '$lib/components/game/TimeWidget.svelte';
+	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
+	import { generateStoryAppropriateTime, shouldRegenerateGameTime } from './timeLogic';
+
 	// Element/component refs (dialogs, child components)
 	let actionInputFormComponent = $state<{ clear?: () => void }>();
-
-	// Create modal manager
-	const modalManager = createModalManager();
 
 	//ai state
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
@@ -127,6 +122,9 @@
 	let isAiGeneratingState = $state(false);
 	let didAIProcessDiceRollActionState = useLocalStorage<boolean>('didAIProcessDiceRollAction');
 	let didAIProcessActionState = $state<boolean>(true);
+
+	// Create modal manager après les autres états locaux
+	const modalManager = createModalManager();
 	let gameAgent: GameAgent,
 		summaryAgent: SummaryAgent,
 		characterAgent: CharacterAgent,
@@ -247,6 +245,7 @@
 	let useDynamicCombat = useLocalStorage<boolean>('useDynamicCombat', false);
 	let gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState', defaultGameSettings());
 	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
+	const gameTimeState = useLocalStorage<GameTime | null>('gameTimeState', null);
 
 	onMount(async () => {
 		beforeNavigate(({ cancel }) => {
@@ -322,6 +321,7 @@
 				additionalActionInputState,
 				chosenActionState,
 				gameSettingsState,
+				gameTimeState,
 				useDynamicCombat
 			},
 			helpers: {
@@ -843,6 +843,11 @@
 </script>
 
 <div id="game-container" class="container mx-auto p-4">
+	<!-- Widget temps en haut à droite -->
+	<div class="mb-4 flex justify-end">
+		<TimeWidget gameTime={gameTimeState.value} />
+	</div>
+
 	<GameModals
 		{isAiGeneratingState}
 		{modalManager}
@@ -865,8 +870,8 @@
 			controller!.handleTargetedSpellsOrAbility(action, targets || [])}
 		{onDeleteItem}
 		{handleCustomActionSubmit}
-		handleItemUseChosen={handleItemUseChosen}
-		handleSuggestItemActionClosed={handleSuggestItemActionClosed}
+		{handleItemUseChosen}
+		{handleSuggestItemActionClosed}
 		handleLevelUpModalClosed={(levelUp) => controller!.handleLevelUpModalClosed(levelUp)}
 		handleUtilityAction={(action) => controller!.handleUtilityAction(action)}
 		{handleCustomDiceRollClosed}
