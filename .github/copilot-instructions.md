@@ -134,7 +134,105 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
 
 ---
 ### 20. Quick Reference Links
-`game/+page.svelte` • `gameAgent.ts` • `actionAgent.ts` • `summaryAgent.ts` • `campaignAgent.ts` • `combatAgent.ts` • `characterStatsAgent.ts` • `eventAgent.ts` • `memoryLogic.ts` • `gameLogic.ts` • `campaignLogic.ts` • `llm.ts` • `geminiProvider.ts` • `pollinationsProvider.ts` • `useLocalStorage.svelte.ts` (state util).
+`src/routes/game/+page.svelte` • `src/lib/ai/agents/gameAgent.ts` • `src/lib/ai/agents/actionAgent.ts` • `src/lib/ai/agents/summaryAgent.ts` • `src/lib/ai/agents/campaignAgent.ts` • `src/lib/ai/agents/combatAgent.ts` • `src/lib/ai/agents/characterStatsAgent.ts` • `src/lib/ai/agents/eventAgent.ts` • `src/routes/game/memoryLogic.ts` • `src/routes/game/gameLogic.ts` • `src/routes/game/campaignLogic.ts` • `src/lib/ai/llm.ts` • `src/lib/ai/geminiProvider.ts` • `src/lib/ai/pollinationsProvider.ts` • `src/lib/state/useLocalStorage.svelte.ts` (state util).
+
+---
+
+### 21.1 Important Files & Directories (Map)
+- Core routes & pages
+	- `src/routes/+layout.svelte` / `src/routes/+layout.server.ts`: App shell, server layout.
+	- `src/routes/+page.svelte`: Landing / entry UI.
+	- `src/routes/game/+layout.svelte`: Game screen shell.
+	- `src/routes/game/+page.svelte`: Main game UI and streaming presentation.
+
+- Game logic (Section 3 & 7)
+	- `src/routes/game/gameController.ts`: Orchestrates action/story cycle, coordinates agents and state updates. See Sections 4, 7, 17.
+	- `src/routes/game/gameLogic.ts`: Dice gates, side-effects injection, core flow helpers. See Sections 13, 11.
+	- `src/routes/game/campaignLogic.ts`: Chapter progression, prompts (Section 14).
+	- `src/routes/game/combatLogic.ts`: Combat outcomes and JSON updates (Section 8/Combat contract).
+	- `src/routes/game/characterLogic.ts`: Character-related helpers.
+	- `src/routes/game/resourceLogic.ts`: Resource calculations and updates.
+	- `src/routes/game/levelLogic.ts`: Level thresholds and XP handling (Section 15).
+	- `src/routes/game/timeLogic.ts`: Time progression helpers.
+	- `src/routes/game/memoryLogic.ts` + `src/routes/game/memoryLogic/`: Related history retrieval and summarization support (Section 12).
+	- `src/routes/game/skillProgressionHelpers.ts`: Skills and progression utilities (Section 15).
+
+- AI layer (Sections 4, 5, 8)
+	- `src/lib/ai/agents/*.ts`: All core agents (see Section 4 table). Do not change JSON contracts (Section 8).
+	- `src/lib/ai/llm.ts`: Shared prompt fragments and language constants.
+	- `src/lib/ai/llmProvider.ts`: Provider abstraction selection.
+	- `src/lib/ai/geminiProvider.ts`: Streaming story/thoughts, retries, safety settings.
+	- `src/lib/ai/pollinationsProvider.ts`: Image prompt build + retrieval fallback.
+	- `src/lib/ai/jsonStreamHelper.ts`: Streamed JSON parsing utilities.
+
+- State & utilities (Section 6)
+	- `src/lib/state/useLocalStorage.svelte.ts`: Local storage rune-based state util. Keys listed in Section 6.
+	- `src/lib/state/versionMigration.ts`: Versioned migrations for persisted state.
+	- `src/lib/state/errorState.svelte.ts`: Centralized error state handling.
+	- `src/lib/util.svelte.ts`: Shared UI/utility helpers.
+
+- UI components (Section 1 & 9)
+	- `src/lib/components/StoryProgressionWithImage.svelte`: Story + image area.
+	- `src/lib/components/AIGeneratedImage.svelte`: Image rendering (Pollinations).
+	- `src/lib/components/TTSComponent.svelte`: Text-to-speech (msedge).
+	- `src/lib/components/ImportExportSaveGame.svelte`: Save/load persistence.
+	- `src/lib/components/LoadingModal.svelte` / `LoadingIcon.svelte`: Streaming/loading UI.
+	- `src/lib/components/ResourcesComponent.svelte`: Player resources.
+
+- Tests (Section 10)
+	- Unit: `src/index.test.ts`, `src/routes/game/*.test.ts`, `src/lib/ai/agents/storyAgent.test.ts`.
+	- E2E: `tests/test.ts` (Playwright). Config: `playwright.config.ts`.
+
+- Config & build
+	- `svelte.config.js`, `vite.config.ts`, `tailwind.config.ts`, `postcss.config.js`.
+	- `eslint.config.js`, `.prettierrc`, `.prettierignore`.
+	- `vercel.json`: Deployment target.
+	- `package.json`: Scripts and deps.
+
+---
+
+### 21.2 Runes Pattern Snippet (Svelte 5)
+Minimal, accessible pattern aligned with Section 9:
+
+```svelte
+<script lang="ts">
+	import { $state, $derived, $effect } from 'svelte';
+
+	type Counter = { count: number };
+	const counter = $state<Counter>({ count: 0 });
+
+	const doubled = $derived(counter.count * 2);
+
+	const handleIncrement = () => {
+		counter.count += 1; // mutation is reactive
+	};
+
+	$effect(() => {
+		// idempotent side-effect
+		console.debug('count', counter.count);
+	});
+</script>
+
+<button class="btn btn-primary" aria-label="Increment" on:click={handleIncrement}>
+	+1 (x2: {doubled})
+</button>
+```
+
+---
+
+### 21.3 Run & Test Quick Reference
+- Dev server: `npm run dev`
+- Typecheck: `npm run check` (watch: `npm run check:watch`)
+- Lint/format: `npm run lint` • `npm run lint:fix` • `npm run format`
+- Unit tests: `npm run test:unit` (Vitest)
+- E2E tests: `npm run test:integration` (Playwright)
+- Full test suite: `npm test`
+- Build/preview: `npm run build` • `npm run preview`
+
+Notes:
+- Keep tests deterministic; mock LLM outputs for agents.
+- After changing public contracts, update tests and this file (Sections 8 & 18).
+
 
 ---
 ### 21. When Generating Code (AI Assistant Rules)

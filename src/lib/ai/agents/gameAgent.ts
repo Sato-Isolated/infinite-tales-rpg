@@ -166,16 +166,18 @@ export class GameAgent {
 			combinedText += PAST_STORY_PLOT_RULE + relatedHistory.join('\n');
 		}
 
-		// Ajouter le contexte temporel de l'historique pour la cohérence
+		// Add temporal context from history for coherence
 		const temporalContext = GameAgent.extractTemporalContext(historyMessages);
 		if (temporalContext) {
 			combinedText += temporalContext;
 		}
 
-		// Ajouter le temps actuel au prompt
+		// Add current time to prompt
 		if (currentGameTime) {
 			const timeStr = `${currentGameTime.dayName} ${currentGameTime.day} ${currentGameTime.monthName} ${currentGameTime.year}, ${currentGameTime.hour}:${currentGameTime.minute.toString().padStart(2, '0')} (${currentGameTime.timeOfDay})`;
-			combinedText += `\n\nTEMPS ACTUEL DANS LE JEU:\nIl est actuellement ${timeStr}.\nAssure-toi que ta narration respecte ce moment de la journée (luminosité, activités des NPCs, etc.).\n\nDétermine aussi combien de temps s'est écoulé pour cette action selon ces exemples (adaptables) :\n- Conversations/dialogues : e.g. 1-5 minutes\n- Se déplacer dans zone : e.g. 2-10 minutes\n- Voyager entre zones : e.g. 15 minutes - 2 heures\n- Combat simple : e.g. 2-15 minutes\n- Combat boss/épique : e.g. 30 minutes - 3 heures\n- Repos : e.g. 10-30 minutes (court) ou 6-8 heures (long)\n- Activités complexes : e.g. 30 minutes - 3 heures\n`;
+			const seasonStr = currentGameTime.season ? ` | Season: ${currentGameTime.season}` : '';
+			const weatherStr = currentGameTime.weather ? ` | Weather: ${currentGameTime.weather.description || `${currentGameTime.weather.type} (${currentGameTime.weather.intensity})`}` : '';
+			combinedText += `\n\nCURRENT GAME TIME:\nIt is currently ${timeStr}${seasonStr}${weatherStr}.\nEnsure your narration respects this time of day, season and weather (lighting, NPC activities, weather conditions, etc.).\n\nAlso determine how much time has passed for this action according to these examples (adaptable):\n- Conversations/dialogues: e.g. 1-5 minutes\n- Moving within area: e.g. 2-10 minutes\n- Traveling between areas: e.g. 15 minutes - 2 hours\n- Simple combat: e.g. 2-15 minutes\n- Boss/epic combat: e.g. 30 minutes - 3 hours\n- Rest: e.g. 10-30 minutes (short) or 6-8 hours (long)\n- Complex activities: e.g. 30 minutes - 3 hours\n`;
 		}
 
 		const gameAgent = this.getGameAgentSystemInstructionsFromStates(
@@ -339,20 +341,20 @@ export class GameAgent {
 
 	buildHistoryMessages = function (userText: string, modelStateObject: GameActionState, gameTime?: import('$lib/types/gameTime').GameTime | null) {
 		const userMessage: LLMMessage = { role: 'user', content: userText };
-		
-		// Ajouter le contexte temporel caché dans l'historique pour améliorer la cohérence narrative
-		const storyWithTimeContext = gameTime 
-			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay}${modelStateObject.time_passed_minutes ? ` | Action duration: ${modelStateObject.time_passed_minutes}min` : ''}]\n${modelStateObject.story}`
+
+		// Add temporal context hidden in history to improve narrative consistency
+		const storyWithTimeContext = gameTime
+			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay} | Season: ${gameTime.season || 'Unknown'} | Weather: ${gameTime.weather?.description || `${gameTime.weather?.type || 'clear'} (${gameTime.weather?.intensity || 'light'})`}${modelStateObject.time_passed_minutes ? ` | Action duration: ${modelStateObject.time_passed_minutes}min` : ''}]\n${modelStateObject.story}`
 			: modelStateObject.story;
 
-		const modelMessage: LLMMessage = { 
-			role: 'model', 
+		const modelMessage: LLMMessage = {
+			role: 'model',
 			content: stringifyPretty({
 				...modelStateObject,
 				story: storyWithTimeContext
 			})
 		};
-		
+
 		return { userMessage, modelMessage };
 	};
 
@@ -367,7 +369,7 @@ export class GameAgent {
 	 */
 	static extractTemporalContext(historyMessages: Array<LLMMessage>): string {
 		const timeMarkers: string[] = [];
-		
+
 		historyMessages.forEach((message, index) => {
 			if (message.role === 'model' && message.content) {
 				try {
@@ -383,7 +385,7 @@ export class GameAgent {
 		});
 
 		if (timeMarkers.length === 0) return '';
-		
+
 		return `\n\nTEMPORAL CONTEXT FROM RECENT HISTORY:\n${timeMarkers.slice(-5).join('\n')}\nMaintain chronological consistency with this timeline.`;
 	}
 
@@ -555,7 +557,7 @@ export async function generateInitialGameTime(
 	gameSettings: GameSettings
 ): Promise<import('$lib/types/gameTime').GameTime> {
 	console.log('generateInitialGameTime starting with story:', storyState.game, 'character:', characterState.name);
-	
+
 	const agent = [
 		'You are a Time Generation Agent for a RPG adventure. Your task is to generate an appropriate starting date and time that fits the story context.',
 		'Consider the story setting, theme, character background, and narrative tone to determine:',
@@ -563,6 +565,13 @@ export async function generateInitialGameTime(
 		'2. What season/month would fit the story theme',
 		'3. What day of the week might be narratively interesting',
 		'4. What year fits the setting (medieval fantasy typically 800-1200, modern fantasy 1900-2100, etc.)',
+		'5. What weather conditions would enhance the story atmosphere',
+		'',
+		'For weather, consider:',
+		'- Story mood and tone (gloomy stories might have rain/storms, adventure might have clear skies)',
+		'- Season consistency (winter=snow/cold, summer=heat/storms, etc.)',
+		'- Dramatic potential (storms for epic moments, fog for mystery, clear for peaceful starts)',
+		'- Setting realism (desert=heat/dust, mountains=wind/snow, coastal=mist/storms)',
 		'',
 		'Story context:',
 		stringifyPretty(storyState),
@@ -571,7 +580,7 @@ export async function generateInitialGameTime(
 		stringifyPretty(characterState),
 		'',
 		'IMPORTANT: Respond with following JSON format:',
-		'{"day": number 1-30, "dayName": "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday", "month": number 1-12, "monthName": "January|February|March|April|May|June|July|August|September|October|November|December", "year": number, "hour": number 0-23, "minute": number 0-59, "timeOfDay": "dawn|morning|midday|afternoon|evening|night|deep_night", "explanation": "Brief explanation of why this time fits the story"}'
+		'{"day": number 1-30, "dayName": "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday", "month": number 1-12, "monthName": "January|February|March|April|May|June|July|August|September|October|November|December", "year": number, "hour": number 0-23, "minute": number 0-59, "timeOfDay": "dawn|morning|midday|afternoon|evening|night|deep_night", "season": "spring|summer|autumn|winter", "weather": {"type": "clear|cloudy|light_rain|heavy_rain|drizzle|snow|blizzard|storm|thunderstorm|fog|mist|wind|hail|heat_wave|cold_snap", "intensity": "light|moderate|heavy|extreme", "description": "brief atmospheric description"}, "explanation": "Brief explanation of why this time and weather fits the story"}'
 	];
 
 	const request: LLMRequest = {
@@ -585,7 +594,7 @@ export async function generateInitialGameTime(
 		const response = await llm.generateContent(request);
 		console.log('LLM response received:', response);
 		const timeData = response?.content as any;
-		
+
 		if (timeData && timeData.day && timeData.hour !== undefined) {
 			console.log('Valid time data received:', timeData);
 			return {
@@ -596,7 +605,13 @@ export async function generateInitialGameTime(
 				year: timeData.year,
 				hour: timeData.hour,
 				minute: timeData.minute || 0,
-				timeOfDay: timeData.timeOfDay
+				timeOfDay: timeData.timeOfDay,
+				season: timeData.season || 'spring',
+				weather: timeData.weather || {
+					type: 'clear',
+					intensity: 'light',
+					description: 'Pleasant weather'
+				}
 			};
 		} else {
 			console.warn('Invalid time data received from LLM:', timeData);

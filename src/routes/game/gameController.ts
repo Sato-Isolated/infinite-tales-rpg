@@ -263,7 +263,13 @@ export function createGameController(ctx: ControllerCtx) {
           year: newState.initial_game_time.year,
           hour: newState.initial_game_time.hour,
           minute: newState.initial_game_time.minute,
-          timeOfDay: newState.initial_game_time.timeOfDay as GameTime['timeOfDay']
+          timeOfDay: newState.initial_game_time.timeOfDay as GameTime['timeOfDay'],
+          season: (newState.initial_game_time as any).season || 'spring',
+          weather: (newState.initial_game_time as any).weather || {
+            type: 'clear',
+            intensity: 'light',
+            description: 'Pleasant weather'
+          }
         };
         ctx.state.gameTimeState.value = newGameTime;
         console.log(`🎯 Temps initial généré par l'IA: ${newGameTime.dayName} ${newGameTime.day} ${newGameTime.monthName} ${newGameTime.year}, ${newGameTime.hour}:${newGameTime.minute.toString().padStart(2, '0')} (${newGameTime.timeOfDay})`);
