@@ -346,7 +346,9 @@
 									id={`${resourceName}-max`}
 									class="input input-bordered w-full"
 									oninput={(e) =>
-										addResourceOverwrite(resourceName, { max_value: parseInt((e.currentTarget as HTMLInputElement).value) })}
+										addResourceOverwrite(resourceName, {
+											max_value: parseInt((e.currentTarget as HTMLInputElement).value)
+										})}
 									bind:value={characterStatsState.value.resources[resourceName].max_value}
 								/>
 							</div>
@@ -360,7 +362,9 @@
 									id={`${resourceName}-start`}
 									class="input input-bordered w-full"
 									oninput={(e) =>
-										addResourceOverwrite(resourceName, { start_value: parseInt((e.currentTarget as HTMLInputElement).value) })}
+										addResourceOverwrite(resourceName, {
+											start_value: parseInt((e.currentTarget as HTMLInputElement).value)
+										})}
 									bind:value={characterStatsState.value.resources[resourceName].start_value}
 								/>
 							</div>
@@ -372,7 +376,9 @@
 								type="checkbox"
 								class="toggle"
 								oninput={(e) =>
-									addResourceOverwrite(resourceName, { game_ends_when_zero: (e.currentTarget as HTMLInputElement).checked })}
+									addResourceOverwrite(resourceName, {
+										game_ends_when_zero: (e.currentTarget as HTMLInputElement).checked
+									})}
 								bind:checked={characterStatsState.value.resources[resourceName].game_ends_when_zero}
 							/>
 						</label>
@@ -452,7 +458,11 @@
 							id={`attributes-${statName}`}
 							class="input input-bordered w-full"
 							bind:value={characterStatsState.value.attributes[statName]}
-							oninput={(e) => addAttributeOverwrite(statName, parseInt((e.currentTarget as HTMLInputElement).value))}
+							oninput={(e) =>
+								addAttributeOverwrite(
+									statName,
+									parseInt((e.currentTarget as HTMLInputElement).value)
+								)}
 						/>
 					</div>
 				{/each}
@@ -533,7 +543,8 @@
 							id={`skills-${statName}`}
 							class="input input-bordered w-full"
 							bind:value={characterStatsState.value.skills[statName]}
-							oninput={(e) => addSkillOverwrite(statName, parseInt((e.currentTarget as HTMLInputElement).value))}
+							oninput={(e) =>
+								addSkillOverwrite(statName, parseInt((e.currentTarget as HTMLInputElement).value))}
 						/>
 					</div>
 				{/each}

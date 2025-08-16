@@ -317,10 +317,12 @@ export class GeminiProvider extends LLM {
 							json,
 							(firstError as SyntaxError).message
 						);
-						return fixedJson && {
-							thoughts: '',
-							content: fixedJson
-						};
+						return (
+							fixedJson && {
+								thoughts: '',
+								content: fixedJson
+							}
+						);
 					}
 					handleError(firstError as string);
 					return undefined;

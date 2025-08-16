@@ -370,7 +370,9 @@
 																							}
 																							campaignStateOverwrites[stateValue][chapterNumber][
 																								chapterProperty
-																							][plotPoint][plotPointProperty] = (evt.currentTarget as HTMLTextAreaElement).value;
+																							][plotPoint][plotPointProperty] = (
+																								evt.currentTarget as HTMLTextAreaElement
+																							).value;
 																						}}
 																						class="textarea textarea-bordered textarea-md mt-2 w-full"
 																					>
@@ -528,8 +530,8 @@
 				</button>
 				<button
 					class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
-						onclick={() => {
-							campaignState.resetProperty(stateValue as keyof Campaign);
+					onclick={() => {
+						campaignState.resetProperty(stateValue as keyof Campaign);
 						delete campaignStateOverwrites[stateValue];
 					}}
 				>

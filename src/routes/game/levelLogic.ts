@@ -26,7 +26,8 @@ export function mapXP(statsUpdate: StatsUpdate): StatsUpdate {
 		const upper = raw.toUpperCase();
 		if (upper in XP_INCREASING_SCALE) {
 			// Map enum SMALL|MEDIUM|HIGH
-			(statsUpdate.value as any).result = XP_INCREASING_SCALE[upper as keyof typeof XP_INCREASING_SCALE];
+			(statsUpdate.value as any).result =
+				XP_INCREASING_SCALE[upper as keyof typeof XP_INCREASING_SCALE];
 			return statsUpdate;
 		}
 		// If it's a numeric string, keep as-is (applyGameActionState will parseInt)

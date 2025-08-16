@@ -158,7 +158,9 @@ export function renderStatUpdates(
 	if (statsUpdates) {
 		// Backward-compatible param handling: tests may call (updates, currentPlayerName)
 		const resources: ResourcesWithCurrentValue =
-			typeof resourcesOrPlayerName === 'string' ? ({} as ResourcesWithCurrentValue) : resourcesOrPlayerName;
+			typeof resourcesOrPlayerName === 'string'
+				? ({} as ResourcesWithCurrentValue)
+				: resourcesOrPlayerName;
 		const playerNames: Array<string> = Array.isArray(playerNamesParam)
 			? playerNamesParam
 			: typeof playerNamesParam === 'string'
@@ -197,7 +199,10 @@ export function renderStatUpdates(
 						.replaceAll('_', ' ')
 						.toUpperCase() || '';
 
-				const color = getColorForStatUpdate(mappedType, resources || ({} as ResourcesWithCurrentValue));
+				const color = getColorForStatUpdate(
+					mappedType,
+					resources || ({} as ResourcesWithCurrentValue)
+				);
 
 				if (playerNames.includes(targetName)) {
 					responseText = 'You ';
@@ -217,9 +222,7 @@ export function renderStatUpdates(
 							) || resourceText);
 					}
 				} else {
-					responseText = (targetName || '')
-						.replaceAll('_', ' ')
-						.replaceAll('id', '') + ' ';
+					responseText = (targetName || '').replaceAll('_', ' ').replaceAll('id', '') + ' ';
 					if (!changeText) {
 						//probably unhandled status effect
 						changeText = 'is';
@@ -419,14 +422,10 @@ export function isEnoughResource(
 		return true;
 	}
 	const wanted = canonicalizeKey(action.resource_cost?.resource_key || '');
-	const resourceKey = Object.keys(resources).find(
-		(key) => canonicalizeKey(key) === wanted
-	);
+	const resourceKey = Object.keys(resources).find((key) => canonicalizeKey(key) === wanted);
 	let inventoryKey: string | undefined = undefined;
 	if (!resourceKey) {
-		inventoryKey = Object.keys(inventory).find(
-			(key) => canonicalizeKey(key) === wanted
-		);
+		inventoryKey = Object.keys(inventory).find((key) => canonicalizeKey(key) === wanted);
 		return !!inventoryKey;
 	}
 	return resources[resourceKey || '']?.current_value >= cost;

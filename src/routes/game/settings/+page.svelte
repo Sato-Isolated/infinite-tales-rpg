@@ -53,7 +53,9 @@
 				aiConfigState.value?.useFallbackLlmState
 			);
 			gameTimeState.value = newGameTime;
-			alert(`New game time generated: ${newGameTime.dayName} ${newGameTime.day} ${newGameTime.monthName} ${newGameTime.year}, ${newGameTime.hour}:${newGameTime.minute.toString().padStart(2, '0')} (${newGameTime.timeOfDay})`);
+			alert(
+				`New game time generated: ${newGameTime.dayName} ${newGameTime.day} ${newGameTime.monthName} ${newGameTime.year}, ${newGameTime.hour}:${newGameTime.minute.toString().padStart(2, '0')} (${newGameTime.timeOfDay})`
+			);
 		} catch (error) {
 			console.error('Failed to regenerate time:', error);
 			alert('Failed to regenerate time. Check console for details.');
@@ -98,8 +100,8 @@
 	<button class="btn btn-neutral mt-2 w-3/4 sm:w-1/2" onclick={taleSettingsClicked}>
 		View Tale Settings
 	</button>
-	<button 
-		class="btn btn-secondary mt-2 w-3/4 sm:w-1/2" 
+	<button
+		class="btn btn-secondary mt-2 w-3/4 sm:w-1/2"
 		onclick={regenerateGameTime}
 		disabled={isRegeneratingTime}
 	>

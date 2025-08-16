@@ -24,7 +24,7 @@ export async function generateStoryAppropriateTime(
 		apiKey: apiKey ? 'present' : 'missing',
 		language
 	});
-	
+
 	try {
 		const llm = LLMProvider.provideLLM(
 			{

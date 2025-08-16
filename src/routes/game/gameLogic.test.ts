@@ -62,7 +62,12 @@ describe('renderStatUpdates', () => {
 
 	it('should handle status effects with unhandled types', () => {
 		const statsUpdates = [
-			{ targetId: 'Player1', targetName: 'Player1', value: { result: 'stunned' }, type: 'status_effect' }
+			{
+				targetId: 'Player1',
+				targetName: 'Player1',
+				value: { result: 'stunned' },
+				type: 'status_effect'
+			}
 		];
 		const result = renderStatUpdates(statsUpdates, 'Player1');
 		expect(result).toEqual([
@@ -76,7 +81,12 @@ describe('renderStatUpdates', () => {
 
 	it('should handle undefined effects with unhandled types', () => {
 		const statsUpdates = [
-			{ targetId: 'Player1', targetName: 'Player1', value: { result: undefined }, type: 'status_effect' }
+			{
+				targetId: 'Player1',
+				targetName: 'Player1',
+				value: { result: undefined },
+				type: 'status_effect'
+			}
 		];
 		const result = renderStatUpdates(statsUpdates, 'Player1');
 		expect(result.length).toEqual(0);
@@ -104,7 +114,12 @@ describe('renderStatUpdates', () => {
 
 	it('should format names and types correctly for third-person updates', () => {
 		const statsUpdates = [
-			{ targetId: 'Player_id1', targetName: 'Player_id1', value: { result: '20' }, type: 'hp_gained' }
+			{
+				targetId: 'Player_id1',
+				targetName: 'Player_id1',
+				value: { result: '20' },
+				type: 'hp_gained'
+			}
 		];
 		const result = renderStatUpdates(statsUpdates, 'Player2');
 		expect(result).toEqual([
@@ -156,7 +171,9 @@ describe('renderStatUpdates', () => {
 	});
 
 	it('handles accented resource keys like ÉNERGIE ÆTHÉRIQUE in render (color detection only)', () => {
-		const statsUpdates = [{ targetId: 'Player1', value: { result: '2' }, type: 'énergie_æthérique_lost' } as any];
+		const statsUpdates = [
+			{ targetId: 'Player1', value: { result: '2' }, type: 'énergie_æthérique_lost' } as any
+		];
 		// When rendering, color detection tries to match against provided resources; pass matching resource shape
 		const resources = {
 			'ENERGIE AETHERIQUE': { current_value: 8, max_value: 8, game_ends_when_zero: false }

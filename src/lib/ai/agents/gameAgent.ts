@@ -176,7 +176,9 @@ export class GameAgent {
 		if (currentGameTime) {
 			const timeStr = `${currentGameTime.dayName} ${currentGameTime.day} ${currentGameTime.monthName} ${currentGameTime.year}, ${currentGameTime.hour}:${currentGameTime.minute.toString().padStart(2, '0')} (${currentGameTime.timeOfDay})`;
 			const seasonStr = currentGameTime.season ? ` | Season: ${currentGameTime.season}` : '';
-			const weatherStr = currentGameTime.weather ? ` | Weather: ${currentGameTime.weather.description || `${currentGameTime.weather.type} (${currentGameTime.weather.intensity})`}` : '';
+			const weatherStr = currentGameTime.weather
+				? ` | Weather: ${currentGameTime.weather.description || `${currentGameTime.weather.type} (${currentGameTime.weather.intensity})`}`
+				: '';
 			combinedText += `\n\nCURRENT GAME TIME:\nIt is currently ${timeStr}${seasonStr}${weatherStr}.\nEnsure your narration respects this time of day, season and weather (lighting, NPC activities, weather conditions, etc.).\n\nAlso determine how much time has passed for this action according to these examples (adaptable):\n- Conversations/dialogues: e.g. 1-5 minutes\n- Moving within area: e.g. 2-10 minutes\n- Traveling between areas: e.g. 15 minutes - 2 hours\n- Simple combat: e.g. 2-15 minutes\n- Boss/epic combat: e.g. 30 minutes - 3 hours\n- Rest: e.g. 10-30 minutes (short) or 6-8 hours (long)\n- Complex activities: e.g. 30 minutes - 3 hours\n`;
 		}
 
@@ -234,14 +236,14 @@ export class GameAgent {
 	): Promise<{ thoughts?: string; answer: GameMasterAnswer }> {
 		const gameAgent = [
 			'You are Reviewer Agent, your task is to answer a players question.\n' +
-			'You can refer to the internal state, rules and previous messages that the Game Master has considered',
+				'You can refer to the internal state, rules and previous messages that the Game Master has considered',
 			'The following is the internal state of the NPCs.' + '\n' + stringifyPretty(npcState)
 		];
 		if (campaignChapterState) {
 			gameAgent.push(
 				'The following is the state of the current campaign chapter.' +
-				'\n' +
-				stringifyPretty(campaignChapterState)
+					'\n' +
+					stringifyPretty(campaignChapterState)
 			);
 		}
 		if (customGmNotes) {
@@ -252,8 +254,8 @@ export class GameAgent {
 		if (thoughtsState.storyThoughts) {
 			gameAgent.push(
 				'The following are thoughts of the Game Master regarding how to progress the story.' +
-				'\n' +
-				JSON.stringify(thoughtsState)
+					'\n' +
+					JSON.stringify(thoughtsState)
 			);
 		}
 		if (relatedHistory.length > 0) {
@@ -306,12 +308,12 @@ export class GameAgent {
 			systemBehaviour(gameSettings),
 			stringifyPretty(storyState),
 			'The following is a description of the player character, always refer to it when considering appearance, reasoning, motives etc.' +
-			'\n' +
-			stringifyPretty(characterState),
+				'\n' +
+				stringifyPretty(characterState),
 			"The following are the character's CURRENT resources, consider it in your response\n" +
-			stringifyPretty(Object.values(playerCharactersGameState)),
+				stringifyPretty(Object.values(playerCharactersGameState)),
 			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.\n" +
-			stringifyPretty(inventoryState)
+				stringifyPretty(inventoryState)
 		];
 		if (customSystemInstruction) {
 			gameAgent.push('Following instructions overrule all others: ' + customSystemInstruction);
@@ -339,7 +341,11 @@ export class GameAgent {
 		);
 	}
 
-	buildHistoryMessages = function (userText: string, modelStateObject: GameActionState, gameTime?: import('$lib/types/gameTime').GameTime | null) {
+	buildHistoryMessages = function (
+		userText: string,
+		modelStateObject: GameActionState,
+		gameTime?: import('$lib/types/gameTime').GameTime | null
+	) {
 		const userMessage: LLMMessage = { role: 'user', content: userText };
 
 		// Add temporal context hidden in history to improve narrative consistency
@@ -373,7 +379,8 @@ export class GameAgent {
 		historyMessages.forEach((message, index) => {
 			if (message.role === 'model' && message.content) {
 				try {
-					const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+					const content =
+						typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
 					const timeMatch = content.match(/\[Time: ([^\]]+)\]/);
 					if (timeMatch) {
 						timeMarkers.push(`Step ${index + 1}: ${timeMatch[1]}`);
@@ -556,7 +563,12 @@ export async function generateInitialGameTime(
 	characterState: CharacterDescription,
 	gameSettings: GameSettings
 ): Promise<import('$lib/types/gameTime').GameTime> {
-	console.log('generateInitialGameTime starting with story:', storyState.game, 'character:', characterState.name);
+	console.log(
+		'generateInitialGameTime starting with story:',
+		storyState.game,
+		'character:',
+		characterState.name
+	);
 
 	const agent = [
 		'You are a Time Generation Agent for a RPG adventure. Your task is to generate an appropriate starting date and time that fits the story context.',
@@ -584,7 +596,8 @@ export async function generateInitialGameTime(
 	];
 
 	const request: LLMRequest = {
-		userMessage: 'Generate an appropriate initial game time for this story and character. Consider what time would create the most dramatic and engaging opening scene.',
+		userMessage:
+			'Generate an appropriate initial game time for this story and character. Consider what time would create the most dramatic and engaging opening scene.',
 		systemInstruction: agent,
 		temperature: 0.8
 	};
