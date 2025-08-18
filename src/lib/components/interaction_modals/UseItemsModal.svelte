@@ -71,14 +71,14 @@
 	></CraftingModal>
 {/if}
 
-<dialog bind:this={dialogRef} class="z-99 modal" style="background: rgba(0, 0, 0, 0.3);">
+<dialog bind:this={dialogRef} class="modal z-99" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center">
 		<form method="dialog">
 			<span class="m-auto">Inventory</span>
-			<button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2">✕</button>
+			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2">✕</button>
 		</form>
 		<button
-			class="components btn btn-neutral no-animation m-auto mt-2"
+			class="components btn btn-neutral no-animation btn-md m-auto mt-2"
 			onclick={() => {
 				craftingDialogState = true;
 				dialogRef.close();
@@ -88,12 +88,12 @@
 			Crafting
 		</button>
 		{#each Object.entries(inventoryState || {}) as [item_id, item] (item_id)}
-			<label class="form-control mt-3 w-full">
-				<details class="collapse collapse-arrow textarea-bordered border bg-base-200">
+			<fieldset class="mt-3 w-full">
+				<details class="collapse-arrow textarea bg-base-200 textarea-md collapse border">
 					<summary class="collapse-title capitalize">
 						<div
 							class:sm:grid-cols-6={!aiConfigState.value?.disableImagesState}
-							class="grid grid-cols-1 overflow-hidden overflow-ellipsis text-center"
+							class="grid grid-cols-1 truncate text-center"
 						>
 							<div class="m-auto sm:col-span-3">
 								{#if !aiConfigState.value?.disableImagesState}
@@ -111,12 +111,12 @@
 								{/if}
 							</div>
 							<div class="m-auto w-full sm:col-span-2">
-								<p class="mt-2 overflow-hidden overflow-ellipsis capitalize">
+								<p class="mt-2 truncate capitalize">
 									{formatItemId(item_id)}
 								</p>
 								<button
 									type="button"
-									class="components btn btn-neutral no-animation mt-2"
+									class="components btn btn-neutral no-animation btn-md mt-2"
 									onclick={() => {
 										dialogRef.close();
 										onclose(mapToAction(item_id, item));
@@ -142,7 +142,7 @@
 						</button>
 					</div>
 				</details>
-			</label>
+			</fieldset>
 		{/each}
 	</div>
 </dialog>

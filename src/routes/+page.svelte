@@ -57,7 +57,7 @@
 	<section class="my-8 text-center">
 		<h2 class="mb-4 text-2xl font-semibold">Join the Beta</h2>
 		<p class="mb-4">Experience the game in the early stages and help shape it's future.</p>
-		<button class="btn btn-primary" onclick={() => (disclaimerOpen = true)}>Start Your Tale</button>
+		<button class="btn btn-primary btn-md" onclick={() => (disclaimerOpen = true)}>Start Your Tale</button>
 	</section>
 
 	<section class="my-8 rounded-lg bg-gray-800 p-6 text-center shadow-md">

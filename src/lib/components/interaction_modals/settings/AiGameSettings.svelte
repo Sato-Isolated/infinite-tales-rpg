@@ -12,55 +12,55 @@
 	<div class="modal-box flex flex-col items-center text-center">
 		<h3 class="text-lg font-bold">AI Settings</h3>
 
-		<label class="form-control mt-5 w-full sm:w-2/3">
-			<span>Dynamic Combat</span>
+		<fieldset class="mt-5 w-full sm:w-2/3">
+			<legend class="fieldset-legend">Dynamic Combat</legend>
 			<input
 				type="checkbox"
 				id="useDynamicCombat"
 				bind:checked={useDynamicCombat.value}
 				class="toggle m-auto mt-2 text-center"
 			/>
-			<small class="m-auto mt-2 text-xs text-base-content/70">
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
 				Enable for reactions for every NPC during combat.<br />
 				Disable for faster, story-focused combat.
 			</small>
-		</label>
+		</fieldset>
 
-		<label class="form-control mt-5 w-full sm:w-2/3">
-			<span>Detailed Narration Length</span>
+		<fieldset class="fieldset mt-5 w-full sm:w-2/3">
+			<legend class="fieldset-legend">Detailed Narration Length</legend>
 			<input
 				type="checkbox"
 				bind:checked={gameSettingsState.value.detailedNarrationLength}
 				class="toggle m-auto mt-2 text-center"
 			/>
-			<small class="m-auto mt-2 text-xs text-base-content/70">
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
 				Enabled longer detailed narration, disabled shorter concise length
 			</small>
-		</label>
+		</fieldset>
 
-		<label class="form-control mt-5 w-full sm:w-2/3">
-			<span>AI creates new skills</span>
+		<fieldset class="fieldset mt-5 w-full sm:w-2/3">
+			<legend class="fieldset-legend">AI creates new skills</legend>
 			<input
 				type="checkbox"
 				bind:checked={gameSettingsState.value.aiIntroducesSkills}
 				class="toggle m-auto mt-2 text-center"
 			/>
-			<small class="m-auto mt-2 text-xs text-base-content/70">
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
 				When no existing skill fits the action, the AI will create a new one.
 			</small>
-		</label>
+		</fieldset>
 
-		<label class="form-control mt-5 w-full sm:w-2/3">
-			<span>Random events</span>
+		<fieldset class="fieldset mt-5 w-full sm:w-2/3">
+			<legend class="fieldset-legend">Random events</legend>
 			<select
 				bind:value={gameSettingsState.value.randomEventsHandling}
-				class="select select-bordered mt-2 text-center"
+				class="select select-md mt-2 text-center"
 			>
 				<option value="none">None</option>
 				<option value="probability">Probability</option>
 				<option value="ai_decides">AI decides</option>
 			</select>
-			<small class="m-auto mt-2 text-xs text-base-content/70">
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
 				E.g. travel or spell channelling is interrupted
 				<br />
 				None: action is never interrupted
@@ -69,11 +69,11 @@
 				<br />
 				AI decides: based on context
 			</small>
-		</label>
+		</fieldset>
 
 		<!-- Close Button -->
 		<div class="modal-action mt-6">
-			<button class="btn btn-info" onclick={onclose}>Close</button>
+			<button class="btn btn-info btn-md" onclick={onclose}>Close</button>
 		</div>
 	</div>
 	<!-- Optional: Click outside to close -->

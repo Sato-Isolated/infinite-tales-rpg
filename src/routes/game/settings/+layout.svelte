@@ -14,15 +14,21 @@
 <a href="/">
 	<img src={logo} alt="Infinite Tales Logo" class="m-auto mt-3 w-1/2 sm:w-1/4" />
 </a>
-<nav class="btm-nav bottom-[6vh] ml-auto mr-auto h-[7vh] max-w-7xl overflow-auto bg-base-300">
-	<ul class="menu gap-0 p-0 sm:text-lg">
-		<li>
-			<a href="/game/settings/" class:active={activeUrl === '/game/settings'}>Tale Settings</a>
-		</li>
-		<li>
-			<a href="/game/settings/ai" class:active={activeUrl === '/game/settings/ai'}>AI Settings</a>
-		</li>
-	</ul>
+<nav class="dock bg-base-300 bottom-[6vh] h-[7vh] w-screen overflow-hidden">
+	<a
+		href="/game/settings/"
+		class="hover:bg-base-100 transition-colors"
+		class:dock-active={activeUrl === '/game/settings'}
+	>
+		<span class="dock-label">Tale Settings</span>
+	</a>
+	<a
+		href="/game/settings/ai"
+		class="hover:bg-base-100 transition-colors"
+		class:dock-active={activeUrl === '/game/settings/ai'}
+	>
+		<span class="dock-label">AI Settings</span>
+	</a>
 </nav>
 
 {@render children()}

@@ -127,7 +127,7 @@
 		generated.
 	</p>
 	<button
-		class="btn btn-accent m-auto mt-3 w-3/4 sm:w-1/2"
+		class="btn btn-accent btn-md m-auto mt-3 w-1/2"
 		disabled={isGeneratingState}
 		onclick={onRandomize}
 	>
@@ -135,14 +135,14 @@
 	</button>
 	<button
 		type="button"
-		class="btn btn-neutral m-auto w-3/4 sm:w-1/2"
+		class="btn btn-neutral btn-md m-auto w-1/2"
 		onclick={onUploadClicked}
 		disabled={isGeneratingState}
 	>
 		Generate Tale from PDF
 	</button>
 	<button
-		class="btn btn-neutral m-auto w-3/4 sm:w-1/2"
+		class="btn btn-neutral btn-md m-auto w-1/2"
 		onclick={() => {
 			storyState.reset();
 			storyStateOverwrites = {};
@@ -152,14 +152,14 @@
 	</button>
 	<ImportExportSaveGame isSaveGame={false}>
 		{#snippet exportButton(onclick)}
-			<button {onclick} class="btn btn-neutral m-auto w-3/4 sm:w-1/2"> Export Settings </button>
+			<button {onclick} class="btn btn-neutral btn-md m-auto w-1/2"> Export Settings </button>
 		{/snippet}
 		{#snippet importButton(onclick)}
-			<button {onclick} class="btn btn-neutral m-auto w-3/4 sm:w-1/2"> Import Settings </button>
+			<button {onclick} class="btn btn-neutral btn-md m-auto w-1/2"> Import Settings </button>
 		{/snippet}
 	</ImportExportSaveGame>
 	<button
-		class="btn btn-primary m-auto w-3/4 sm:w-1/2"
+		class="btn btn-primary btn-md m-auto w-1/2"
 		onclick={() => {
 			navigate('/new/character');
 		}}
@@ -168,7 +168,7 @@
 	</button>
 	{#if storyState.value}
 		{#each Object.keys(storyStateForPrompt) as stateValue}
-			<label class="form-control mt-3 w-full">
+			<fieldset class="mt-3 w-full">
 				<div class=" flex-row capitalize">
 					{stateValue.replaceAll('_', ' ')}
 					{#if storyStateOverwrites[stateValue]}
@@ -181,11 +181,11 @@
 					rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
 					oninput={(evt) => handleInput(evt, stateValue)}
 					placeholder={storyStateForPrompt[stateValue]}
-					class="textarea textarea-bordered textarea-md mt-2 w-full"
+					class="textarea textarea-md mt-2 w-full"
 				></textarea>
-			</label>
+			</fieldset>
 			<button
-				class="btn btn-accent m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+				class="btn btn-accent btn-md m-auto mt-2 w-1/2 capitalize"
 				onclick={() => {
 					onRandomizeSingle(stateValue);
 				}}
@@ -193,7 +193,7 @@
 				Randomize {stateValue.replaceAll('_', ' ')}
 			</button>
 			<button
-				class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+				class="btn btn-neutral btn-md m-auto mt-2 w-1/2 capitalize"
 				onclick={() => {
 					storyState.resetProperty(stateValue as keyof Story);
 					delete storyStateOverwrites[stateValue];
@@ -203,7 +203,7 @@
 			</button>
 		{/each}
 		<button
-			class="btn btn-primary m-auto mt-2 w-3/4 sm:w-1/2"
+			class="btn btn-primary btn-md m-auto mt-2 w-1/2"
 			onclick={() => {
 				navigate('/new/character');
 			}}

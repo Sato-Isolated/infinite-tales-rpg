@@ -56,7 +56,7 @@
 
 		<textarea
 			bind:value={storyDescription}
-			class="textarea textarea-bordered mt-3 w-full"
+			class="textarea mt-3 w-full textarea-md"
 			rows="5"
 			oninput={() => (storyState = undefined)}
 			placeholder="Type your idea or let the AI generate one.
@@ -65,8 +65,8 @@ By entering an idea and click Generate Idea, the AI will enhance what you entere
 		</textarea>
 
 		<div class="mt-3 flex gap-2">
-			<button class="btn btn-primary flex-1" onclick={generateIdea}>Generate Idea</button>
-			<button class="btn btn-accent flex-1" onclick={generateStory}>Start</button>
+			<button class="btn btn-primary flex-1 btn-md" onclick={generateIdea}>Generate Idea</button>
+			<button class="btn btn-accent flex-1 btn-md" onclick={generateStory}>Start</button>
 		</div>
 	</div>
 </dialog>

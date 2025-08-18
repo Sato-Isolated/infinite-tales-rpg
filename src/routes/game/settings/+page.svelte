@@ -72,14 +72,11 @@
 	<AiGameSettingsModal onclose={() => (showAiGameSettingsModal = false)} />
 {/if}
 <form class="m-6 flex flex-col items-center text-center">
-	<button
-		class="btn btn-neutral mt-2 w-3/4 sm:w-1/2"
-		onclick={() => (showGameSettingsModal = true)}
-	>
+	<button class="btn btn-neutral btn-md mt-2 w-1/2" onclick={() => (showGameSettingsModal = true)}>
 		Game Settings
 	</button>
 	<button
-		class="btn btn-neutral mt-2 w-3/4 sm:w-1/2"
+		class="btn btn-neutral btn-md mt-2 w-1/2"
 		onclick={() => (showAiGameSettingsModal = true)}
 	>
 		AI Settings
@@ -87,42 +84,38 @@
 
 	<ImportExportSaveGame isSaveGame={true}>
 		{#snippet exportButton(onclick)}
-			<button {onclick} class="btn btn-neutral m-auto mt-4 w-3/4 sm:w-1/2">
-				Export Save Game
-			</button>
+			<button {onclick} class="btn btn-neutral btn-md m-auto mt-4 w-1/2"> Export Save Game </button>
 		{/snippet}
 		{#snippet importButton(onclick)}
-			<button {onclick} class="btn btn-neutral m-auto mt-2 w-3/4 sm:w-1/2">
-				Import Save Game
-			</button>
+			<button {onclick} class="btn btn-neutral btn-md m-auto mt-2 w-1/2"> Import Save Game </button>
 		{/snippet}
 	</ImportExportSaveGame>
-	<button class="btn btn-neutral mt-2 w-3/4 sm:w-1/2" onclick={taleSettingsClicked}>
+	<button class="btn btn-neutral btn-md mt-2 w-1/2" onclick={taleSettingsClicked}>
 		View Tale Settings
 	</button>
 	<button
-		class="btn btn-secondary mt-2 w-3/4 sm:w-1/2"
+		class="btn btn-secondary btn-md mt-2 w-1/2"
 		onclick={regenerateGameTime}
 		disabled={isRegeneratingTime}
 	>
 		{isRegeneratingTime ? 'Generating...' : 'Regenerate Game Time (AI)'}
 	</button>
-	<label class="form-control mt-2 w-full">
+	<fieldset class="mt-2 w-full">
 		<p>Custom Tale Memories</p>
 		<textarea
 			rows={3}
 			placeholder="If the AI forgets important events during the Tale, you can enter custom memories here. Added to every action, don't make it too long."
 			bind:value={customMemoriesState.value}
-			class="textarea textarea-bordered mt-2 w-full"
+			class="textarea textarea-md mt-2 w-full"
 		></textarea>
-	</label>
-	<label class="form-control mt-2 w-full">
+	</fieldset>
+	<fieldset class="mt-2 w-full">
 		<p>Custom GM Notes</p>
 		<textarea
 			rows={3}
 			placeholder="Use for specific/temporary game rules, added to every action, don't make it too long."
 			bind:value={customGMNotesState.value}
-			class="textarea textarea-bordered mt-2 w-full"
+			class="textarea textarea-md mt-2 w-full"
 		></textarea>
-	</label>
+	</fieldset>
 </form>

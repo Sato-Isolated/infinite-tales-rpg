@@ -19,7 +19,7 @@
 	<div class="mt-2 p-4 pb-0 pt-0">
 		{#each actions as action (action.text + action.type)}
 			<button
-				class="text-md ai-gen-action btn btn-neutral mb-3 w-full"
+				class="text-md ai-gen-action btn btn-neutral mb-3 w-full btn-md"
 				disabled={!isEnoughResource(action, playerResources, inventoryState)}
 				onclick={() => handleClick(action)}>{getTextForActionButton(action)}</button
 			>

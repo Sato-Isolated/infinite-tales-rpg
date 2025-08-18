@@ -19,10 +19,10 @@
 </script>
 
 {#if isMounted}
-	<label class="form-control textarea-bordered mt-3 w-full border bg-base-200">
+	<fieldset class="fieldset mt-3 w-full border bg-base-200 p-4">
 		<div
 			class:sm:grid-cols-6={!aiConfigState.value?.disableImagesState}
-			class="grid-cols mt-4 grid overflow-hidden overflow-ellipsis text-center"
+			class="grid-cols mt-2 grid truncate text-center"
 		>
 			<div class="m-auto sm:col-span-3">
 				{#if !aiConfigState.value?.disableImagesState}
@@ -48,11 +48,11 @@
 						{(ability.resource_cost?.resource_key || '').replaceAll('_', ' ')}
 					</p>
 				{/if}
-				<p class="mt-2 overflow-hidden overflow-ellipsis">{ability.name}</p>
+				<p class="mt-2 truncate">{ability.name}</p>
 			</div>
 		</div>
 		<p class="m-5 mt-2">
 			{ability.effect}
 		</p>
-	</label>
+	</fieldset>
 {/if}

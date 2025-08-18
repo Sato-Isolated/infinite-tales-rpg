@@ -290,7 +290,7 @@
 {/if}
 <form class="m-6 grid items-center gap-2 text-center">
 	{@render navigation()}
-	<div class="form-control m-auto w-full">
+	<div class="m-auto w-full">
 		<div class="flex items-center justify-center">
 			<label for="level" class="label">
 				<span class="m-auto">Level</span>
@@ -302,25 +302,25 @@
 		<input
 			type="number"
 			id="level"
-			class="input input-bordered m-auto w-full max-w-md"
+			class="input input-md m-auto w-full max-w-md"
 			bind:value={characterStatsState.value.level}
 			oninput={(e) => addLevelOverwrite(parseInt((e.currentTarget as HTMLInputElement).value))}
 		/>
 	</div>
 
 	<!-- Dynamically render resources -->
-	<details class="collapse collapse-arrow border border-base-300 bg-base-200">
+	<details class="collapse-arrow border-base-300 bg-base-200 collapse border">
 		<summary class="collapse-title items-center text-center">Resources</summary>
 		<div class="collapse-content">
 			{#if characterStatsState.value.resources}
 				{#each Object.entries(characterStatsState.value.resources) as [resourceName]}
-					<div class="form-control m-auto w-full max-w-md rounded-lg border border-base-300 p-3">
+					<div class="border-base-300 m-auto w-full max-w-md rounded-lg border p-3">
 						<div class="flex flex-col items-center justify-center sm:flex-row">
 							{#if characterStatsStateOverwrites.resources[resourceName]}
 								<span class="badge badge-accent ml-2">overwritten</span>
 							{/if}
 							<label for={`resource-${resourceName}`} class="label flex-1 text-center">
-								<span class="m-auto max-w-48 overflow-clip overflow-ellipsis capitalize sm:max-w-96"
+								<span class="m-auto max-w-48 truncate overflow-clip capitalize sm:max-w-96"
 									>{resourceName.replace(/_/g, ' ')}</span
 								>
 							</label>
@@ -344,7 +344,7 @@
 								<input
 									type="number"
 									id={`${resourceName}-max`}
-									class="input input-bordered w-full"
+									class="input input-md w-full"
 									oninput={(e) =>
 										addResourceOverwrite(resourceName, {
 											max_value: parseInt((e.currentTarget as HTMLInputElement).value)
@@ -360,7 +360,7 @@
 								<input
 									type="number"
 									id={`${resourceName}-start`}
-									class="input input-bordered w-full"
+									class="input input-md w-full"
 									oninput={(e) =>
 										addResourceOverwrite(resourceName, {
 											start_value: parseInt((e.currentTarget as HTMLInputElement).value)
@@ -389,7 +389,7 @@
 			<!-- Button to add new resource -->
 			<div class="m-auto mt-4 flex w-full max-w-md flex-col justify-center gap-2 sm:flex-row">
 				<button
-					class="btn btn-neutral flex-1"
+					class="btn btn-neutral btn-md flex-1"
 					onclick={(e) => {
 						e.preventDefault();
 						const newResourceName = window.prompt('Enter new resource name:');
@@ -410,7 +410,7 @@
 					Add Resource
 				</button>
 				<button
-					class="btn btn-accent flex-1"
+					class="btn btn-accent btn-md flex-1"
 					onclick={(e) => {
 						e.preventDefault();
 						onRandomizeResources();
@@ -424,19 +424,19 @@
 	</details>
 
 	<!-- Dynamically render attributes -->
-	<details class="collapse collapse-arrow border border-base-300 bg-base-200">
+	<details class="collapse-arrow border-base-300 bg-base-200 collapse border">
 		<summary class="collapse-title items-center text-center">Attributes</summary>
 		<div class="collapse-content">
 			<p class="m-auto mt-4">Attributes increase on level up.</p>
 			{#if characterStatsState.value.attributes}
 				{#each Object.entries(characterStatsState.value.attributes) as [statName]}
-					<div class="form-control m-auto flex w-full max-w-md">
+					<div class="m-auto flex w-full max-w-md">
 						<div class="m-3 flex flex-col items-center justify-center sm:flex-row">
 							{#if characterStatsStateOverwrites.attributes[statName]}
 								<span class="badge badge-accent">overwritten</span>
 							{/if}
 							<label for={`attributes-${statName}`} class="label flex-1 text-center">
-								<span class="sm:max-w-90 m-auto max-w-48 overflow-clip overflow-ellipsis capitalize"
+								<span class="m-auto max-w-48 truncate overflow-clip capitalize sm:max-w-90"
 									>{statName.replace(/_/g, ' ')}</span
 								>
 							</label>
@@ -456,7 +456,7 @@
 							min={-10}
 							max={10}
 							id={`attributes-${statName}`}
-							class="input input-bordered w-full"
+							class="input input-md w-full"
 							bind:value={characterStatsState.value.attributes[statName]}
 							oninput={(e) =>
 								addAttributeOverwrite(
@@ -471,7 +471,7 @@
 			<!-- Button to add new attribute -->
 			<div class="m-auto mt-4 flex w-full max-w-md flex-col justify-center gap-2 sm:flex-row">
 				<button
-					class="btn btn-neutral flex-1"
+					class="btn btn-neutral btn-md flex-1"
 					onclick={(e) => {
 						e.preventDefault();
 						const newStatName = window.prompt('Enter new attribute name:');
@@ -484,7 +484,7 @@
 					Add attribute
 				</button>
 				<button
-					class="btn btn-accent flex-1"
+					class="btn btn-accent btn-md flex-1"
 					onclick={(e) => {
 						e.preventDefault();
 						onRandomizeAttributes();
@@ -498,30 +498,30 @@
 	</details>
 
 	<!-- Dynamically render skills -->
-	<details class="collapse collapse-arrow border border-base-300 bg-base-200">
+	<details class="collapse-arrow border-base-300 bg-base-200 collapse border">
 		<summary class="collapse-title items-center text-center">Skills</summary>
 		<div class="collapse-content">
-			<label class="form-control mt-2 w-full">
+			<fieldset class="mt-2 w-full">
 				<p>AI creates new skills</p>
 				<input
 					type="checkbox"
 					bind:checked={gameSettingsState.value.aiIntroducesSkills}
 					class="toggle m-auto mt-2 text-center"
 				/>
-				<small class="m-auto mb-1 mt-2"
+				<small class="m-auto mt-2 mb-1"
 					>When no existing skill fits the action, the AI will create a new one.</small
 				>
-			</label>
+			</fieldset>
 			<p class="m-auto mt-4">Skills increase the more you use them.</p>
 			{#if characterStatsState.value.skills}
 				{#each Object.entries(characterStatsState.value.skills) as [statName]}
-					<div class="form-control m-auto flex w-full max-w-md">
+					<div class="m-auto flex w-full max-w-md">
 						<div class="m-3 flex flex-col items-center justify-center sm:flex-row">
 							{#if characterStatsStateOverwrites.skills[statName]}
 								<span class="badge badge-accent ml-2">overwritten</span>
 							{/if}
 							<label for={`skills-${statName}`} class="label flex-1 text-center">
-								<span class="m-auto max-w-48 overflow-clip overflow-ellipsis capitalize sm:max-w-96"
+								<span class="m-auto max-w-48 truncate overflow-clip capitalize sm:max-w-96"
 									>{statName.replace(/_/g, ' ')}</span
 								>
 							</label>
@@ -541,7 +541,7 @@
 							min={-10}
 							max={10}
 							id={`skills-${statName}`}
-							class="input input-bordered w-full"
+							class="input input-md w-full"
 							bind:value={characterStatsState.value.skills[statName]}
 							oninput={(e) =>
 								addSkillOverwrite(statName, parseInt((e.currentTarget as HTMLInputElement).value))}
@@ -553,7 +553,7 @@
 			<!-- Button to add new skill -->
 			<div class="m-auto mt-4 flex w-full max-w-md flex-col justify-center gap-2 sm:flex-row">
 				<button
-					class="btn btn-neutral flex-1"
+					class="btn btn-neutral btn-md flex-1"
 					onclick={(e) => {
 						e.preventDefault();
 						const newStatName = window.prompt('Enter new skill name:');
@@ -566,7 +566,7 @@
 					Add Skill
 				</button>
 				<button
-					class="btn btn-accent flex-1"
+					class="btn btn-accent btn-md flex-1"
 					onclick={(e) => {
 						e.preventDefault();
 						onRandomizeSkills();
@@ -579,7 +579,7 @@
 		</div>
 	</details>
 
-	<details class="collapse collapse-arrow border border-base-300 bg-base-200">
+	<details class="collapse-arrow border-base-300 bg-base-200 collapse border">
 		<summary class="collapse-title items-center text-center">Spells & Abilities</summary>
 		<div class="collapse-content">
 			<!-- Basic editor for spells and abilities -->
@@ -602,7 +602,7 @@
 
 			<div class="m-auto flex w-full max-w-md flex-col justify-center gap-2 sm:flex-row">
 				<button
-					class="btn btn-neutral flex-1"
+					class="btn btn-neutral btn-md flex-1"
 					onclick={() => {
 						characterStatsState.value.spells_and_abilities.push({
 							name: '',
@@ -621,7 +621,7 @@
 					Add Spell/Ability
 				</button>
 				<button
-					class="btn btn-accent flex-1"
+					class="btn btn-accent btn-md flex-1"
 					onclick={(e) => {
 						e.preventDefault();
 						onRandomizeAllAbilities();
@@ -640,14 +640,14 @@
 	<div class="card-actions m-auto mt-4 flex w-full flex-col sm:flex-row">
 		{#if !isLast}
 			<button
-				class="btn btn-accent m-auto w-3/4 sm:w-1/2"
+				class="btn btn-accent btn-md m-auto w-1/2"
 				onclick={onRandomize}
 				disabled={isGeneratingState}
 			>
 				Randomize All
 			</button>
 			<button
-				class="btn btn-neutral m-auto w-3/4 sm:w-1/2"
+				class="btn btn-neutral btn-md m-auto w-1/2"
 				onclick={() => {
 					characterStatsState.value = cloneDeep(initialCharacterStatsState);
 				}}
@@ -655,7 +655,7 @@
 				Clear All
 			</button>
 		{/if}
-		<button class="btn btn-primary m-auto w-3/4 sm:w-1/2" onclick={onContinue}>
+		<button class="btn btn-primary btn-md m-auto w-1/2" onclick={onContinue}>
 			Start Your Tale
 		</button>
 	</div>

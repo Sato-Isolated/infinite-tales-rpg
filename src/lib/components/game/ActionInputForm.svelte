@@ -25,8 +25,8 @@
 </script>
 
 <form id="input-form" class="p-4 pb-2" onsubmit={onFormSubmit}>
-	<div class="w-full lg:join">
-		<select bind:value={receiver} class="select select-bordered w-full lg:w-fit">
+	<div class="lg:join lg:flex w-full gap-0">
+		<select bind:value={receiver} class="select select-md join-item w-full lg:w-fit">
 			<option>Character Action</option>
 			<option>Game Command</option>
 			<option>GM Question</option>
@@ -35,10 +35,12 @@
 		<input
 			type="text"
 			bind:this={inputRef}
-			class="input input-bordered w-full"
+			class="input input-md join-item w-full lg:flex-1"
 			id="user-input"
 			placeholder={getPlaceholder()}
 		/>
-		<button class="btn btn-neutral w-full lg:w-1/4" id="submit-button" type="submit">Submit</button>
+		<button class="btn btn-neutral btn-md join-item w-full lg:w-1/4 shrink-0" id="submit-button" type="submit"
+			>Submit</button
+		>
 	</div>
 </form>

@@ -122,14 +122,14 @@
 <form class="m-6 grid items-center gap-2 text-center">
 	<p>Click on Randomize All to generate a random Character based on the Tale settings</p>
 	<button
-		class="btn btn-accent m-auto mt-3 w-3/4 sm:w-1/2"
+		class="btn btn-accent btn-md m-auto mt-3 w-1/2"
 		disabled={isGeneratingState}
 		onclick={onRandomize}
 	>
 		Randomize All
 	</button>
 	<button
-		class="btn btn-neutral m-auto w-3/4 sm:w-1/2"
+		class="btn btn-neutral btn-md m-auto w-1/2"
 		onclick={() => {
 			characterState.reset();
 			characterStateOverwrites = {};
@@ -140,7 +140,7 @@
 	</button>
 	{#if campaignState.value?.campaign_title}
 		<button
-			class="btn btn-primary m-auto w-3/4 sm:w-1/2"
+			class="btn btn-primary btn-md m-auto w-1/2"
 			onclick={() => {
 				navigate('/new/campaign');
 			}}
@@ -149,7 +149,7 @@
 		</button>
 	{:else}
 		<button
-			class="btn btn-primary m-auto w-3/4 sm:w-1/2"
+			class="btn btn-primary btn-md m-auto w-1/2"
 			onclick={() => {
 				navigate('/new/tale');
 			}}
@@ -159,7 +159,7 @@
 	{/if}
 
 	<button
-		class="btn btn-primary m-auto w-3/4 sm:w-1/2"
+		class="btn btn-primary btn-md m-auto w-1/2"
 		onclick={() => {
 			navigate('/new/characterStats');
 		}}
@@ -169,7 +169,7 @@
 	</button>
 
 	{#each Object.keys(characterState.value) as stateValue}
-		<label class="form-control mt-3 w-full">
+		<fieldset class="mt-3 w-full">
 			<div class="flex-row capitalize">
 				{stateValue.replaceAll('_', ' ')}
 				{#if characterStateOverwrites[stateValue]}
@@ -183,12 +183,12 @@
 				oninput={(evt) => {
 					characterStateOverwrites[stateValue] = evt.currentTarget.value;
 				}}
-				class="textarea textarea-bordered textarea-md mt-2 w-full"
+				class="textarea textarea-md mt-2 w-full"
 			>
 			</textarea>
-		</label>
+		</fieldset>
 		<button
-			class="btn btn-accent m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+			class="btn btn-accent btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 			onclick={() => {
 				onRandomizeSingle(stateValue);
 			}}
@@ -196,7 +196,7 @@
 			Randomize {stateValue.replaceAll('_', ' ')}
 		</button>
 		<button
-			class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+			class="btn btn-neutral btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 			onclick={() => {
 				characterState.resetProperty(stateValue as keyof CharacterDescription);
 				delete characterStateOverwrites[stateValue];
@@ -218,7 +218,7 @@
 		{/if}
 	{/each}
 	<button
-		class="btn btn-primary m-auto w-3/4 sm:w-1/2"
+		class="btn btn-primary btn-md m-auto w-1/2"
 		onclick={() => {
 			navigate('/new/characterStats');
 		}}

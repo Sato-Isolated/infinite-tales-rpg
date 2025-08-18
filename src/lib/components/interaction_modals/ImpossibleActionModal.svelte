@@ -23,7 +23,7 @@
 		{/if}
 		<button
 			type="button"
-			class="components btn btn-neutral mt-2 w-1/2"
+			class="components btn btn-neutral mt-2 w-1/2 btn-md"
 			onclick={() => onclose(false)}
 		>
 			Ok
@@ -37,7 +37,7 @@
 		</p>
 		<button
 			type="button"
-			class="components btn btn-primary mt-2 w-1/2"
+			class="components btn btn-primary mt-2 w-1/2 btn-md"
 			onclick={() => onclose(true)}
 		>
 			Try anyway

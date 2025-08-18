@@ -243,7 +243,7 @@ export class ActionAgent {
 		}
 		let userMessage =
 			'Suggest specific actions the CHARACTER can take, considering their personality, skills and items.\n' +
-			'Each action must clearly outline what the character does and how they do it. \n The actions must be directly related to the current story: ' +
+			'Each action must clearly outline-solid what the character does and how they do it. \n The actions must be directly related to the current story: ' +
 			stringifyPretty(currentGameStateMapped) +
 			'\nThe actions must be plausible in the current situation, e.g. before investigating, a tense situation must be resolved.';
 		if (currentGameState.is_character_in_combat) {
@@ -322,7 +322,7 @@ export class ActionAgent {
 		let userMessage =
 			'Suggest specific actions the CHARACTER can take with the item:\n' +
 			stringifyPretty(item) +
-			'\nEach action must clearly outline what the character does and how they do it. \n The actions must be directly related to the current story: ' +
+			'\nEach action must clearly outline-solid what the character does and how they do it. \n The actions must be directly related to the current story: ' +
 			stringifyPretty(currentGameStateMapped) +
 			'\nThe actions must be plausible in the current situation, e.g. before investigating, a combat or tense situation must be resolved.';
 

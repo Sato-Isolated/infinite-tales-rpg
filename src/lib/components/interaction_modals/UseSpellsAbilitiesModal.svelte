@@ -43,15 +43,15 @@
 	<TargetModal bind:dialogRef={targetModalRef} {targets} action={abilityActionState} {onclose}
 	></TargetModal>
 {/if}
-<dialog bind:this={dialogRef} class="z-100 modal" style="background: rgba(0, 0, 0, 0.3);">
+<dialog bind:this={dialogRef} class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center">
 		<form method="dialog">
 			<span class="m-auto">Spells & Abilities</span>
-			<button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2">✕</button>
+			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2">✕</button>
 		</form>
 		{#each abilities as ability (ability.name)}
-			<label class="form-control mt-3 w-full">
-				<details class="collapse collapse-arrow textarea-bordered border bg-base-200">
+			<fieldset class="mt-3 w-full">
+				<details class="collapse-arrow textarea bg-base-200 textarea-md collapse border">
 					<summary class="collapse-title capitalize">
 						<div class="flex h-full flex-col justify-between text-center">
 							<!-- Top: Badge always at the top -->
@@ -75,17 +75,17 @@
 										showGenerateButton={false}
 									/>
 								{/if}
-								<p class="mt-2 overflow-hidden overflow-ellipsis">{ability.name}</p>
+								<p class="mt-2 truncate">{ability.name}</p>
 							</div>
 
 							<!-- Bottom: Cast Button always at the bottom -->
 							<div>
 								<button
 									type="button"
-									class="components btn btn-neutral no-animation mt-2"
+									class="components btn btn-neutral no-animation btn-md mt-2"
 									disabled={ability.resource_cost?.cost > 0 &&
 										ability.resource_cost?.cost >
-											(resources[ability.resource_cost?.resource_key || '']?.current_value || 0)}
+											(resources?.[ability.resource_cost?.resource_key || '']?.current_value || 0)}
 									onclick={() => {
 										mapAbilityToAction(ability);
 										dialogRef.close();
@@ -103,7 +103,7 @@
 						</p>
 					</div>
 				</details>
-			</label>
+			</fieldset>
 		{/each}
 	</div>
 </dialog>

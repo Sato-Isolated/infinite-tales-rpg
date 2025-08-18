@@ -72,9 +72,9 @@
 	};
 </script>
 
-<details class="collapse collapse-arrow textarea-bordered mb-4 border bg-base-200">
+<details class="collapse-arrow textarea bg-base-200 textarea-md collapse mb-4 border">
 	<summary class="collapse-title capitalize" tabindex="0">
-		<div class="grid overflow-hidden overflow-ellipsis text-center">
+		<div class="grid truncate text-center">
 			{#if !aiConfigState.value?.disableImagesState}
 				<div class="m-auto mb-3">
 					<AIGeneratedImage
@@ -90,10 +90,7 @@
 				</div>
 			{/if}
 			<div class="m-auto w-full">
-				<p
-					class="content-center overflow-hidden overflow-ellipsis"
-					title={ability.name || 'Unnamed Ability'}
-				>
+				<p class="content-center truncate" title={ability.name || 'Unnamed Ability'}>
 					{ability.name || 'Unnamed Ability'}
 				</p>
 				<button
@@ -108,7 +105,7 @@
 		</div>
 	</summary>
 	<div class="collapse-content">
-		<div class="form-control m-auto w-full max-w-md rounded-lg">
+		<fieldset class="fieldset m-auto w-full max-w-md rounded-lg">
 			<div class="grid grid-cols-1 gap-2">
 				{#if isOverwritten}
 					<span class="badge badge-accent m-auto">overwritten</span>
@@ -120,7 +117,7 @@
 					<input
 						type="text"
 						id={`ability-${index}-name`}
-						class="input input-bordered w-full"
+						class="input input-md w-full"
 						value={ability.name}
 						oninput={handleNameInput}
 						aria-label="Ability Name"
@@ -133,7 +130,7 @@
 					</label>
 					<textarea
 						id={`ability-${index}-effect`}
-						class="textarea textarea-bordered w-full"
+						class="textarea textarea-md w-full"
 						value={ability.effect}
 						rows={4}
 						oninput={handleEffectInput}
@@ -150,7 +147,7 @@
 					<input
 						type="number"
 						id={`ability-${index}-resource-cost`}
-						class="input input-bordered w-full"
+						class="input input-md w-full"
 						value={ability.resource_cost.cost}
 						oninput={handleCostInput}
 						aria-label="Resource Cost"
@@ -163,7 +160,7 @@
 					</label>
 					<select
 						id={`ability-${index}-resource-key`}
-						class="select select-bordered w-full"
+						class="select select-md w-full"
 						value={ability.resource_cost.resource_key ?? undefined}
 						onchange={handleResourceKeyChange}
 						aria-label="Resource Type"
@@ -182,7 +179,7 @@
 			<input
 				type="text"
 				id={`ability-${index}-image-prompt`}
-				class="input input-bordered w-full"
+				class="input input-md w-full"
 				value={ability.image_prompt}
 				oninput={handleImagePromptInput}
 				aria-label="Image Prompt"
@@ -197,6 +194,6 @@
 			>
 				Randomize Ability
 			</button>
-		</div>
+		</fieldset>
 	</div>
 </details>

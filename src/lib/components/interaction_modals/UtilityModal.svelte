@@ -26,7 +26,7 @@
 		<div class="py-4">
 			{#each actions as action}
 				<button
-					class="btn btn-primary mb-2 w-full"
+					class="btn btn-primary mb-2 w-full btn-md"
 					disabled={is_character_in_combat}
 					onclick={() => close(action.value)}
 				>

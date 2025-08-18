@@ -49,31 +49,45 @@
 	<ErrorModal />
 {/if}
 
-<nav class="btm-nav ml-auto mr-auto h-[7vh] max-w-7xl overflow-auto bg-base-300">
-	<ul class="menu gap-0 p-0 sm:text-lg">
-		<li>
-			<a href="/game" class:active={activeUrl === '/game'}>Tale</a>
-		</li>
-		<li>
-			<a href="/game/debugstate" class:active={activeUrl === '/game/debugstate'}>Debug Info</a>
-		</li>
-		<li>
-			<a href="/game/character" class:active={activeUrl === '/game/character'}>Character</a>
-		</li>
-		<li>
-			<a href="/game/settings/ai" class:active={activeUrl.includes('/game/settings')}>Menu</a>
-		</li>
-	</ul>
+<nav class="dock bg-base-300 h-[7vh] w-screen overflow-hidden">
+	<a
+		href="/game"
+		class="hover:bg-base-100 transition-colors"
+		class:dock-active={activeUrl === '/game'}
+	>
+		<span class="dock-label">Tale</span>
+	</a>
+	<a
+		href="/game/debugstate"
+		class="hover:bg-base-100 transition-colors"
+		class:dock-active={activeUrl === '/game/debugstate'}
+	>
+		<span class="dock-label">Debug Info</span>
+	</a>
+	<a
+		href="/game/character"
+		class="hover:bg-base-100 transition-colors"
+		class:dock-active={activeUrl === '/game/character'}
+	>
+		<span class="dock-label">Character</span>
+	</a>
+	<a
+		href="/game/settings/ai"
+		class="hover:bg-base-100 transition-colors"
+		class:dock-active={activeUrl.includes('/game/settings')}
+	>
+		<span class="dock-label">Menu</span>
+	</a>
 </nav>
 
 <!--TODO max-h-[85vh] is just a workaround because the mobile browser address bar makes 93vh higher than it should...
 -->
 <main
-	class:max-h-[78vh]={hasSubMenu}
-	class:lg:max-h-[86vh]={hasSubMenu}
-	class:max-h-[85vh]={!hasSubMenu}
-	class:lg:max-h-[93vh]={!hasSubMenu}
-	class="ml-auto mr-auto max-w-7xl overflow-auto"
+	class:max-h-[78svh]={hasSubMenu}
+	class:lg:max-h-[86svh]={hasSubMenu}
+	class:max-h-[85svh]={!hasSubMenu}
+	class:lg:max-h-[93svh]={!hasSubMenu}
+	class="w-screen overflow-x-hidden overflow-y-auto"
 >
 	{@render children()}
 </main>

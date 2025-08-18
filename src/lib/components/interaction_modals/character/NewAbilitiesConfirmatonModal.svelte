@@ -83,20 +83,20 @@
 					<AbilityComponent {ability} />
 				{/each}
 				<div class="mt-4 flex gap-2">
-					<button class="btn btn-primary flex-1" onclick={() => onclose([])}>Decline</button>
-					<button class="btn btn-accent flex-1" onclick={onConfirm}>Learn</button>
+					<button class="btn btn-primary flex-1 btn-md" onclick={() => onclose([])}>Decline</button>
+					<button class="btn btn-accent flex-1 btn-md" onclick={onConfirm}>Learn</button>
 				</div>
 			{:else}
 				<span class="m-auto mt-4">Details will be generated after confirmation.</span>
 				{#each spells_abilities as ability (ability.name)}
-					<div class="form-control textarea-bordered mt-3 w-full border bg-base-200">
-						<span class="m-auto mt-4 font-bold">{ability.name}</span>
-						<span class="m-auto mt-4">{ability.effect}</span>
-					</div>
+					<fieldset class="fieldset mt-3 w-full border bg-base-200 p-4">
+						<legend class="fieldset-legend font-bold">{ability.name}</legend>
+						<span class="m-auto mt-2">{ability.effect}</span>
+					</fieldset>
 				{/each}
 				<div class="mt-4 flex gap-2">
-					<button class="btn btn-primary flex-1" onclick={() => onclose([])}>Decline</button>
-					<button class="btn btn-accent flex-1" onclick={onGenerate}>Generate</button>
+					<button class="btn btn-primary flex-1 btn-md" onclick={() => onclose([])}>Decline</button>
+					<button class="btn btn-accent flex-1 btn-md" onclick={onGenerate}>Generate</button>
 				</div>
 			{/if}
 		</div>

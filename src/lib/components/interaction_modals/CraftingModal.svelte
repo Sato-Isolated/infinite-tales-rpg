@@ -40,12 +40,12 @@
 	}
 </script>
 
-<dialog open class="z-100 modal" style="background: rgba(0, 0, 0, 0.3);">
+<dialog open class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center">
 		<span class="m-auto">Choose Items to Craft With</span>
 		<span class="m-auto">On failure the selected items will be lost!</span>
 		<button
-			class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2"
+			class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2"
 			onclick={() => {
 				itemForm.reset();
 				onclose([], craftDescription);
@@ -57,7 +57,7 @@
 				<span class="m-auto mt-2">Inventory is empty.</span>
 			{/if}
 			{#each Object.keys(inventory) as item}
-				<div class="form-control items-center">
+				<div class="fieldset items-center">
 					<label class="label cursor-pointer">
 						<input type="checkbox" class="checkbox" value={item} />
 						<span class="ml-2 capitalize">{formatItemId(item)}</span>
@@ -65,17 +65,17 @@
 				</div>
 			{/each}
 
-			<div class="form-control mt-5 w-full items-center">
+			<div class="fieldset mt-5 w-full items-center">
 				<label for="craftDescription" class="capitalize">Crafting Instructions</label>
 				<input
 					id="craftDescription"
-					class="input input-bordered mt-3 w-full"
+					class="input input-md mt-3 w-full"
 					bind:value={craftDescription}
 					placeholder="e.g. 'Make a light source'"
 				/>
 			</div>
 
-			<button type="button" class="btn btn-neutral m-auto mt-5" onclick={handleCraft}>
+			<button type="button" class="btn btn-neutral btn-md m-auto mt-5" onclick={handleCraft}>
 				Craft
 			</button>
 		</form>

@@ -129,7 +129,7 @@
 <UseSpellsAbilitiesModal
 	bind:dialogRef={modalManager.useSpellsAbilitiesModal}
 	playerName={characterName}
-	resources={playerCharactersGameState[Object.keys(playerCharactersGameState)[0]]}
+	resources={playerCharactersGameState[Object.keys(playerCharactersGameState)[0]] || {}}
 	abilities={characterStatsState?.spells_and_abilities}
 	storyImagePrompt={storyState.general_image_prompt}
 	targets={currentGameActionState.currently_present_npcs}
