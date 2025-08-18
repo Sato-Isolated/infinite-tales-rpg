@@ -16,7 +16,7 @@
 	}
 </script>
 
-{#snippet resourcesList(isDisplayedInGrid)}
+{#snippet resourcesList(isDisplayedInGrid: boolean)}
 	{#each Object.entries(resources || {}) as [resourceKey, resourceValue] (resourceKey)}
 		{#if resourceKey === 'XP'}
 			<output

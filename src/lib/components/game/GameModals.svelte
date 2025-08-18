@@ -113,7 +113,7 @@
 
 {#if eventEvaluationState.character_changed?.showEventConfirmationDialog && !eventEvaluationState.character_changed?.aiProcessingComplete}
 	<CharacterChangedConfirmationModal
-		onclose={(confirmed) =>
+		onclose={(confirmed: boolean) =>
 			confirmCharacterChangeEvent(eventEvaluationState.character_changed!, confirmed)}
 		eventToConfirm={getEventToConfirm(eventEvaluationState.character_changed)}
 	/>
@@ -175,7 +175,7 @@
 />
 
 <DiceRollComponent
-	bind:diceRollDialog={modalManager.diceRollDialog}
+	bind:diceRollDialog={modalManager.diceRollDialog as HTMLDialogElement}
 	action={chosenActionState}
 	resetState={didAIProcessDiceRollActionState}
 ></DiceRollComponent>

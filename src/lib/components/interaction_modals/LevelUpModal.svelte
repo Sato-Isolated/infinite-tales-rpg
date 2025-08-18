@@ -17,9 +17,9 @@
 
 	let {
 		onclose
-	}: {
-		onclose?;
-	} = $props();
+    }: {
+	    onclose?: (levelUp?: any) => void;
+    } = $props();
 
 	const storyState = useLocalStorage<Story>('storyState');
 	const characterState = useLocalStorage<CharacterDescription>('characterState');

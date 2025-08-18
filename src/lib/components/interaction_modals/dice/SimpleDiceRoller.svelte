@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 
 	// Define props using Svelte 5 runes
-	const { notation, onClose }: { notation: string; onClose: (number) => void } = $props();
+	const { notation, onClose }: { notation: string; onClose: (result: number) => void } = $props();
 
 	// Calculate the dice roll result reactively using $derived
 	let rollResult = $state<number>(NaN);
@@ -12,13 +12,13 @@
 		diceBox.roll(notation);
 	};
 
-	let diceBox;
+	let diceBox: any;
 	onMount(async () => {
 		diceBox = new DiceBox('#simple-dice-box', {
 			assetPath: '/assets/dice-box/' // required
 		});
 		await diceBox.init();
-		diceBox.onRollComplete = (result) => (rollResult = result[0].value);
+		diceBox.onRollComplete = (result: Array<{ value: number }>) => (rollResult = result[0].value);
 	});
 
 	const _onClose = (result: number) => {

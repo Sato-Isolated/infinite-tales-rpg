@@ -25,9 +25,9 @@
 		onDeleteItem: (item_id: string) => void;
 		playerName: string;
 		storyImagePrompt: string;
-		onclose;
+		onclose: (item?: Action | undefined) => void;
 		oncrafting: (actionText: string | undefined) => void;
-		dialogRef;
+		dialogRef: HTMLDialogElement;
 	} = $props();
 
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');

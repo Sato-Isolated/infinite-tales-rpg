@@ -38,13 +38,13 @@ export function navigate(path: string) {
 }
 
 export const downloadLocalStorageAsJson = () => {
-	const toSave = { ...localStorage };
+	const toSave: Record<string, string> = { ...(localStorage as any) };
 	delete toSave.apiKeyState;
 	const json = encodeURIComponent(
 		JSON.stringify(
 			(function () {
-				const o = {};
-				for (const k of Object.keys(toSave)) {
+				const o: Record<string, any> = {};
+				for (const k of Object.keys(toSave as Record<string, string>)) {
 					o[k] = JSON.parse(toSave[k]);
 				}
 				return o;
@@ -81,7 +81,7 @@ export const importJsonFromFile = (callback: Function) => {
 	});
 };
 
-let worker;
+let worker: pdfjs.PDFWorker | undefined;
 
 export async function loadPDF(file: File) {
 	if (!worker) {
@@ -118,8 +118,8 @@ export async function loadPDF(file: File) {
 	});
 }
 
-export function getRowsForTextarea(object: object) {
-	const mappedRows = {};
+export function getRowsForTextarea(object: Record<string, any>) {
+	const mappedRows: Record<string, any> = {};
 	if (!object) {
 		return undefined;
 	}
@@ -146,10 +146,10 @@ export function getRowsForTextarea(object: object) {
 	return mappedRows;
 }
 
-export function parseState(newState: object) {
+export function parseState(newState: Record<string, any>) {
 	Object.keys(newState).forEach((key) => {
 		if (isString(newState[key])) {
-			newState[key] = JSON.parse(newState[key]);
+			newState[key] = JSON.parse(newState[key] as string);
 		}
 	});
 }
@@ -158,15 +158,15 @@ export function getRandomInteger(min: number, max: number) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export const removeEmptyValues = (object: object) =>
+export const removeEmptyValues = (object: Record<string, any>) =>
 	object &&
 	Object.fromEntries(
 		Object.entries(object)
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			.filter(([_, value]) => value && Object.keys(value).length > 0)
+			.filter(([_, value]) => value && typeof value === 'object' && Object.keys(value as object).length > 0)
 	);
 
-export function playAudioFromStream(text, voice, onended?): HTMLAudioElement {
+export function playAudioFromStream(text: string, voice: string, onended?: () => void): HTMLAudioElement {
 	const audio = new Audio();
 	audio.src = getTTSUrl(text, voice);
 	audio.autoplay = true;
@@ -176,7 +176,7 @@ export function playAudioFromStream(text, voice, onended?): HTMLAudioElement {
 	return audio;
 }
 
-export function getTTSUrl(text, voice) {
+export function getTTSUrl(text: string, voice: string) {
 	return '/api/edgeTTSStream?voice=' + encodeURI(voice) + '&text=' + encodeURI(text);
 }
 
@@ -209,7 +209,7 @@ export const getNPCTechnicalID = (npc: NpcID) => {
 	return npc.uniqueTechnicalNameId || npc.displayName || JSON.stringify(npc);
 };
 
-export function shuffleArray(array) {
+export function shuffleArray<T>(array: T[]) {
 	for (let i = array.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
 		[array[i], array[j]] = [array[j], array[i]];

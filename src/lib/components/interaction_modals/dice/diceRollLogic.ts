@@ -8,11 +8,11 @@ export const difficultyDiceRollModifier = {
 
 export function getRequiredValue(
 	action_difficulty: string | undefined,
-	gameDifficulty: string
+	gameDifficulty: keyof typeof difficultyDiceRollModifier
 ): number {
 	let requiredValue = 0;
-	const difficulty: ActionDifficulty =
-		ActionDifficulty[action_difficulty?.toLowerCase() || 'medium'];
+	const difficultyKey = (action_difficulty?.toLowerCase() || 'medium') as keyof typeof ActionDifficulty;
+	const difficulty: ActionDifficulty = ActionDifficulty[difficultyKey];
 	switch (difficulty) {
 		case ActionDifficulty.simple:
 			return 0;
@@ -59,16 +59,14 @@ export type DiceRollResult =
 
 export function determineDiceRollResult(
 	required_value: number,
-	rolledValue,
-	modifier
+	rolledValue: number,
+	modifier: number
 ): DiceRollResult | undefined {
 	if (!required_value || !rolledValue) {
 		return undefined;
 	}
-	const evaluatedModifier = isNaN(Number.parseInt(modifier)) ? 0 : Number.parseInt(modifier);
-	const evaluatedRolledValue = isNaN(Number.parseInt(rolledValue))
-		? 0
-		: Number.parseInt(rolledValue);
+	const evaluatedModifier = Number.isNaN(Number(modifier)) ? 0 : Number(modifier);
+	const evaluatedRolledValue = Number.isNaN(Number(rolledValue)) ? 0 : Number(rolledValue);
 	const evaluatedValue = evaluatedRolledValue + evaluatedModifier;
 	if (evaluatedRolledValue === 1) {
 		return 'critical_failure';

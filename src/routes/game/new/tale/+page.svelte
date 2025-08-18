@@ -22,7 +22,9 @@
 
 	const storyState = useLocalStorage<Story>('storyState', { ...initialStoryState });
 	const textAreaRowsDerived = $derived(getRowsForTextarea(storyState.value));
-	let storyStateOverwrites = $state({});
+	// Allow dynamic keys like 'gameBook' used during PDF import
+	let storyStateOverwrites: (Partial<Story> & Record<string, any>) = $state({});
+	const storyKeys = Object.keys(storyStateForPrompt) as Array<keyof Story>;
 	const characterState = useLocalStorage<CharacterDescription>('characterState', {
 		...initialCharacterState
 	});
@@ -61,23 +63,25 @@
 		}
 		isGeneratingState = false;
 	};
-	const onRandomizeSingle = async (stateValue) => {
+	const onRandomizeSingle = async (stateValue: keyof Story) => {
 		isGeneratingState = true;
-		const currentStory = { ...storyState.value };
-		currentStory[stateValue] = undefined;
+		const currentStory = { ...storyState.value } as any;
+		// Intentionally clear a single field to ask the agent to regenerate it
+		currentStory[stateValue as string] = undefined;
 		const agentInput = { ...currentStory, ...storyStateOverwrites };
 		const newState = await storyAgent.generateRandomStorySettings(
 			agentInput,
 			getCharacterDescription()
 		);
 		if (newState) {
+			// Index via keyof to satisfy TS when writing a single property
 			storyState.value[stateValue] = newState[stateValue];
 		}
 		isGeneratingState = false;
 	};
 
-	function handleInput(evt, stateValue) {
-		storyStateOverwrites[stateValue] = evt.target.value;
+	function handleInput(evt: Event, stateValue: keyof Story) {
+		storyStateOverwrites[stateValue] = (evt.target as HTMLTextAreaElement).value as any;
 	}
 
 	function onUploadClicked() {
@@ -167,7 +171,7 @@
 		Next Step:<br /> Customize Character
 	</button>
 	{#if storyState.value}
-		{#each Object.keys(storyStateForPrompt) as stateValue}
+		{#each storyKeys as stateValue}
 			<fieldset class="mt-3 w-full">
 				<div class=" flex-row capitalize">
 					{stateValue.replaceAll('_', ' ')}

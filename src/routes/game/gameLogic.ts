@@ -58,8 +58,8 @@ export function getNewNPCs(targets: Targets, npcState: NPCState) {
 
 //TODO implement parsing to enums directly from json
 export function mustRollDice(action: Action, isInCombat?: boolean) {
-	const difficulty: ActionDifficulty =
-		ActionDifficulty[action.action_difficulty?.toLowerCase() || ''];
+	const diffKey = (action.action_difficulty?.toLowerCase() || '') as keyof typeof ActionDifficulty;
+	const difficulty: ActionDifficulty | undefined = ActionDifficulty[diffKey];
 	if (!difficulty || difficulty === ActionDifficulty.simple) {
 		return false;
 	}
@@ -392,7 +392,7 @@ export function applyGameActionStates(
 	playerCharactersGameState: PlayerCharactersGameState,
 	playerCharactersIdToNamesMapState: PlayerCharactersIdToNamesMap,
 	npcState: NPCState,
-	inventoryState,
+	inventoryState: InventoryState,
 	states: Array<GameActionState>
 ) {
 	for (const state of states) {

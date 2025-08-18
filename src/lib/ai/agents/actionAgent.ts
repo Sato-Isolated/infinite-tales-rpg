@@ -352,10 +352,10 @@ export class ActionAgent {
 
 	private getCurrentGameStateMapped(currentGameState: GameActionState) {
 		return {
-			currently_present_npcs_explanation: currentGameState['currently_present_npcs_explanation'],
+			currently_present_npcs_explanation: (currentGameState as any)['currently_present_npcs_explanation'],
 			currently_present_npcs: currentGameState.currently_present_npcs,
-			plotPointAdvancingNudgeExplanation: currentGameState['plotPointAdvancingNudgeExplanation'],
-			gradualNarrativeExplanation: currentGameState['gradualNarrativeExplanation'],
+			plotPointAdvancingNudgeExplanation: (currentGameState as any)['plotPointAdvancingNudgeExplanation'],
+			gradualNarrativeExplanation: (currentGameState as any)['gradualNarrativeExplanation'],
 			story: currentGameState.story,
 			is_character_in_combat: currentGameState.is_character_in_combat
 		};

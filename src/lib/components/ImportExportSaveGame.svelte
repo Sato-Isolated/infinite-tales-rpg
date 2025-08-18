@@ -29,7 +29,7 @@
 	const relatedActionHistoryState = useLocalStorage<string[]>('relatedActionHistoryState', []);
 
 	const importSettings = () => {
-		importJsonFromFile((parsed) => {
+		importJsonFromFile((parsed: any) => {
 			parsed.characterStatsState = migrateIfApplicable(
 				'characterStatsState',
 				parsed.characterStatsState

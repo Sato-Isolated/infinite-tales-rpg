@@ -34,12 +34,12 @@ export function refillResourcesFully(
 	};
 
 	//then set current values to start or max value or if smaller than current value to current value
-	const newResources = {};
-	for (const key in maxResources) {
-		const refillValue = GameAgent.getRefillValue(maxResources[key]);
-		const currentValue = playerCharactersGameState[playerId][key]?.current_value || 0;
+	const newResources: Record<string, any> = {};
+	for (const key in maxResources as Record<string, any>) {
+		const refillValue = GameAgent.getRefillValue((maxResources as any)[key]);
+		const currentValue = (playerCharactersGameState as any)[playerId][key]?.current_value || 0;
 		newResources[key] = {
-			...maxResources[key],
+			...(maxResources as any)[key],
 			current_value: refillValue >= currentValue ? refillValue : currentValue
 		};
 	}

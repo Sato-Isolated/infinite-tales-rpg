@@ -2,7 +2,7 @@
 	import DiceBox from '@3d-dice/dice-box';
 	import * as diceRollLogic from './diceRollLogic';
 	import type { Action } from '$lib/ai/agents/gameAgent';
-	type Props = { diceRollDialog; action: Action; resetState: boolean };
+	type Props = { diceRollDialog: HTMLDialogElement; action: Action; resetState: boolean };
 
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { onMount } from 'svelte';
@@ -16,7 +16,7 @@
 
 	const rolledValueState = useLocalStorage<number>('rolledValueState');
 	const rollDifferenceHistoryState = useLocalStorage<number[]>('rollDifferenceHistoryState', []);
-	const difficultyState = useLocalStorage<string>('difficultyState', 'Default');
+	const difficultyState = useLocalStorage<'Easy' | 'Default'>('difficultyState', 'Default');
 	const useKarmicDice = useLocalStorage<boolean>('useKarmicDice', true);
 	const diceRollRequiredValueState = useLocalStorage<number>('diceRollRequiredValueState');
 	let modifierReasonState = $derived<string>(action?.dice_roll?.modifier_explanation || '');
@@ -88,7 +88,7 @@
 			}
 		}
 	});
-	let diceBox;
+	let diceBox: any;
 	onMount(() => {
 		diceBox = new DiceBox('#dice-box', {
 			assetPath: '/assets/dice-box/' // required
@@ -101,12 +101,12 @@
 		return `${rolledValueState.value || '?'}  + ${getModifier()} = ${rolledValueState.value + getModifier() || '?'}`;
 	}
 
-	let onRoll = (evt) => {
+	let onRoll = (evt: MouseEvent & { currentTarget: HTMLButtonElement }) => {
 		//for easy testing
 		//rolledValueState.value = getRandomInteger(1, 20);
 		//return;
 		evt.currentTarget.disabled = true;
-		diceBox.roll('1d20').then((results) => {
+	diceBox.roll('1d20').then((results: Array<{ value: number }>) => {
 			rolledValueState.value = results[0].value;
 		});
 	};

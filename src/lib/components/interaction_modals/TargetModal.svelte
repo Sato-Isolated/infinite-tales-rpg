@@ -10,8 +10,8 @@
 	}: {
 		targets: Targets;
 		action: Action;
-		onclose;
-		dialogRef;
+		onclose: (action: Action, targets: string[]) => void;
+		dialogRef: HTMLDialogElement;
 	} = $props();
 
 	let targetForm: HTMLFormElement;

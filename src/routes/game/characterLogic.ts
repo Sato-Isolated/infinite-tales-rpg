@@ -123,7 +123,7 @@ export function getSkillIfApplicable(stats: CharacterStats, action: Action): str
 }
 
 //number of succesfull actions required to raise skill by one
-const requiredSkillProgression = {
+const requiredSkillProgression: { [k: number]: number | undefined } = {
 	0: 10,
 	1: 20,
 	2: 30,

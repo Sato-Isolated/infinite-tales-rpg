@@ -37,7 +37,7 @@
 				imagePrompt="{gameActionState.image_prompt} {storyState.general_image_prompt}"
 				gameUpdates={getRenderedGameUpdates(gameActionState, playerCharacterIdState)}
 			/>
-			{#if gameActionState['fallbackUsed']}
+			{#if (gameActionState as any)?.fallbackUsed}
 				<small class="text-sm text-red-500"> For this action the fallback LLM was used.</small>
 			{/if}
 		{/each}
@@ -49,7 +49,7 @@
 		gameUpdates={latestStoryProgressionState.gameUpdates}
 		stream_finished={latestStoryProgressionState.stream_finished}
 	/>
-	{#if latestStoryProgressionState.stream_finished && currentGameActionState['fallbackUsed']}
+	{#if latestStoryProgressionState.stream_finished && (currentGameActionState as any)?.fallbackUsed}
 		<small class="text-sm text-red-500"> For this action the fallback LLM was used.</small>
 	{/if}
 	{#if isGameEnded}

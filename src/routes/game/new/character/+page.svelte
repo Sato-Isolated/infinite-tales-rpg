@@ -33,6 +33,7 @@
 	const textAreaRowsDerived = $derived(getRowsForTextarea(characterState.value));
 
 	let characterStateOverwrites: Partial<CharacterDescription> = $state({});
+	const characterKeys = Object.keys(initialCharacterState) as Array<keyof CharacterDescription>;
 	let resetImageState = $state(false);
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 	const playerCharactersIdToNamesMapState = useLocalStorage<PlayerCharactersIdToNamesMap>(
@@ -80,10 +81,10 @@
 		}
 		isGeneratingState = false;
 	};
-	const onRandomizeSingle = async (stateValue) => {
+	const onRandomizeSingle = async (stateValue: keyof CharacterDescription) => {
 		isGeneratingState = true;
-		const currentCharacter = { ...characterState.value };
-		currentCharacter[stateValue] = undefined;
+		const currentCharacter = { ...characterState.value } as any;
+		currentCharacter[stateValue as string] = undefined;
 		const characterInput = { ...currentCharacter, ...characterStateOverwrites };
 		const newState = await characterAgent.generateCharacterDescription(
 			$state.snapshot(storyState.value),
@@ -168,7 +169,7 @@
 		Next Step:<br /> Customize Stats & Abilities
 	</button>
 
-	{#each Object.keys(characterState.value) as stateValue}
+	{#each characterKeys as stateValue}
 		<fieldset class="mt-3 w-full">
 			<div class="flex-row capitalize">
 				{stateValue.replaceAll('_', ' ')}
@@ -181,7 +182,7 @@
 				rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
 				placeholder=""
 				oninput={(evt) => {
-					characterStateOverwrites[stateValue] = evt.currentTarget.value;
+					characterStateOverwrites[stateValue] = (evt.currentTarget as HTMLTextAreaElement).value as any;
 				}}
 				class="textarea textarea-md mt-2 w-full"
 			>

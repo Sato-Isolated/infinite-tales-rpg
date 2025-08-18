@@ -11,7 +11,7 @@ import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapStatsUpdates } from '$lib/ai/agents/mappers';
 
 export type DiceRoll = {
-	result;
+	result: any;
 	number?: number;
 	type?: number;
 	modifier?: number;

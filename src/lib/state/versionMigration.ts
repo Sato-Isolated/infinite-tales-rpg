@@ -13,24 +13,22 @@ export const migrateIfApplicable = (key: string, state: unknown) => {
 	return migrated;
 };
 
-function migrate11to11_1(key, state) {
+function migrate11to11_1(key: string, state: any) {
 	if (key === 'gameSettingsState') {
 		(state as GameSettings).randomEventsHandling = defaultGameSettings().randomEventsHandling;
 	}
 	return state;
 }
 
-function migrate09to10(key, state) {
+function migrate09to10(key: string, state: any) {
 	if (key === 'gameActionsState') {
-		(state as GameActionState[]).forEach((action) => {
+	(state as GameActionState[]).forEach((action: any) => {
 			if (action.stats_update) {
-				action.stats_update.forEach((stat) => {
+		action.stats_update.forEach((stat: any) => {
 					if (stat.targetName) {
 						return;
 					}
-					// @ts-expect-error no error here
 					stat.targetName = stat.targetId;
-					// @ts-expect-error no error here
 					stat.sourceName = stat.sourceId;
 				});
 			}
@@ -39,7 +37,7 @@ function migrate09to10(key, state) {
 	return state;
 }
 
-function migrate051to06(key, state) {
+function migrate051to06(key: string, state: any) {
 	if (key === 'characterStatsState') {
 		//migrate saves before level feature
 		if (!state.level) {
@@ -49,7 +47,7 @@ function migrate051to06(key, state) {
 	return state;
 }
 
-function migrate062to07(key, state) {
+function migrate062to07(key: string, state: any) {
 	if (key === 'characterStatsState') {
 		if (state.resources.MAX_HP) {
 			state.resources.HP = {
@@ -65,7 +63,7 @@ function migrate062to07(key, state) {
 			delete state.resources.MAX_HP;
 			delete state.resources.MAX_MP;
 		}
-		state.spells_and_abilities.forEach((spell) => {
+	state.spells_and_abilities.forEach((spell: any) => {
 			if (spell.mp_cost) {
 				spell.resource_cost = { cost: spell.mp_cost, resource_key: 'MP' };
 				delete spell.mp_cost;

@@ -1,7 +1,7 @@
 import { MsEdgeTTS } from 'msedge-tts';
 import { json } from '@sveltejs/kit';
 
-export async function GET({ setHeaders }) {
+export async function GET({ setHeaders }: { setHeaders: (headers: Record<string, string>) => void }) {
 	const tts = new MsEdgeTTS();
 	//cache one year and never revalidate
 	setHeaders({

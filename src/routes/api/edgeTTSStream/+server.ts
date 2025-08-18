@@ -1,6 +1,6 @@
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 
-export async function GET({ url }) {
+export async function GET({ url }: { url: URL }) {
 	try {
 		const text = url.searchParams.get('text') as string;
 		if (!text || text === 'undefined') {
@@ -25,7 +25,7 @@ export async function GET({ url }) {
 		// Create a ReadableStream for the audio response
 		const stream = new ReadableStream({
 			start(controller) {
-				readable.on('data', (chunk) => {
+				readable.on('data', (chunk: any) => {
 					if (isStreamClosed) return; // Skip if the stream is already closed
 					controller.enqueue(chunk); // Enqueue each chunk as it arrives
 				});
@@ -36,7 +36,7 @@ export async function GET({ url }) {
 					isStreamClosed = true; // Mark the stream as closed
 				});
 
-				readable.on('error', (err) => {
+				readable.on('error', (err: any) => {
 					if (isStreamClosed) return; // Skip if the stream is already closed
 					controller.error(err); // Propagate errors
 					isStreamClosed = true; // Mark the stream as closed

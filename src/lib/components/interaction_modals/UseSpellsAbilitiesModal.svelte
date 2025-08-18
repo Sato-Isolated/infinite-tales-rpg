@@ -20,8 +20,8 @@
 		storyImagePrompt: string;
 		resources: ResourcesWithCurrentValue;
 		targets: Targets;
-		onclose;
-		dialogRef;
+		onclose: (action: Action, targets: string[]) => void;
+		dialogRef: HTMLDialogElement;
 	} = $props();
 
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');

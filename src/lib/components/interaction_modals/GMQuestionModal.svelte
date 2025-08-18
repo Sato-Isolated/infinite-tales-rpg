@@ -29,11 +29,11 @@
 		onclose,
 		question,
 		playerCharactersGameState
-	}: {
-		onclose?;
-		question: string;
-		playerCharactersGameState: PlayerCharactersGameState;
-	} = $props();
+    }: {
+	    onclose?: (closedByPlayer: boolean, gmAnswerStateAsContext?: any) => void;
+	    question: string;
+	    playerCharactersGameState: PlayerCharactersGameState;
+    } = $props();
 
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
 	const systemInstructionsState = useLocalStorage<SystemInstructionsState>(
@@ -112,7 +112,7 @@
 		gmThoughtsState = thoughts;
 		isGeneratingState = false;
 		if (!gmAnswerState) {
-			onclose(false);
+			onclose?.(false);
 		}
 	});
 </script>
@@ -159,9 +159,9 @@
 			<div class="mt-3 flex w-full flex-row gap-2">
 				<button
 					class="btn btn-info flex-1 btn-md"
-					onclick={() => onclose(true, { question, ...gmAnswerState })}>Add to context</button
+					onclick={() => onclose?.(true, { question, ...gmAnswerState })}>Add to context</button
 				>
-				<button class="btn btn-info flex-1 btn-md" onclick={() => onclose(true)}>Close</button>
+				<button class="btn btn-info flex-1 btn-md" onclick={() => onclose?.(true)}>Close</button>
 			</div>
 		</div>
 	</dialog>

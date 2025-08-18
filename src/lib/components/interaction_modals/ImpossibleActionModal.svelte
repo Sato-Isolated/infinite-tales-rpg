@@ -4,10 +4,10 @@
 	let {
 		onclose,
 		action
-	}: {
-		onclose?;
-		action: Action;
-	} = $props();
+    }: {
+	    onclose?: (tryAnyway: boolean) => void;
+	    action: Action;
+    } = $props();
 </script>
 
 <dialog open class="z-100 modal" style="background: rgba(0, 0, 0, 0.3);">
@@ -24,7 +24,7 @@
 		<button
 			type="button"
 			class="components btn btn-neutral mt-2 w-1/2 btn-md"
-			onclick={() => onclose(false)}
+			onclick={() => onclose?.(false)}
 		>
 			Ok
 		</button>
@@ -38,7 +38,7 @@
 		<button
 			type="button"
 			class="components btn btn-primary mt-2 w-1/2 btn-md"
-			onclick={() => onclose(true)}
+			onclick={() => onclose?.(true)}
 		>
 			Try anyway
 		</button>

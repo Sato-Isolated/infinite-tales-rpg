@@ -218,7 +218,7 @@
 
 	function addLevelOverwrite(value: number): void {
 		if (!value) {
-			delete characterStatsStateOverwrites.level;
+			characterStatsStateOverwrites.level = undefined as unknown as number;
 		} else {
 			characterStatsStateOverwrites.level = value;
 		}
@@ -255,7 +255,7 @@
 
 	function addSpellOverwrite(index: number, spellData: Partial<Ability>): void {
 		if (!characterStatsStateOverwrites.spells_and_abilities[index]) {
-			characterStatsStateOverwrites.spells_and_abilities[index] = {};
+			characterStatsStateOverwrites.spells_and_abilities[index] = {} as Partial<Ability> as any;
 		}
 		characterStatsStateOverwrites.spells_and_abilities[index] = {
 			...characterStatsStateOverwrites.spells_and_abilities[index],

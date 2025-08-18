@@ -7,7 +7,7 @@
 	}: {
 		is_character_in_combat: boolean;
 		actions: { label: string; value: string }[];
-		onclose: (action) => void;
+		onclose: (action?: string) => void;
 		dialogRef: HTMLDialogElement;
 	} = $props();
 

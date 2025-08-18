@@ -33,7 +33,15 @@
 	const storyState = useLocalStorage<Story>('storyState', {} as Story);
 	const currentChapterState = useLocalStorage<number>('currentChapterState');
 	const textAreaRowsDerived = $derived(getRowsForTextarea(campaignState.value));
-	let campaignStateOverwrites = $state({});
+	// Define a loose overwrite shape to avoid implicit any during dynamic edits
+	type CampaignOverwrites = Partial<
+		Omit<Campaign, 'chapters'> & {
+			chapters?: Array<Partial<CampaignChapter>> | Record<string, Partial<CampaignChapter>>;
+			// allow extra keys like gameBook for PDF import processing
+			[key: string]: any;
+		}
+	>;
+	let campaignStateOverwrites: CampaignOverwrites = $state({});
 	const characterState = useLocalStorage<CharacterDescription>('characterState');
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 
@@ -97,19 +105,19 @@
 		return newState;
 	};
 
-	const onRandomizeSingle = async (stateValue: string, chapterNumber: string = '') => {
+	const onRandomizeSingle = async (stateValue: keyof Campaign | 'chapters', chapterNumber: string = '') => {
 		isGeneratingState = true;
-		const currentCampaign = $state.snapshot(campaignState.value);
+		const currentCampaign: any = $state.snapshot(campaignState.value);
 		if (chapterNumber) {
-			currentCampaign[stateValue][chapterNumber] = undefined;
+			(currentCampaign as any)[stateValue as string][chapterNumber] = undefined;
 		} else {
-			currentCampaign[stateValue] = undefined;
+			(currentCampaign as any)[stateValue as string] = undefined;
 		}
-		const filteredOverwrites: Campaign = removeEmptyValues(
+		const filteredOverwrites: any = removeEmptyValues(
 			$state.snapshot(campaignStateOverwrites)
-		) as Campaign;
+		) as any;
 		const singleChapterOverwritten =
-			filteredOverwrites.chapters && filteredOverwrites.chapters[chapterNumber];
+			(filteredOverwrites as any).chapters && (filteredOverwrites as any).chapters[chapterNumber];
 		//TODO not generic
 		if (filteredOverwrites.chapters) {
 			filteredOverwrites.chapters = Object.entries(
@@ -120,7 +128,7 @@
 			);
 		}
 
-		let alteredCampaign = { ...currentCampaign, ...filteredOverwrites };
+		let alteredCampaign: Campaign = { ...(currentCampaign as Campaign), ...(filteredOverwrites as Partial<Campaign>) } as Campaign;
 		if (chapterNumber) {
 			// TODO only works for chapters section
 			const newChapter = await campaignAgent.generateSingleChapter(
@@ -129,7 +137,7 @@
 				Number.parseInt(chapterNumber) + 1,
 				singleChapterOverwritten
 			);
-			campaignState.value[stateValue][chapterNumber] = newChapter;
+			(campaignState.value as any)[stateValue as string][chapterNumber] = newChapter;
 		} else {
 			const newState = await campaignAgent.generateCampaign(
 				alteredCampaign,
@@ -137,14 +145,14 @@
 			);
 			if (newState) {
 				console.log(stringifyPretty(newState));
-				campaignState.value[stateValue] = newState[stateValue];
+				(campaignState.value as any)[stateValue as string] = (newState as any)[stateValue as string];
 			}
 		}
 		isGeneratingState = false;
 	};
 
-	function handleInput(evt, stateValue) {
-		campaignStateOverwrites[stateValue] = evt.target.value;
+	function handleInput(evt: Event, stateValue: keyof Campaign | string) {
+		(campaignStateOverwrites as any)[stateValue as string] = (evt.target as HTMLTextAreaElement).value;
 	}
 
 	function isCampaignSet() {
@@ -262,50 +270,49 @@
 					<details open class="collapse-arrow border-base-300 bg-base-200 collapse border">
 						<summary class="collapse-title capitalize">{stateValue.replaceAll('_', ' ')}</summary>
 						<div class="collapse-content">
-							{#each Object.keys(campaignState.value[stateValue]) as chapterNumber}
+							{#each Object.keys((campaignState.value as any)[stateValue as string]) as chapterNumber}
 								<fieldset class="mt-3 w-full">
 									<details class="collapse-arrow textarea bg-base-200 textarea-md collapse border">
-										{#each Object.keys(campaignState.value[stateValue][chapterNumber]) as chapterProperty (chapterProperty)}
+										{#each Object.keys(((campaignState.value as any)[stateValue as string])[chapterNumber]) as chapterProperty (chapterProperty)}
 											{#if chapterProperty === 'plot_points'}
 												<details class="collapse-arrow border-base-300 bg-base-200 collapse border">
 													<summary class="collapse-title capitalize"
 														>{chapterProperty.replaceAll('_', ' ')}</summary
 													>
 													<div class="collapse-content">
-														{#each Object.keys(campaignState.value[stateValue][chapterNumber][chapterProperty]) as plotPoint}
+														{#each Object.keys(((campaignState.value as any)[stateValue as string])[chapterNumber][chapterProperty]) as plotPoint}
 															<fieldset class="mt-3 w-full">
 																<details
 																	class="collapse-arrow textarea bg-base-200 textarea-md collapse border"
 																>
-																	{#each Object.keys(campaignState.value[stateValue][chapterNumber][chapterProperty][plotPoint]) as plotPointProperty (plotPointProperty)}
+																	{#each Object.keys((((campaignState.value as any)[stateValue as string])[chapterNumber][chapterProperty])[plotPoint]) as plotPointProperty (plotPointProperty)}
 																		{#if plotPointProperty === 'location'}
 																			<summary class="collapse-title capitalize">
 																				<div class="m-auto w-full sm:col-span-2">
 																					<p class="content-center truncate">
-																						{`${campaignState.value[stateValue][chapterNumber][chapterProperty][plotPoint][plotPointProperty] || 'Enter A Name'}`}
+																						{`${((((campaignState.value as any)[stateValue as string])[chapterNumber][chapterProperty])[plotPoint] as any)[plotPointProperty] || 'Enter A Name'}`}
 																					</p>
 																					<button
 																						class="components btn btn-error no-animation btn-sm m-auto mt-2"
 																						onclick={(evt) => {
 																							evt.preventDefault();
-																							campaignState.value[stateValue][chapterNumber][
+																							(campaignState.value as any)[stateValue as string][chapterNumber][
 																								chapterProperty
 																							].splice(Number.parseInt(plotPoint), 1);
 																							if (
-																								campaignStateOverwrites[stateValue] &&
-																								campaignStateOverwrites[stateValue][chapterNumber][
+																								(campaignStateOverwrites as any)[stateValue as string] &&
+																								(campaignStateOverwrites as any)[stateValue as string][chapterNumber][
 																									chapterProperty
 																								][plotPoint]
 																							) {
-																								delete campaignStateOverwrites[stateValue][
+																								delete (campaignStateOverwrites as any)[stateValue as string][
 																									chapterNumber
 																								][chapterProperty][plotPoint];
 																							}
-																							campaignState.value[stateValue][chapterNumber][
+																							(campaignState.value as any)[stateValue as string][chapterNumber][
 																								chapterProperty
-																							] = campaignState.value[stateValue][chapterNumber][
-																								chapterProperty
-																							].map((plotPoint, i) => ({
+																						] = ((campaignState.value as any)[stateValue as string][chapterNumber][
+																							chapterProperty] as any[]).map((plotPoint: any, i: number) => ({
 																								...plotPoint,
 																								plotId: i + 1
 																							}));
@@ -321,7 +328,7 @@
 																				<fieldset class="mt-3 w-full">
 																					<div class="capitalize">
 																						{plotPointProperty.replaceAll('_', ' ')}
-																						{#if campaignStateOverwrites[stateValue] && campaignStateOverwrites[stateValue][chapterNumber] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty][plotPoint] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty][plotPoint][plotPointProperty]}
+																						{#if (campaignStateOverwrites as any)[stateValue as string] && (campaignStateOverwrites as any)[stateValue as string][chapterNumber] && (campaignStateOverwrites as any)[stateValue as string][chapterNumber][chapterProperty] && (campaignStateOverwrites as any)[stateValue as string][chapterNumber][chapterProperty][plotPoint] && (campaignStateOverwrites as any)[stateValue as string][chapterNumber][chapterProperty][plotPoint][plotPointProperty]}
 																							<span class="badge badge-accent ml-2"
 																								>overwritten</span
 																							>
@@ -329,48 +336,44 @@
 																					</div>
 																					<textarea
 																						bind:value={
-																							campaignState.value[stateValue][chapterNumber][
-																								chapterProperty
-																							][plotPoint][plotPointProperty]
+																								((((campaignState.value as any)[stateValue as string])[chapterNumber][
+																									chapterProperty]) as any)[plotPoint][plotPointProperty] as any
 																						}
-																						rows={(
-																							campaignState.value[stateValue][chapterNumber][
-																								chapterProperty
-																							][plotPoint][plotPointProperty] + ''
-																						).length > 60
+																						rows={((((((campaignState.value as any)[stateValue as string])[chapterNumber][
+																								chapterProperty]) as any)[plotPoint][plotPointProperty] + '') as string).length > 60
 																							? 4
 																							: 2}
 																						oninput={(evt) => {
-																							if (!campaignStateOverwrites[stateValue]) {
-																								campaignStateOverwrites[stateValue] = {};
+																							if (!(campaignStateOverwrites as any)[stateValue as string]) {
+																								(campaignStateOverwrites as any)[stateValue as string] = {};
 																							}
 																							if (
-																								!campaignStateOverwrites[stateValue][chapterNumber]
+																								!(campaignStateOverwrites as any)[stateValue as string][chapterNumber]
 																							) {
-																								campaignStateOverwrites[stateValue][chapterNumber] =
+																								(campaignStateOverwrites as any)[stateValue as string][chapterNumber] =
 																									{};
 																							}
 																							if (
-																								!campaignStateOverwrites[stateValue][chapterNumber][
+																								!(campaignStateOverwrites as any)[stateValue as string][chapterNumber][
 																									chapterProperty
 																								]
 																							) {
-																								campaignStateOverwrites[stateValue][chapterNumber][
+																								(campaignStateOverwrites as any)[stateValue as string][chapterNumber][
 																									chapterProperty
 																								] = {};
 																							}
 																							if (
-																								!campaignStateOverwrites[stateValue][chapterNumber][
+																								!(campaignStateOverwrites as any)[stateValue as string][chapterNumber][
 																									chapterProperty
 																								][plotPoint]
 																							) {
-																								campaignStateOverwrites[stateValue][chapterNumber][
+																								(campaignStateOverwrites as any)[stateValue as string][chapterNumber][
 																									chapterProperty
 																								][plotPoint] = {};
 																							}
-																							campaignStateOverwrites[stateValue][chapterNumber][
+																							(campaignStateOverwrites as any)[stateValue as string][chapterNumber][
 																								chapterProperty
-																							][plotPoint][plotPointProperty] = (
+																								][plotPoint][plotPointProperty] = (
 																								evt.currentTarget as HTMLTextAreaElement
 																							).value;
 																						}}
@@ -390,12 +393,8 @@
 												<button
 													class="btn btn-neutral btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 													onclick={() => {
-														campaignState.value[stateValue][chapterNumber][chapterProperty].push(
-															getNewPlotPointObject(
-																campaignState.value[stateValue][chapterNumber][chapterProperty]
-																	.length + 1
-															)
-														);
+														const arr = (((campaignState.value as any)[stateValue as string][chapterNumber][chapterProperty]) as any[]);
+														arr.push(getNewPlotPointObject(arr.length + 1));
 													}}
 												>
 													Add Plot Point
@@ -407,7 +406,7 @@
 															<p class="content-center truncate">
 																{isNaN(parseInt(chapterNumber))
 																	? chapterNumber.replaceAll('_', ' ')
-																	: `${campaignState.value[stateValue][chapterNumber][chapterProperty] || 'Enter A Name'}`}
+																	: `${(((campaignState.value as any)[stateValue as string])[chapterNumber][chapterProperty] as any) || 'Enter A Name'}`}
 															</p>
 															<button
 																class="components btn btn-error no-animation btn-sm m-auto mt-2"
@@ -418,10 +417,10 @@
 																		1
 																	);
 																	if (
-																		campaignStateOverwrites[stateValue] &&
-																		campaignStateOverwrites[stateValue][chapterNumber]
+																		(campaignStateOverwrites as any)[stateValue as string] &&
+																		(campaignStateOverwrites as any)[stateValue as string][chapterNumber]
 																	) {
-																		delete campaignStateOverwrites[stateValue][chapterNumber];
+																		delete (campaignStateOverwrites as any)[stateValue as string][chapterNumber];
 																	}
 																	campaignState.value[stateValue] = campaignState.value[
 																		stateValue
@@ -438,27 +437,24 @@
 														<fieldset class="mt-3 w-full">
 															<div class="capitalize">
 																{chapterProperty.replaceAll('_', ' ')}
-																{#if campaignStateOverwrites[stateValue] && campaignStateOverwrites[stateValue][chapterNumber] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty]}
+																{#if (campaignStateOverwrites as any)[stateValue as string] && (campaignStateOverwrites as any)[stateValue as string][chapterNumber] && (campaignStateOverwrites as any)[stateValue as string][chapterNumber][chapterProperty]}
 																	<span class="badge badge-accent ml-2">overwritten</span>
 																{/if}
 															</div>
 															<textarea
-																bind:value={
-																	campaignState.value[stateValue][chapterNumber][chapterProperty]
-																}
-																rows={campaignState.value[stateValue][chapterNumber][
-																	chapterProperty
-																]?.length > 30
+																bind:value={(((campaignState.value as any)[stateValue as string])[chapterNumber][chapterProperty]) as any}
+																rows={(((((campaignState.value as any)[stateValue as string])[chapterNumber][
+																	chapterProperty]) as any)?.length as number) > 30
 																	? 2
 																	: 1}
 																oninput={(evt) => {
 																	if (!campaignStateOverwrites[stateValue]) {
 																		campaignStateOverwrites[stateValue] = {};
 																	}
-																	if (!campaignStateOverwrites[stateValue][chapterNumber]) {
-																		campaignStateOverwrites[stateValue][chapterNumber] = {};
+																	if (!(campaignStateOverwrites as any)[stateValue as string][chapterNumber]) {
+																		(campaignStateOverwrites as any)[stateValue as string][chapterNumber] = {};
 																	}
-																	campaignStateOverwrites[stateValue][chapterNumber][
+																	(campaignStateOverwrites as any)[stateValue as string][chapterNumber][
 																		chapterProperty
 																	] = (evt.currentTarget as HTMLTextAreaElement).value;
 																}}
@@ -495,9 +491,9 @@
 						</button>
 						<button
 							class="btn btn-accent btn-md m-5 m-auto mt-2 mb-2 w-1/2"
-							onclick={() => {
-								onRandomizeSingle(stateValue);
-							}}
+													onclick={() => {
+														onRandomizeSingle(stateValue as any);
+													}}
 						>
 							Randomize All Chapters
 						</button>
@@ -507,23 +503,23 @@
 				<fieldset class="mt-3 w-full">
 					<div class=" flex-row capitalize">
 						{stateValue.replaceAll('_', ' ')}
-						{#if campaignStateOverwrites[stateValue]}
+																{#if (campaignStateOverwrites as any)[stateValue as string]}
 							<span class="badge badge-accent ml-2">overwritten</span>
 						{/if}
 					</div>
 
-					<textarea
-						bind:value={campaignState.value[stateValue]}
-						rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
-						oninput={(evt) => handleInput(evt, stateValue)}
-						placeholder={initialCampaignState[stateValue]}
-						class="textarea textarea-md mt-2 w-full"
-					></textarea>
+						<textarea
+							bind:value={(campaignState.value as any)[stateValue as string]}
+							rows={textAreaRowsDerived ? (textAreaRowsDerived as any)[stateValue as string] : 2}
+							oninput={(evt) => handleInput(evt, stateValue)}
+							placeholder={(initialCampaignState as any)[stateValue as string]}
+							class="textarea textarea-md mt-2 w-full"
+						></textarea>
 				</fieldset>
 				<button
 					class="btn btn-accent btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 					onclick={() => {
-						onRandomizeSingle(stateValue);
+						onRandomizeSingle(stateValue as any);
 					}}
 				>
 					Randomize {stateValue.replaceAll('_', ' ')}

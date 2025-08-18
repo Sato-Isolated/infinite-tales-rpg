@@ -1,0 +1,51 @@
+// Minimal ambient module declarations to satisfy TS in Svelte files
+declare module 'lodash/cloneDeep' {
+  import cloneDeep from 'lodash/cloneDeep.js';
+  export default cloneDeep as <T>(value: T) => T;
+}
+declare module 'lodash/isEqual' {
+  import isEqual from 'lodash/isEqual.js';
+  export default isEqual as (a: any, b: any) => boolean;
+}
+declare module 'lodash.isequal' {
+  const isEqual: (a: any, b: any) => boolean;
+  export default isEqual;
+}
+declare module 'lodash.isplainobject' {
+  const isPlainObject: (v: any) => v is Record<string, unknown>;
+  export default isPlainObject;
+}
+declare module 'lodash.isstring' {
+  const isString: (v: any) => v is string;
+  export default isString;
+}
+declare module 'lodash.clonedeep' {
+  const cloneDeep: <T>(value: T) => T;
+  export default cloneDeep;
+}
+declare module '@3d-dice/dice-box' {
+  export default class DiceBox {
+    constructor(selector: string, options?: { assetPath: string });
+    init(): Promise<void> | void;
+    roll(notation: string): Promise<Array<{ value: number }>>;
+    clear(): void;
+    onRollComplete?: (result: Array<{ value: number }>) => void;
+  }
+}
+declare module 'msedge-tts' {
+  export type Voice = { ShortName: string; FriendlyName: string; Gender: string; Locale: string };
+  export enum OUTPUT_FORMAT {
+    AUDIO_24KHZ_48KBITRATE_MONO_MP3 = 'audio-24khz-48kbitrate-mono-mp3',
+    AUDIO_24KHZ_96KBITRATE_MONO_MP3 = 'audio-24khz-96kbitrate-mono-mp3',
+  }
+  export class MsEdgeTTS {
+    setMetadata(voice: string, format: OUTPUT_FORMAT): Promise<void>;
+    toStream(text: string): { audioStream: any };
+    getVoices(): Promise<Voice[]>;
+  }
+}
+declare module 'dice-notation-js' {
+  type DetailedResult = { result: number; number?: number; type?: number; modifier?: number; rolls?: number[] };
+  const Dice: { detailed: (notation: string) => DetailedResult };
+  export default Dice;
+}

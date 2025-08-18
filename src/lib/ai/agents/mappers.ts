@@ -12,7 +12,7 @@ export function mapStatsUpdates(object: Pick<GameActionState, 'stats_update'>) {
 	object.stats_update = object.stats_update?.map((statUpdate) => mapStatsUpdate(statUpdate));
 }
 
-export function mapStatsUpdate(stats_update): StatsUpdate {
+export function mapStatsUpdate(stats_update: any): StatsUpdate {
 	let parsed: DiceRoll;
 	try {
 		parsed = Dice.detailed(stats_update.value);

@@ -183,10 +183,10 @@ describe('StoryAgent', () => {
 				)
 			);
 			// Check if all keys from storyStateForPrompt (excluding game which is handled by random selection) are in preset.
-			for (const key of Object.keys(storyStateForPrompt)) {
+			for (const key of Object.keys(storyStateForPrompt) as Array<keyof Story>) {
 				if (key === 'game') continue; // game is specifically set randomly if no overwrites
 				expect(presetInRequest).toHaveProperty(key);
-				expect(presetInRequest[key]).toEqual(storyStateForPrompt[key]);
+				expect(presetInRequest[key as string]).toEqual(storyStateForPrompt[key]);
 			}
 		});
 	});
