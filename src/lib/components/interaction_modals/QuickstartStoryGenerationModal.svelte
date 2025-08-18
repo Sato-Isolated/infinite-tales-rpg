@@ -31,13 +31,13 @@
 		}
 		if (storyDescription) {
 			overwriteStory = {
-				adventure_and_main_event: storyDescription,
+				main_scenario: storyDescription,
 				character_simple_description: storyDescription
 			};
 		}
 		const generated = await storyAgent!.generateRandomStorySettings(overwriteStory);
 		if (generated) {
-			storyDescription = generated.game + '\n' + generated.adventure_and_main_event;
+			storyDescription = generated.game + '\n' + generated.main_scenario;
 			storyState = generated;
 		}
 		isGenerating = false;

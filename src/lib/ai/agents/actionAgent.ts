@@ -104,7 +104,7 @@ export class ActionAgent {
 	): Promise<Action> {
 		//remove knowledge of story secrets etc
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { ['adventure_and_main_event']: _, ...storySettingsMapped } = storySettings;
+		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
 
 		const agent = [
@@ -200,7 +200,7 @@ export class ActionAgent {
 	): Promise<{ thoughts: string; actions: Array<Action> }> {
 		//remove knowledge of story secrets etc
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { ['adventure_and_main_event']: _, ...storySettingsMapped } = storySettings;
+		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
 		const agent = [
@@ -288,7 +288,7 @@ export class ActionAgent {
 	): Promise<{ thoughts: string; actions: Array<Action> }> {
 		//remove knowledge of story secrets etc
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { ['adventure_and_main_event']: _, ...storySettingsMapped } = storySettings;
+		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
 		const agent = [

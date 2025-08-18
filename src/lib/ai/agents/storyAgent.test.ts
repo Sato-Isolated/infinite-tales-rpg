@@ -37,7 +37,7 @@ describe('StoryAgent', () => {
 			...initialStoryState,
 			game: 'Dungeons & Dragons',
 			world_details: 'A realm of magic and monsters.',
-			adventure_and_main_event: 'A quest to defeat the Lich King.',
+			main_scenario: 'A quest to defeat the Lich King.',
 			character_simple_description: 'A brave hero.',
 			general_image_prompt: 'fantasy medieval battle',
 			theme: 'High Fantasy',
@@ -66,17 +66,17 @@ describe('StoryAgent', () => {
 		});
 
 		// Test Case 2: Generation with text input (simulating PDF text)
-		it('should generate story settings with adventure_and_main_event from text input', async () => {
+		it('should generate story settings with main_scenario from text input', async () => {
 			const sampleText = 'A brave knight ventures into a dark forest to find a lost artifact.';
 			const storyFromText: Story = {
 				...sampleStory,
-				adventure_and_main_event: sampleText,
+				main_scenario: sampleText,
 				world_details: 'A dark and mysterious forest.' // LLM would generate this
 			};
 			mockLLMInstance.generateContent.mockResolvedValue({ content: storyFromText });
 
 			const result = await storyAgent.generateRandomStorySettings({
-				adventure_and_main_event: sampleText
+				main_scenario: sampleText
 			});
 
 			expect(mockLLMInstance.generateContent).toHaveBeenCalledOnce();
@@ -88,9 +88,9 @@ describe('StoryAgent', () => {
 				)
 			);
 
-			expect(presetInRequest.adventure_and_main_event).toBe(sampleText);
+			expect(presetInRequest.main_scenario).toBe(sampleText);
 			expect(result).toEqual(storyFromText);
-			expect(result?.adventure_and_main_event).toBe(sampleText);
+			expect(result?.main_scenario).toBe(sampleText);
 		});
 
 		// Test Case 3: Generation with character description
@@ -130,13 +130,13 @@ describe('StoryAgent', () => {
 			};
 			const storyCombined: Story = {
 				...sampleStory,
-				adventure_and_main_event: sampleText,
+				main_scenario: sampleText,
 				character_simple_description: 'Gorok, the warrior, joins a group to stop the cataclysm.'
 			};
 			mockLLMInstance.generateContent.mockResolvedValue({ content: storyCombined });
 
 			const result = await storyAgent.generateRandomStorySettings(
-				{ adventure_and_main_event: sampleText },
+				{ main_scenario: sampleText },
 				sampleCharacter
 			);
 
@@ -149,7 +149,7 @@ describe('StoryAgent', () => {
 				)
 			);
 
-			expect(presetInRequest.adventure_and_main_event).toBe(sampleText);
+			expect(presetInRequest.main_scenario).toBe(sampleText);
 			expect(request.historyMessages).toBeDefined();
 			expect(request.historyMessages?.length).toBe(1);
 			expect(request.historyMessages?.[0].content).toContain(stringifyPretty(sampleCharacter));

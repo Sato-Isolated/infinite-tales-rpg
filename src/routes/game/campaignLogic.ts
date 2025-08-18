@@ -118,7 +118,7 @@ export function getNextChapterPrompt(
 		// Update the story with the new chapter's JSON.
 		const updatedStory: Story = {
 			...story,
-			adventure_and_main_event: newChapterJson
+			main_scenario: newChapterJson
 		};
 
 		return {

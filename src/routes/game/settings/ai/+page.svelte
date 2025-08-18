@@ -141,7 +141,7 @@
 			if (story && isPlainObject(story)) {
 				newStoryState = story as Story;
 			} else {
-				const overwriteStory = !story ? {} : { adventure_and_main_event: story as string };
+				const overwriteStory = !story ? {} : { main_scenario: story as string };
 				newStoryState = await storyAgent!.generateRandomStorySettings(overwriteStory);
 			}
 			if (newStoryState) {

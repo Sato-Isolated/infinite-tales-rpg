@@ -162,7 +162,7 @@
 
 	const overwriteTaleWithCampaignSettings = (currentChapter: CampaignChapter, taleState: Story) => {
 		if (taleState) {
-			taleState.adventure_and_main_event = stringifyPretty(currentChapter);
+			taleState.main_scenario = stringifyPretty(currentChapter);
 			taleState.general_image_prompt = campaignState.value.general_image_prompt;
 			taleState.character_simple_description = campaignState.value.character_simple_description;
 			taleState.world_details = campaignState.value.world_details;
