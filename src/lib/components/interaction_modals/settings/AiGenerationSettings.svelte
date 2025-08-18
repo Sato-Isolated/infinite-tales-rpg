@@ -18,7 +18,7 @@
 		<h3 class="text-lg font-bold">AI Generation Settings</h3>
 
 		<!-- Use Gemini Flash Fallback -->
-		<label class="form-control mt-5 w-full sm:w-2/3">
+		<fieldset class="mt-5 w-full sm:w-2/3">
 			<div class="flex flex-col items-center gap-2">
 				<span>Use Gemini Flash as fallback</span>
 				<div class="flex items-center gap-2">
@@ -28,17 +28,17 @@
 						bind:checked={aiConfigState.value.useFallbackLlmState}
 					/>
 				</div>
-				<small class="m-auto mt-2 text-xs text-base-content/70">
+				<small class="text-base-content/70 m-auto mt-2 text-xs">
 					When Gemini Thinking is overloaded, Flash will be used.
 				</small>
-				<small class="m-auto mt-1 text-xs text-base-content/70">
+				<small class="text-base-content/70 m-auto mt-1 text-xs">
 					Keep in mind that the game experience can be decreased with this option.
 				</small>
 			</div>
-		</label>
+		</fieldset>
 
 		<!-- Temperature -->
-		<label class="form-control mt-5 w-full sm:w-2/3">
+		<fieldset class="mt-5 w-full sm:w-2/3">
 			Temperature: {temperatureState.value.toFixed(2)}
 			<!-- Show formatted value -->
 			<input
@@ -50,27 +50,27 @@
 				bind:value={temperatureState.value}
 				class="range range-info mt-2"
 			/>
-			<small class="m-auto mt-2 text-xs text-base-content/70">
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
 				Higher temperature makes the AI more creative, but also errors more likely.
 			</small>
-		</label>
+		</fieldset>
 
 		<!-- AI Language -->
-		<label class="form-control mt-5 w-full sm:w-2/3">
+		<fieldset class="mt-5 w-full sm:w-2/3">
 			AI Language
 			<input
 				bind:value={aiLanguage.value}
 				placeholder="AI will respond in this language (e.g., 'fr', 'de', 'es'). Leave empty for English."
-				class="input input-bordered mt-2"
+				class="input input-md mt-2"
 			/>
-			<small class="m-auto mt-2 text-xs text-base-content/70">
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
 				The Game UI will not be translated yet. Ensure the AI supports the entered language code.
 			</small>
-		</label>
+		</fieldset>
 
 		<!-- Close Button -->
 		<div class="modal-action mt-6">
-			<button class="btn btn-info" onclick={onclose}>Close</button>
+			<button class="btn btn-info btn-md" onclick={onclose}>Close</button>
 			<!-- No explicit "Save" needed as bind:value updates localStorage directly -->
 		</div>
 	</div>

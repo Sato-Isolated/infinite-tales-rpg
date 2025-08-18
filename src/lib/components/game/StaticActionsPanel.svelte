@@ -17,14 +17,14 @@
 <div id="static-actions" class="p-4 pb-0 pt-0">
 	<button
 		onclick={handleContinue}
-		class="text-md btn btn-neutral mb-3 w-full"
+		class="text-md btn btn-neutral mb-3 w-full btn-md"
 		disabled={busy}
 		aria-disabled={busy}>Continue The Tale.</button
 	>
 	{#if levelUpEnabled}
 		<button
 			onclick={handleLevelUp}
-			class="text-md btn btn-success mb-3 w-full"
+			class="text-md btn btn-success mb-3 w-full btn-md"
 			disabled={busy}
 			aria-disabled={busy}>Level up!</button
 		>
@@ -32,7 +32,7 @@
 	{#if transformPending}
 		<button
 			onclick={handleTransform}
-			class="text-md btn btn-success mb-3 w-full"
+			class="text-md btn btn-success mb-3 w-full btn-md"
 			disabled={busy}
 			aria-disabled={busy}>Transform into {transformLabel}</button
 		>
@@ -40,26 +40,26 @@
 	{#if abilitiesPending}
 		<button
 			onclick={handleLearnAbilities}
-			class="text-md btn btn-success mb-3 w-full"
+			class="text-md btn btn-success mb-3 w-full btn-md"
 			disabled={busy}
 			aria-disabled={busy}>Learn new Spells & Abilities</button
 		>
 	{/if}
 	<button
 		onclick={handleOpenSpells}
-		class="text-md btn btn-primary w-full"
+		class="text-md btn btn-primary w-full btn-md"
 		disabled={busy}
 		aria-disabled={busy}>Spells & Abilities</button
 	>
 	<button
 		onclick={handleOpenInventory}
-		class="text-md btn btn-primary mt-3 w-full"
+		class="text-md btn btn-primary mt-3 w-full btn-md"
 		disabled={busy}
 		aria-disabled={busy}>Inventory</button
 	>
 	<button
 		onclick={handleOpenUtility}
-		class="text-md btn btn-primary mt-3 w-full"
+		class="text-md btn btn-primary mt-3 w-full btn-md"
 		disabled={busy}
 		aria-disabled={busy}>Utility</button
 	>

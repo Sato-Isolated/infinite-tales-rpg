@@ -122,7 +122,7 @@
 				<p class="mt-2 font-bold">New ability gained:</p>
 			{/if}
 			<AbilityComponent ability={aiLevelUp.ability} />
-			<button type="button" class="components btn btn-primary mt-2" onclick={acceptAILevelUp}>
+			<button type="button" class="components btn btn-primary mt-2 btn-md" onclick={acceptAILevelUp}>
 				Accept
 			</button>
 			<p class="mt-4">
@@ -131,7 +131,7 @@
 			</p>
 			<button
 				type="button"
-				class="components btn btn-neutral mt-2"
+				class="components btn btn-neutral mt-2 btn-md"
 				onclick={() => {
 					if (onclose) {
 						onclose();

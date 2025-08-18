@@ -84,10 +84,10 @@
 	});
 </script>
 
-<dialog open class="z-100 modal" style="background: rgba(0, 0, 0, 0.3);">
+<dialog open class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center text-center">
 		<span class="m-auto font-bold">Suggested Actions</span>
-		<button onclick={() => onclose()} class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2"
+		<button onclick={() => onclose()} class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2"
 			>✕</button
 		>
 		{#if isGeneratingState}
@@ -99,7 +99,7 @@
 			</div>
 		{:else}
 			<details
-				class="collapse collapse-arrow textarea-bordered mt-4 overflow-y-scroll border bg-base-200"
+				class="collapse-arrow textarea bg-base-200 textarea-md collapse mt-4 overflow-y-scroll border"
 			>
 				<summary class="collapse-title capitalize">
 					<p>Thoughts</p>
@@ -110,18 +110,18 @@
 				<button
 					type="button"
 					disabled={!isEnoughResource(action, resources, inventoryState.value)}
-					class="components btn btn-neutral no-animation mt-2 w-full"
+					class="components btn btn-neutral no-animation btn-md mt-2 w-full"
 					onclick={() => onclose(action)}
 				>
 					{getTextForActionButton(action)}
 				</button>
 			{/each}
 		{/if}
-		<div class="mt-4 w-full lg:join">
+		<div class="lg:join mt-4 w-full">
 			<input
 				type="text"
 				bind:value={customActionInput}
-				class="input input-bordered w-full"
+				class="input input-md w-full"
 				id="user-input"
 				placeholder="Custom action for item"
 			/>
@@ -133,7 +133,7 @@
 						text: 'Use item ' + itemForSuggestActionsState.item_id + ' - ' + customActionInput,
 						is_custom_action: true
 					})}
-				class="btn btn-neutral w-full lg:w-1/4"
+				class="btn btn-neutral btn-md w-full lg:w-1/4"
 				id="submit-button"
 				>Submit
 			</button>

@@ -23,10 +23,10 @@
 			Current Abilities will be kept, but resource cost removed. Edit them manually in the Tale
 			Settings.
 		</p>
-		<button class="btn btn-primary mt-3" onclick={downloadLocalStorageAsJson}>Save Game</button>
+		<button class="btn btn-primary mt-3 btn-md" onclick={downloadLocalStorageAsJson}>Save Game</button>
 		<div class="mt-2 flex gap-2">
-			<button class="btn btn-primary flex-1" onclick={() => onclose(false)}>Decline</button>
-			<button class="btn btn-accent flex-1" onclick={() => onclose(true)}>Accept</button>
+			<button class="btn btn-primary flex-1 btn-md" onclick={() => onclose(false)}>Decline</button>
+			<button class="btn btn-accent flex-1 btn-md" onclick={() => onclose(true)}>Accept</button>
 		</div>
 	</div>
 </dialog>

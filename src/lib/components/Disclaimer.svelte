@@ -46,7 +46,7 @@
 		>
 
 		<button
-			class="btn btn-info mt-3"
+			class="btn btn-info mt-3 btn-md"
 			onclick={() => {
 				disclaimer.close();
 				onAgree();

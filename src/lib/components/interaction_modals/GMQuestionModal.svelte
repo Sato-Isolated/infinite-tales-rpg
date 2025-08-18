@@ -125,7 +125,7 @@
 			<span class="m-auto font-bold">Game Master Answer</span>
 			<p class="mt-4 max-h-48 overflow-y-scroll">{gmAnswerState?.answerToPlayer}</p>
 			<details
-				class="collapse collapse-arrow textarea-bordered mt-4 overflow-y-scroll border bg-base-200"
+				class="collapse collapse-arrow textarea mt-4 overflow-y-scroll border bg-base-200 textarea-md"
 			>
 				<summary class="collapse-title capitalize">
 					<p>Considered Game State</p>
@@ -133,7 +133,7 @@
 				<p>{gmAnswerState?.game_state_considered || 'The AI did not return a response...'}</p>
 			</details>
 			<details
-				class="collapse collapse-arrow textarea-bordered mt-4 overflow-y-scroll border bg-base-200"
+				class="collapse collapse-arrow textarea mt-4 overflow-y-scroll border bg-base-200 textarea-md"
 			>
 				<summary class="collapse-title capitalize">
 					<p>Considered Rules</p>
@@ -148,7 +148,7 @@
 			</details>
 			{#if gmThoughtsState}
 				<details
-					class="collapse collapse-arrow textarea-bordered mt-4 overflow-y-scroll border bg-base-200"
+					class="collapse collapse-arrow textarea mt-4 overflow-y-scroll border bg-base-200 textarea-md"
 				>
 					<summary class="collapse-title capitalize">
 						<p>Thoughts</p>
@@ -158,10 +158,10 @@
 			{/if}
 			<div class="mt-3 flex w-full flex-row gap-2">
 				<button
-					class="btn btn-info flex-1"
+					class="btn btn-info flex-1 btn-md"
 					onclick={() => onclose(true, { question, ...gmAnswerState })}>Add to context</button
 				>
-				<button class="btn btn-info flex-1" onclick={() => onclose(true)}>Close</button>
+				<button class="btn btn-info flex-1 btn-md" onclick={() => onclose(true)}>Close</button>
 			</div>
 		</div>
 	</dialog>

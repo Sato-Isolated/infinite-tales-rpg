@@ -212,17 +212,17 @@
 </ul>
 <form class="m-6 grid items-center gap-2 text-center">
 	<button
-		class="btn btn-accent m-auto mt-3 w-3/4 sm:w-1/2"
+		class="btn btn-accent btn-md m-auto mt-3 w-1/2"
 		disabled={isGeneratingState}
 		onclick={onRandomize}
 	>
 		Randomize All
 	</button>
-	<button class="btn btn-neutral m-auto w-3/4 sm:w-1/2" onclick={onUploadClicked}>
+	<button class="btn btn-neutral btn-md m-auto w-1/2" onclick={onUploadClicked}>
 		Generate Campaign from PDF
 	</button>
 	<button
-		class="btn btn-neutral m-auto w-3/4 sm:w-1/2"
+		class="btn btn-neutral btn-md m-auto w-1/2"
 		onclick={() => {
 			campaignState.reset();
 			storyState.reset();
@@ -233,14 +233,14 @@
 	</button>
 	<ImportExportSaveGame isSaveGame={false}>
 		{#snippet exportButton(onclick)}
-			<button {onclick} class="btn btn-neutral m-auto w-3/4 sm:w-1/2"> Export Settings</button>
+			<button {onclick} class="btn btn-neutral btn-md m-auto w-1/2"> Export Settings</button>
 		{/snippet}
 		{#snippet importButton(onclick)}
-			<button {onclick} class="btn btn-neutral m-auto w-3/4 sm:w-1/2"> Import Settings</button>
+			<button {onclick} class="btn btn-neutral btn-md m-auto w-1/2"> Import Settings</button>
 		{/snippet}
 	</ImportExportSaveGame>
 	<button
-		class="btn btn-primary m-auto w-3/4 sm:w-1/2"
+		class="btn btn-primary btn-md m-auto w-1/2"
 		disabled={!isCampaignSet()}
 		onclick={() => _goto('character')}
 	>
@@ -258,32 +258,30 @@
 		{#each Object.keys(initialCampaignState) as stateValue}
 			{#if stateValue === 'chapters'}
 				<!-- TODO refactor or leave for now?-->
-				<label class="form-control mt-3 w-full">
-					<details open class="collapse collapse-arrow border border-base-300 bg-base-200">
+				<fieldset class="mt-3 w-full">
+					<details open class="collapse-arrow border-base-300 bg-base-200 collapse border">
 						<summary class="collapse-title capitalize">{stateValue.replaceAll('_', ' ')}</summary>
 						<div class="collapse-content">
 							{#each Object.keys(campaignState.value[stateValue]) as chapterNumber}
-								<label class="form-control mt-3 w-full">
-									<details class="collapse collapse-arrow textarea-bordered border bg-base-200">
+								<fieldset class="mt-3 w-full">
+									<details class="collapse-arrow textarea bg-base-200 textarea-md collapse border">
 										{#each Object.keys(campaignState.value[stateValue][chapterNumber]) as chapterProperty (chapterProperty)}
 											{#if chapterProperty === 'plot_points'}
-												<details class="collapse collapse-arrow border border-base-300 bg-base-200">
+												<details class="collapse-arrow border-base-300 bg-base-200 collapse border">
 													<summary class="collapse-title capitalize"
 														>{chapterProperty.replaceAll('_', ' ')}</summary
 													>
 													<div class="collapse-content">
 														{#each Object.keys(campaignState.value[stateValue][chapterNumber][chapterProperty]) as plotPoint}
-															<label class="form-control mt-3 w-full">
+															<fieldset class="mt-3 w-full">
 																<details
-																	class="collapse collapse-arrow textarea-bordered border bg-base-200"
+																	class="collapse-arrow textarea bg-base-200 textarea-md collapse border"
 																>
 																	{#each Object.keys(campaignState.value[stateValue][chapterNumber][chapterProperty][plotPoint]) as plotPointProperty (plotPointProperty)}
 																		{#if plotPointProperty === 'location'}
 																			<summary class="collapse-title capitalize">
 																				<div class="m-auto w-full sm:col-span-2">
-																					<p
-																						class="content-center overflow-hidden overflow-ellipsis"
-																					>
+																					<p class="content-center truncate">
 																						{`${campaignState.value[stateValue][chapterNumber][chapterProperty][plotPoint][plotPointProperty] || 'Enter A Name'}`}
 																					</p>
 																					<button
@@ -320,7 +318,7 @@
 																		{/if}
 																		{#if plotPointProperty !== 'plotId'}
 																			<div class="collapse-content">
-																				<label class="form-control mt-3 w-full">
+																				<fieldset class="mt-3 w-full">
 																					<div class="capitalize">
 																						{plotPointProperty.replaceAll('_', ' ')}
 																						{#if campaignStateOverwrites[stateValue] && campaignStateOverwrites[stateValue][chapterNumber] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty][plotPoint] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty][plotPoint][plotPointProperty]}
@@ -330,9 +328,11 @@
 																						{/if}
 																					</div>
 																					<textarea
-																						bind:value={campaignState.value[stateValue][
-																							chapterNumber
-																						][chapterProperty][plotPoint][plotPointProperty]}
+																						bind:value={
+																							campaignState.value[stateValue][chapterNumber][
+																								chapterProperty
+																							][plotPoint][plotPointProperty]
+																						}
 																						rows={(
 																							campaignState.value[stateValue][chapterNumber][
 																								chapterProperty
@@ -374,21 +374,21 @@
 																								evt.currentTarget as HTMLTextAreaElement
 																							).value;
 																						}}
-																						class="textarea textarea-bordered textarea-md mt-2 w-full"
+																						class="textarea textarea-md mt-2 w-full"
 																					>
 																					</textarea>
-																				</label>
+																				</fieldset>
 																			</div>
 																		{/if}
 																	{/each}
 																</details>
-															</label>
+															</fieldset>
 														{/each}
 													</div>
 												</details>
 												<!-- Plot Points -->
 												<button
-													class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+													class="btn btn-neutral btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 													onclick={() => {
 														campaignState.value[stateValue][chapterNumber][chapterProperty].push(
 															getNewPlotPointObject(
@@ -404,7 +404,7 @@
 												{#if chapterProperty === 'title'}
 													<summary class="collapse-title capitalize">
 														<div class="m-auto w-full sm:col-span-2">
-															<p class="content-center overflow-hidden overflow-ellipsis">
+															<p class="content-center truncate">
 																{isNaN(parseInt(chapterNumber))
 																	? chapterNumber.replaceAll('_', ' ')
 																	: `${campaignState.value[stateValue][chapterNumber][chapterProperty] || 'Enter A Name'}`}
@@ -435,7 +435,7 @@
 												{/if}
 												{#if chapterProperty !== 'chapterId'}
 													<div class="collapse-content">
-														<label class="form-control mt-3 w-full">
+														<fieldset class="mt-3 w-full">
 															<div class="capitalize">
 																{chapterProperty.replaceAll('_', ' ')}
 																{#if campaignStateOverwrites[stateValue] && campaignStateOverwrites[stateValue][chapterNumber] && campaignStateOverwrites[stateValue][chapterNumber][chapterProperty]}
@@ -443,9 +443,9 @@
 																{/if}
 															</div>
 															<textarea
-																bind:value={campaignState.value[stateValue][chapterNumber][
-																	chapterProperty
-																]}
+																bind:value={
+																	campaignState.value[stateValue][chapterNumber][chapterProperty]
+																}
 																rows={campaignState.value[stateValue][chapterNumber][
 																	chapterProperty
 																]?.length > 30
@@ -462,16 +462,16 @@
 																		chapterProperty
 																	] = (evt.currentTarget as HTMLTextAreaElement).value;
 																}}
-																class="textarea textarea-bordered textarea-md mt-2 w-full"
+																class="textarea textarea-md mt-2 w-full"
 															>
 															</textarea>
-														</label>
+														</fieldset>
 													</div>
 												{/if}
 											{/if}
 										{/each}
 										<button
-											class="btn btn-accent m-5 m-auto mb-2 mt-2 w-3/4 sm:w-1/2"
+											class="btn btn-accent btn-md m-5 m-auto mt-2 mb-2 w-1/2"
 											onclick={() => {
 												onRandomizeSingle(stateValue, chapterNumber);
 											}}
@@ -479,12 +479,12 @@
 											Randomize Whole Chapter
 										</button>
 									</details>
-								</label>
+								</fieldset>
 							{/each}
 							<!-- Chapters -->
 						</div>
 						<button
-							class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+							class="btn btn-neutral btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 							onclick={() => {
 								campaignState.value[stateValue].push(
 									getNewChapterObject(campaignState.value[stateValue].length + 1)
@@ -494,7 +494,7 @@
 							Add Chapter
 						</button>
 						<button
-							class="btn btn-accent m-5 m-auto mb-2 mt-2 w-3/4 sm:w-1/2"
+							class="btn btn-accent btn-md m-5 m-auto mt-2 mb-2 w-1/2"
 							onclick={() => {
 								onRandomizeSingle(stateValue);
 							}}
@@ -502,9 +502,9 @@
 							Randomize All Chapters
 						</button>
 					</details>
-				</label>
+				</fieldset>
 			{:else}
-				<label class="form-control mt-3 w-full">
+				<fieldset class="mt-3 w-full">
 					<div class=" flex-row capitalize">
 						{stateValue.replaceAll('_', ' ')}
 						{#if campaignStateOverwrites[stateValue]}
@@ -517,11 +517,11 @@
 						rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
 						oninput={(evt) => handleInput(evt, stateValue)}
 						placeholder={initialCampaignState[stateValue]}
-						class="textarea textarea-bordered textarea-md mt-2 w-full"
+						class="textarea textarea-md mt-2 w-full"
 					></textarea>
-				</label>
+				</fieldset>
 				<button
-					class="btn btn-accent m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+					class="btn btn-accent btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 					onclick={() => {
 						onRandomizeSingle(stateValue);
 					}}
@@ -529,7 +529,7 @@
 					Randomize {stateValue.replaceAll('_', ' ')}
 				</button>
 				<button
-					class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
+					class="btn btn-neutral btn-md m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 					onclick={() => {
 						campaignState.resetProperty(stateValue as keyof Campaign);
 						delete campaignStateOverwrites[stateValue];
@@ -540,7 +540,7 @@
 			{/if}
 		{/each}
 		<button
-			class="btn btn-primary m-auto mt-2 w-3/4 sm:w-1/2"
+			class="btn btn-primary btn-md m-auto mt-2 w-1/2"
 			disabled={!isCampaignSet()}
 			onclick={() => _goto('character')}
 		>

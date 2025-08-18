@@ -175,7 +175,7 @@
 			onclick={onClose}
 			id="dice-rolling-dialog-continue"
 			disabled={!rolledValueState.value}
-			class="btn btn-neutral m-3"
+			class="btn btn-neutral m-3 btn-md"
 			>Continue
 		</button>
 		{#if getModifier() === 10 || getModifier() === -10}

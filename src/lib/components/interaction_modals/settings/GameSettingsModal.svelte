@@ -11,24 +11,24 @@
 <dialog open class="modal z-50" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center text-center">
 		<h3 class="text-lg font-bold">Game Settings</h3>
-		<label class="form-control mt-5 w-full sm:w-2/3">
+		<fieldset class="mt-5 w-full sm:w-2/3">
 			<div class="flex flex-col items-center gap-2">
 				<span>Difficulty</span>
 				<select
 					id="difficultyState"
 					bind:value={difficultyState.value}
-					class="select select-bordered mt-2 text-center"
+					class="select select-md mt-2 text-center"
 				>
 					<option selected>Default</option>
 					<option>Easy</option>
 				</select>
-				<small class="m-auto mt-2 text-xs text-base-content/70">
+				<small class="text-base-content/70 m-auto mt-2 text-xs">
 					Easy will reduce required dice rolls by {difficultyDiceRollModifier.Easy}
 				</small>
 			</div>
-		</label>
+		</fieldset>
 
-		<label class="form-control mt-5 w-full sm:w-2/3">
+		<fieldset class="mt-5 w-full sm:w-2/3">
 			<span>Karmic Dice</span>
 			<input
 				type="checkbox"
@@ -36,14 +36,14 @@
 				bind:checked={useKarmicDice.value}
 				class="toggle m-auto mt-2 text-center"
 			/>
-			<small class="m-auto mt-2 text-xs text-base-content/70">
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
 				If 3 consecutive dice rolls fail, you will get a bonus on the next roll
 			</small>
-		</label>
+		</fieldset>
 
 		<!-- Close Button -->
 		<div class="modal-action mt-6">
-			<button class="btn btn-info" onclick={onclose}>Close</button>
+			<button class="btn btn-info btn-md" onclick={onclose}>Close</button>
 		</div>
 	</div>
 	<!-- Optional: Click outside to close -->

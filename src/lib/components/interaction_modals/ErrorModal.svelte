@@ -13,7 +13,7 @@
 <dialog
 	bind:this={dialog}
 	{onclose}
-	class="modal z-[1000]"
+	class="modal z-1000"
 	open
 	style="background: rgba(0, 0, 0, 0.3);"
 >
@@ -26,7 +26,7 @@
 			</span>
 		{/if}
 		<button
-			class="btn btn-info mt-3"
+			class="btn btn-info mt-3 btn-md"
 			onclick={() => {
 				dialog.close();
 				errorState.clear();
@@ -36,7 +36,7 @@
 			Go To Settings
 		</button>
 		<button
-			class="btn btn-info mt-3"
+			class="btn btn-info mt-3 btn-md"
 			onclick={() => {
 				dialog.close();
 				errorState.clear();

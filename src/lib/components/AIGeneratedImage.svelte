@@ -113,7 +113,7 @@
 
 {#if showGenerateButton}
 	<button
-		class="btn btn-accent mt-3 {buttonClassesString}"
+		class="btn btn-accent mt-3 {buttonClassesString} btn-md"
 		disabled={imageState.value.isGenerating}
 		onclick={(e) => {
 			replaceWithAiGenerated();

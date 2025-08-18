@@ -30,7 +30,7 @@
 		<h3 class="text-lg font-bold">Output Features & Media Settings</h3>
 
 		<!-- Disable Image Generation -->
-		<label class="form-control mt-5 w-full sm:w-2/3">
+		<fieldset class="mt-5 w-full sm:w-2/3">
 			<div class="flex flex-col items-center gap-2">
 				<span>Disable Image Generation</span>
 				<input
@@ -39,10 +39,10 @@
 					bind:checked={aiConfigState.value.disableImagesState}
 				/>
 			</div>
-		</label>
+		</fieldset>
 
 		<!-- Disable Text To Speech Generation -->
-		<label class="form-control mt-5 w-full sm:w-2/3">
+		<fieldset class="mt-5 w-full sm:w-2/3">
 			<div class="flex flex-col items-center gap-2">
 				<span>Disable Text To Speech Generation</span>
 				<input
@@ -51,14 +51,14 @@
 					bind:checked={aiConfigState.value.disableAudioState}
 				/>
 			</div>
-		</label>
+		</fieldset>
 
 		<!-- Voice For Text To Speech (Only show if TTS is enabled) -->
 		{#if !aiConfigState.value.disableAudioState}
-			<label class="form-control mt-5 w-full sm:w-1/2">
+			<fieldset class="mt-5 w-full sm:w-1/2">
 				<p class="mb-2">Voice For Text To Speech</p>
 				<!-- Dropdown -->
-				<select bind:value={ttsVoiceState.value} class="select select-bordered w-full text-center">
+				<select bind:value={ttsVoiceState.value} class="select select-md w-full text-center">
 					{#each ttsVoices as v (v.ShortName)}
 						<option value={v.ShortName}>{v.FriendlyName} - {v.Gender}</option>
 					{/each}
@@ -71,12 +71,12 @@
 					}}
 					>Test Voice
 				</button>
-			</label>
+			</fieldset>
 		{/if}
 
 		<!-- Close Button -->
 		<div class="modal-action mt-6">
-			<button class="btn btn-info" onclick={onclose}>Close</button>
+			<button class="btn btn-info btn-md" onclick={onclose}>Close</button>
 		</div>
 	</div>
 	<!-- Optional: Click outside to close -->

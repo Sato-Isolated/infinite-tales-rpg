@@ -105,7 +105,7 @@
 	};
 </script>
 
-<div class="rounded-lg bg-base-200 p-3 shadow-sm">
+<div class="rounded-lg bg-base-200 p-3 shadow-xs">
 	{#if gameTime}
 		<div class="flex items-center gap-2 text-sm">
 			<span class="text-lg" aria-label="Time icon">{getTimeIcon(gameTime.timeOfDay)}</span>

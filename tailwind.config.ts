@@ -1,19 +1,9 @@
 import type { Config } from 'tailwindcss';
 
+// Tailwind CSS v4+ configuration is primarily handled in CSS via @import, @plugin, and @theme.
+// Keep this file minimal to avoid duplicating plugin setup (done in src/app.css).
 export default {
-	content: ['./src/**/*.{html,js,svelte,ts}'],
-
 	theme: {
-		extend: {
-			colors: {
-				'infinity-blue': '#339AF0'
-			}
-		}
-	},
-	daisyui: {
-		themes: ['business']
-	},
-
-	// eslint-disable-next-line @typescript-eslint/no-require-imports
-	plugins: [require('@tailwindcss/typography'), require('daisyui')]
+		extend: {}
+	}
 } as Config;

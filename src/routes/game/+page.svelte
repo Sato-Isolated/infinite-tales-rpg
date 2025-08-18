@@ -225,7 +225,9 @@
 		);
 
 	let actionsTextForTTS = $derived(
-		(characterActionsState.value || []).map((a) => getTextForActionButton(a)).join(' ')
+		(Array.isArray(characterActionsState.value) ? characterActionsState.value : [])
+			.map((a) => getTextForActionButton(a))
+			.join(' ')
 	);
 	//TODO const lastCombatSinceXActions: number = $derived(
 	//	gameActionsState.value && (gameActionsState.value.length - (gameActionsState.value.findLastIndex(state => state.is_character_in_combat ) + 1))
@@ -431,7 +433,7 @@
 		gameActionsState.value = updatedGameActionsState;
 		playerCharactersGameState.value = updatedPlayerCharactersGameState;
 		tick().then(() => document.getElementById('user-input')?.scrollIntoView(false));
-		if (characterActionsState.value.length === 0) {
+		if (!Array.isArray(characterActionsState.value) || characterActionsState.value.length === 0) {
 			const { thoughts, actions } = await actionAgent.generateActions(
 				currentGameActionState,
 				historyMessagesState.value,
@@ -904,12 +906,13 @@
 			<TTSComponent
 				text={actionsTextForTTS}
 				voice={ttsVoiceState.value}
-				hidden={characterActionsState.value?.length === 0}
+				hidden={!Array.isArray(characterActionsState.value) ||
+					characterActionsState.value.length === 0}
 			></TTSComponent>
 		</div>
 	{/if}
 	<ActionButtons
-		actions={characterActionsState.value}
+		actions={Array.isArray(characterActionsState.value) ? characterActionsState.value : []}
 		{currentGameActionState}
 		sendAction={(a, roll) => {
 			chosenActionState.value = $state.snapshot(a);
@@ -921,7 +924,7 @@
 	/>
 	{#if Object.keys(currentGameActionState).length !== 0}
 		{#if !isGameEnded.value}
-			{#if characterActionsState.value?.length === 0}
+			{#if !Array.isArray(characterActionsState.value) || characterActionsState.value.length === 0}
 				<div class="flex flex-col">
 					<span class="m-auto">Generating next actions...</span>
 					<div class="m-auto"><LoadingIcon /></div>
@@ -957,10 +960,7 @@
 	{/if}
 
 	<style>
-		.btn {
-			height: auto;
-			padding: 1rem;
-		}
+	
 
 		canvas {
 			height: 100%;

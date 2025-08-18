@@ -202,14 +202,14 @@
 	<LoadingModal loadingText="Creating Your New Tale, this may take a minute..." />
 {/if}
 <form class="m-6 flex flex-col items-center text-center">
-	<label class="form-control w-full sm:w-2/3">
+	<fieldset class="w-full sm:w-2/3">
 		<p>Google Gemini API Key</p>
 		<input
 			type="text"
 			id="apikey"
 			bind:value={apiKeyState.value}
 			placeholder="Copy your API Key from Google AI Studio and paste here"
-			class="input input-bordered mt-2"
+			class="input input-md mt-2"
 		/>
 		<small class="m-auto mt-2"
 			>View the
@@ -221,13 +221,13 @@
 				guide to create the API Key</a
 			></small
 		>
-	</label>
-	<button class="btn btn-accent m-auto mt-5 w-1/2" onclick={onQuickstartClicked}>
+	</fieldset>
+	<button class="btn btn-accent btn-md m-auto mt-5 w-1/2" onclick={onQuickstartClicked}>
 		Quickstart:<br />New Tale
 	</button>
 	<small class="m-auto mt-2">Let the AI generate a Tale for you</small>
 	<button
-		class="btn btn-neutral m-auto mt-5 w-1/2"
+		class="btn btn-neutral btn-md m-auto mt-5 w-1/2"
 		disabled={!apiKeyState.value}
 		onclick={onStartCustom}
 	>
@@ -235,7 +235,7 @@
 	</button>
 	<small class="m-auto mt-2">Customize your Tale with a brief, open-ended plot</small>
 	<button
-		class="btn btn-neutral m-auto mt-5 w-1/2"
+		class="btn btn-neutral btn-md m-auto mt-5 w-1/2"
 		disabled={!apiKeyState.value}
 		onclick={onNewCampaign}
 	>
@@ -248,7 +248,7 @@
 		<AiGenerationSettings onclose={() => (showGenerationSettingsModal = false)} />
 	{/if}
 	<button
-		class="btn btn-neutral m-auto mt-5 w-1/2"
+		class="btn btn-neutral btn-md m-auto mt-5 w-1/2"
 		onclick={() => (showGenerationSettingsModal = true)}
 	>
 		Generation Settings
@@ -257,7 +257,7 @@
 		<OutputFeaturesModal onclose={() => (showOutputFeaturesModal = false)} />
 	{/if}
 	<button
-		class="btn btn-neutral m-auto mt-5 w-1/2"
+		class="btn btn-neutral btn-md m-auto mt-5 w-1/2"
 		onclick={() => (showOutputFeaturesModal = true)}
 	>
 		Output Features
@@ -265,7 +265,10 @@
 	{#if showSystemPromptsModal}
 		<SystemPromptsModal onclose={() => (showSystemPromptsModal = false)} />
 	{/if}
-	<button class="btn btn-neutral m-auto mt-5 w-1/2" onclick={() => (showSystemPromptsModal = true)}>
+	<button
+		class="btn btn-neutral btn-md m-auto mt-5 w-1/2"
+		onclick={() => (showSystemPromptsModal = true)}
+	>
 		System Prompts
 	</button>
 </form>
