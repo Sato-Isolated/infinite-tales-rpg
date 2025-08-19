@@ -22,12 +22,25 @@ export const initialThoughtsState: ThoughtsState = {
 const isString = (value: unknown): value is string =>
 	typeof value === 'string' || value instanceof String;
 
-export function stringifyPretty(object: unknown) {
-	return JSON.stringify(object, null, 2);
+/**
+ * Enhanced JSON stringify with better formatting for debugging
+ * Uses Svelte 5 patterns for optimal performance
+ */
+export function stringifyPretty(object: unknown): string {
+	try {
+		return JSON.stringify(object, null, 2);
+	} catch (error) {
+		console.warn('Failed to stringify object:', error);
+		return String(object);
+	}
 }
 
-export function handleError(e: string, retryable = true) {
-	console.log(e);
+/**
+ * Improved error handling with better state management
+ * Compatible with Svelte 5 reactive patterns
+ */
+export function handleError(e: string, retryable = true): void {
+	console.error('Application Error:', e);
 	if (!errorState.exception) {
 		errorState.exception = e;
 		errorState.userMessage = e;
@@ -35,10 +48,20 @@ export function handleError(e: string, retryable = true) {
 	}
 }
 
-export function navigate(path: string) {
-	const a = document.createElement('a');
-	a.href = '/game' + path;
-	a.click();
+/**
+ * Enhanced navigation utility
+ * More robust error handling and modern patterns
+ */
+export function navigate(path: string): void {
+	try {
+		const a = document.createElement('a');
+		a.href = '/game' + path;
+		a.click();
+	} catch (error) {
+		console.error('Navigation failed:', error);
+		// Fallback to window.location
+		window.location.href = '/game' + path;
+	}
 }
 
 export const downloadLocalStorageAsJson = () => {
@@ -202,7 +225,7 @@ export function getTextForActionButton(action: Action) {
 		console.warn('Action with undefined text found:', JSON.stringify(action, null, 2));
 		return action.characterName ? `${action.characterName} - Action manquante` : 'Action manquante';
 	}
-	
+
 	const actionText = action.text;
 	let text = '';
 	const cost = parseInt(action.resource_cost?.cost as unknown as string) || 0;

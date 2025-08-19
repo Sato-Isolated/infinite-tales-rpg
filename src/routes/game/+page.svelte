@@ -101,7 +101,7 @@
 	import StorySection from '$lib/components/game/StorySection.svelte';
 	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
-	import ActionInputForm from '$lib/components/game/ActionInputForm.svelte';
+	import ActionInputForm, { type Receiver } from '$lib/components/game/ActionInputForm.svelte';
 	import { createGameController } from './gameController';
 	import { createModalManager } from './modalManager.svelte';
 	import TimeWidget from '$lib/components/game/TimeWidget.svelte';
@@ -551,9 +551,19 @@
 
 	//TODO sendAction should not be handled here so it can be externally called
 	async function checkGameEnded() {
-		const emptyResourceKeys = getEmptyCriticalResourceKeys(
-			playerCharactersGameState.value[playerCharacterIdState]
-		);
+		// Safety check: ensure player character ID and resources exist
+		if (!playerCharacterIdState) {
+			console.warn('No valid player character ID found');
+			return;
+		}
+
+		const playerResources = playerCharactersGameState.value?.[playerCharacterIdState];
+		if (!playerResources) {
+			console.warn('No player resources found for character ID:', playerCharacterIdState);
+			return;
+		}
+
+		const emptyResourceKeys = getEmptyCriticalResourceKeys(playerResources);
 		if (!isGameEnded.value && emptyResourceKeys.length > 0) {
 			isGameEnded.value = true;
 			await controller!.sendAction({
@@ -955,7 +965,7 @@
 		<ActionInputForm
 			bind:this={actionInputFormComponent}
 			bind:receiver={customActionReceiver}
-			handleSubmit={(text, receiver) =>
+			handleSubmit={(text: string, receiver: Receiver) =>
 				handleCustomActionSubmit(text, receiver === 'Character Action')}
 		/>
 	{/if}

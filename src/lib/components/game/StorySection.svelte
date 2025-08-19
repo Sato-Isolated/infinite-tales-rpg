@@ -8,30 +8,57 @@
 	import * as gameLogic from '../../../routes/game/gameLogic';
 	import type { GameActionState } from '$lib/ai/agents/gameAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
-
-	export let currentGameActionState: GameActionState;
-	export let gameActions: GameActionState[] = [];
-	export let latestStoryProgressionState: StoryProgressionWithImageProps;
-	export let showXLastStoryProgressions: number; // parent keeps state
-	export let setShowXLastStoryProgressions: (n: number) => void;
 	import type { RenderedGameUpdate } from '../../../routes/game/gameLogic';
-	export let getRenderedGameUpdates: (
-		gameState: GameActionState,
-		playerId: string
-	) => (RenderedGameUpdate | undefined)[];
-	export let storyState: Story;
-	export let isGameEnded: boolean;
-	export let playerCharacterIdState: string;
-	// optional binding for scrolling to latest story chunk
-	export let storyTextRef: HTMLElement | undefined;
 
+	// Modern Svelte 5 props pattern with bindable support
+	interface Props {
+		currentGameActionState: GameActionState;
+		gameActions?: GameActionState[];
+		latestStoryProgressionState: StoryProgressionWithImageProps;
+		showXLastStoryProgressions: number;
+		setShowXLastStoryProgressions: (n: number) => void;
+		getRenderedGameUpdates: (
+			gameState: GameActionState,
+			playerId: string
+		) => (RenderedGameUpdate | undefined)[];
+		storyState: Story;
+		isGameEnded: boolean;
+		playerCharacterIdState: string;
+		storyTextRef?: HTMLElement;
+	}
+
+	// Use a single $props() call with bindable props
+	let {
+		currentGameActionState,
+		gameActions = [],
+		latestStoryProgressionState,
+		showXLastStoryProgressions,
+		setShowXLastStoryProgressions,
+		getRenderedGameUpdates,
+		storyState,
+		isGameEnded,
+		playerCharacterIdState,
+		storyTextRef = $bindable()
+	}: Props = $props();
+
+	// Derived state for previous story actions
+	const previousStoryActions = $derived.by(() => {
+		if (!latestStoryProgressionState.stream_finished) {
+			return [currentGameActionState];
+		}
+		const startIndex = Math.max(0, gameActions.length - 2 + showXLastStoryProgressions * -1);
+		const endIndex = gameActions.length - 1;
+		return gameActions.slice(startIndex, endIndex);
+	});
+
+	// Optimized event handler
 	const handleShowPrev = () => setShowXLastStoryProgressions(showXLastStoryProgressions + 1);
 </script>
 
 <div id="story" class="bg-base-100 mt-4 justify-items-center rounded-lg p-4 shadow-md">
 	<button onclick={handleShowPrev} class="btn-xs w-full">Show Previous Story</button>
 	{#if currentGameActionState?.story}
-		{#each !latestStoryProgressionState.stream_finished ? [currentGameActionState] : gameActions.slice(-2 + showXLastStoryProgressions * -1, -1) as gameActionState (gameActionState.id)}
+		{#each previousStoryActions as gameActionState (gameActionState.id)}
 			<StoryProgressionWithImage
 				story={gameActionState.story}
 				imagePrompt="{gameActionState.image_prompt} {storyState.general_image_prompt}"

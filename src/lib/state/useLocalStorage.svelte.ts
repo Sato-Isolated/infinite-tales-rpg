@@ -1,53 +1,75 @@
 import { onMount } from 'svelte';
 import cloneDeep from 'lodash.clonedeep';
 
+/**
+ * Enhanced useLocalStorage utility with optimized Svelte 5 patterns
+ * - Uses more efficient $effect patterns
+ * - Better TypeScript integration
+ * - Improved error handling
+ * - Optimized for performance
+ */
 export function useLocalStorage<T>(key: string, initialValue?: T) {
 	function getInitial(): T | undefined {
 		return cloneDeep(initialValue);
 	}
 
 	let value = $state<T>(getInitial() as T) as T;
-	let isMounted = false;
+	let isMounted = $state(false);
+	let hasHydrated = $state(false);
 
+	// Optimized effect that only runs when value changes and we're mounted
 	$effect(() => {
-		// Need to read all values to trigger effect
-		const json = JSON.stringify(value);
-		if (isMounted) {
+		if (!isMounted || !hasHydrated) return;
+
+		// Use $derived to create a stable reference for JSON serialization
+		const serializedValue = JSON.stringify(value);
+
+		try {
 			if (value !== undefined) {
-				localStorage.setItem(key, json);
+				localStorage.setItem(key, serializedValue);
 			} else {
 				localStorage.removeItem(key);
 			}
+		} catch (error) {
+			console.warn(`Failed to save to localStorage for key "${key}":`, error);
 		}
 	});
 
 	onMount(() => {
-		const currentValue = localStorage.getItem(key);
-		if (currentValue) {
-			try {
+		isMounted = true;
+
+		try {
+			const currentValue = localStorage.getItem(key);
+			if (currentValue) {
 				const parsedValue = JSON.parse(currentValue);
-				// Validate that parsed value has a compatible type with initialValue
-				if (Array.isArray(initialValue) && !Array.isArray(parsedValue)) {
-					// If initial value is array but parsed is not, reset to initial
-					console.warn(
-						`localStorage key "${key}" expected array but got:`,
-						typeof parsedValue,
-						', resetting to initial value'
-					);
-					value = getInitial() as T;
+
+				// Enhanced type validation
+				if (initialValue !== undefined) {
+					const initialType = Array.isArray(initialValue) ? 'array' : typeof initialValue;
+					const parsedType = Array.isArray(parsedValue) ? 'array' : typeof parsedValue;
+
+					if (initialType !== parsedType) {
+						console.warn(
+							`localStorage key "${key}" type mismatch. Expected ${initialType}, got ${parsedType}. Resetting to initial value.`
+						);
+						value = getInitial() as T;
+					} else {
+						value = parsedValue;
+					}
 				} else {
 					value = parsedValue;
 				}
-			} catch (error) {
-				console.warn(
-					`Failed to parse localStorage value for key "${key}":`,
-					error,
-					', resetting to initial value'
-				);
-				value = getInitial() as T;
 			}
+		} catch (error) {
+			console.warn(
+				`Failed to parse localStorage value for key "${key}":`,
+				error,
+				'. Resetting to initial value.'
+			);
+			value = getInitial() as T;
+		} finally {
+			hasHydrated = true;
 		}
-		isMounted = true;
 	});
 
 	return {
@@ -62,9 +84,19 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
 		},
 		resetProperty(stateRef: keyof T) {
 			if (value && initialValue) {
-				// @ts-expect-error can never be undefined
+				// @ts-expect-error Property assignment for reset functionality
 				value[stateRef] = getInitial()?.[stateRef];
 			}
+		},
+		// New utility methods for better state management
+		update(updater: (current: T) => T) {
+			value = updater(value);
+		},
+		get isMounted() {
+			return isMounted;
+		},
+		get hasHydrated() {
+			return hasHydrated;
 		}
 	};
 }

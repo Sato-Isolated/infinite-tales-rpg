@@ -9,10 +9,10 @@
 		iconOnly?: boolean;
 	}
 
-	const { 
-		regenerateActions, 
-		disabled = false, 
-		variant = 'neutral', 
+	const {
+		regenerateActions,
+		disabled = false,
+		variant = 'neutral',
 		size = 'md',
 		iconOnly = false
 	}: Props = $props();
@@ -21,7 +21,7 @@
 
 	const handleRegenerate = async () => {
 		if (isRegenerating || disabled) return;
-		
+
 		try {
 			isRegenerating = true;
 			await regenerateActions();
@@ -68,11 +68,11 @@
 	.btn {
 		transition: all 0.2s ease-in-out;
 	}
-	
+
 	.btn:hover:not(:disabled) {
 		transform: translateY(-1px);
 	}
-	
+
 	.btn:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
