@@ -67,7 +67,24 @@ Streaming callbacks (expected shapes) must remain stable: `onStoryStreamUpdate(p
 ### 6. State Management
 
 Pattern: `const someState = useLocalStorage<Type>('stateKey', initialValue);` All principal keys:
-`characterState`, `characterStatsState`, `storyState`, `campaignState`, `currentChapterState`, `gameActionsState`, `historyMessagesState`, `characterActionsState`, `npcState`, `inventoryState`, `relatedStoryHistoryState`, `relatedActionHistoryState`, `customMemoriesState`, `thoughtsState`, `gameSettingsState`, `aiConfigState`, `eventEvaluationState`, `levelUpState`, `skillsProgressionState`, `isGameEnded`, `dice`, `ttsVoiceState`.
+
+**Core Game State:**
+`characterState`, `characterStatsState`, `storyState`, `campaignState`, `currentChapterState`, `gameActionsState`, `historyMessagesState`, `characterActionsState`, `npcState`, `inventoryState`, `isGameEnded`, `gameTimeState`.
+
+**History & Memory:**
+`relatedStoryHistoryState`, `relatedActionHistoryState`, `customMemoriesState`, `customGMNotesState`, `thoughtsState`, `rollDifferenceHistoryState`.
+
+**UI & Settings:**
+`gameSettingsState`, `aiConfigState`, `apiKeyState`, `temperatureState`, `systemInstructionsState`, `aiLanguage`, `ttsVoiceState`, `useDynamicCombat`.
+
+**Actions & Input:**
+`chosenActionState`, `additionalStoryInputState`, `additionalActionInputState`, `didAIProcessDiceRollAction`.
+
+**Character & Player Management:**
+`playerCharactersIdToNamesMapState`, `playerCharactersGameState`, `characterImageState`, `characterTransformState`.
+
+**Events & Progression:**
+`eventEvaluationState`, `levelUpState`, `skillsProgressionState`.
 
 Use snapshots before deep mutations when required: `$state.snapshot(variable.value)`.
 
@@ -191,6 +208,7 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
 - Game logic (Section 3 & 7)
   - `src/routes/game/gameController.ts`: Orchestrates action/story cycle, coordinates agents and state updates. See Sections 4, 7, 17.
   - `src/routes/game/gameLogic.ts`: Dice gates, side-effects injection, core flow helpers. See Sections 13, 11.
+  - `src/routes/game/gameStateUtils.ts`: Game state utility functions and helpers for state management.
   - `src/routes/game/campaignLogic.ts`: Chapter progression, prompts (Section 14).
   - `src/routes/game/combatLogic.ts`: Combat outcomes and JSON updates (Section 8/Combat contract).
   - `src/routes/game/characterLogic.ts`: Character-related helpers.
@@ -199,6 +217,8 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/routes/game/timeLogic.ts`: Time progression helpers.
   - `src/routes/game/memoryLogic.ts` + `src/routes/game/memoryLogic/`: Related history retrieval and summarization support (Section 12).
   - `src/routes/game/skillProgressionHelpers.ts`: Skills and progression utilities (Section 15).
+  - `src/routes/game/npcLogic.ts`: NPC-related helper functions.
+  - `src/routes/game/modalManager.svelte.ts`: Centralized modal state management.
 
 - AI layer (Sections 4, 5, 8)
   - `src/lib/ai/agents/*.ts`: All core agents (see Section 4 table). Do not change JSON contracts (Section 8).
@@ -213,6 +233,7 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/lib/state/versionMigration.ts`: Versioned migrations for persisted state.
   - `src/lib/state/errorState.svelte.ts`: Centralized error state handling.
   - `src/lib/util.svelte.ts`: Shared UI/utility helpers.
+  - `src/lib/types/gameTime.ts`: Game time type definitions.
 
 - UI components (Section 1 & 9)
   - `src/lib/components/StoryProgressionWithImage.svelte`: Story + image area.
@@ -221,6 +242,8 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/lib/components/ImportExportSaveGame.svelte`: Save/load persistence.
   - `src/lib/components/LoadingModal.svelte` / `LoadingIcon.svelte`: Streaming/loading UI.
   - `src/lib/components/ResourcesComponent.svelte`: Player resources.
+  - `src/lib/components/game/`: Game-specific UI components (ActionButtons, ActionInputForm, GameModals, etc.).
+  - `src/lib/components/interaction_modals/`: Modal components for various interactions (character, dice, settings, etc.).
 
 - Tests (Section 10)
   - Unit: `src/index.test.ts`, `src/routes/game/*.test.ts`, `src/lib/ai/agents/storyAgent.test.ts`.
@@ -266,13 +289,14 @@ Minimal, accessible pattern aligned with Section 9:
 
 ### 21.3 Run & Test Quick Reference
 
-- Dev server: `npm run dev`
-- Typecheck: `npm run check` (watch: `npm run check:watch`)
-- Lint/format: `npm run lint` • `npm run lint:fix` • `npm run format`
-- Unit tests: `npm run test:unit` (Vitest)
-- E2E tests: `npm run test:integration` (Playwright)
-- Full test suite: `npm test`
-- Build/preview: `npm run build` • `npm run preview`
+- Dev server: `pnpm run dev`
+- Typecheck: `pnpm run check` (watch: `pnpm run check:watch`)
+- Lint/format: `pnpm run lint` • `pnpm run lint:fix` • `pnpm run format`
+- Unit tests: `pnpm run test:unit` (Vitest)
+- E2E tests: `pnpm run test:integration` (Playwright)
+- Full test suite: `pnpm test`
+- Build/preview: `pnpm run build` • `pnpm run preview`
+- Release: `pnpm run release` (release-it)
 
 Notes:
 
