@@ -1,7 +1,7 @@
 import { errorState } from './state/errorState.svelte';
 import isPlainObject from 'lodash.isplainobject';
-import isString from 'lodash.isstring';
-import * as pdfjs from 'pdfjs-dist';
+// Type-only import to avoid loading pdfjs in Node test environment
+import type * as pdfjs from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import type { Action } from '$lib/ai/agents/gameAgent';
 import type { NpcID } from '$lib/ai/agents/characterStatsAgent';
@@ -17,6 +17,10 @@ export const initialThoughtsState: ThoughtsState = {
 	actionsThoughts: '',
 	eventThoughts: ''
 };
+
+// Local type guard to avoid extra dependency on lodash.isstring
+const isString = (value: unknown): value is string =>
+	typeof value === 'string' || value instanceof String;
 
 export function stringifyPretty(object: unknown) {
 	return JSON.stringify(object, null, 2);
@@ -84,6 +88,11 @@ export const importJsonFromFile = (callback: Function) => {
 let worker: pdfjs.PDFWorker | undefined;
 
 export async function loadPDF(file: File) {
+	// Ensure this only runs in the browser
+	if (typeof window === 'undefined') {
+		throw new Error('loadPDF is only available in the browser environment');
+	}
+	const pdfjs = await import('pdfjs-dist');
 	if (!worker) {
 		worker = new pdfjs.PDFWorker({
 			port: new Worker(new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url), {
@@ -163,10 +172,17 @@ export const removeEmptyValues = (object: Record<string, any>) =>
 	Object.fromEntries(
 		Object.entries(object)
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			.filter(([_, value]) => value && typeof value === 'object' && Object.keys(value as object).length > 0)
+			.filter(
+				([_, value]) =>
+					value && typeof value === 'object' && Object.keys(value as object).length > 0
+			)
 	);
 
-export function playAudioFromStream(text: string, voice: string, onended?: () => void): HTMLAudioElement {
+export function playAudioFromStream(
+	text: string,
+	voice: string,
+	onended?: () => void
+): HTMLAudioElement {
 	const audio = new Audio();
 	audio.src = getTTSUrl(text, voice);
 	audio.autoplay = true;

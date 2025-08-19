@@ -183,14 +183,12 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
 ### 21.1 Important Files & Directories (Map)
 
 - Core routes & pages
-
   - `src/routes/+layout.svelte` / `src/routes/+layout.server.ts`: App shell, server layout.
   - `src/routes/+page.svelte`: Landing / entry UI.
   - `src/routes/game/+layout.svelte`: Game screen shell.
   - `src/routes/game/+page.svelte`: Main game UI and streaming presentation.
 
 - Game logic (Section 3 & 7)
-
   - `src/routes/game/gameController.ts`: Orchestrates action/story cycle, coordinates agents and state updates. See Sections 4, 7, 17.
   - `src/routes/game/gameLogic.ts`: Dice gates, side-effects injection, core flow helpers. See Sections 13, 11.
   - `src/routes/game/campaignLogic.ts`: Chapter progression, prompts (Section 14).
@@ -203,7 +201,6 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/routes/game/skillProgressionHelpers.ts`: Skills and progression utilities (Section 15).
 
 - AI layer (Sections 4, 5, 8)
-
   - `src/lib/ai/agents/*.ts`: All core agents (see Section 4 table). Do not change JSON contracts (Section 8).
   - `src/lib/ai/llm.ts`: Shared prompt fragments and language constants.
   - `src/lib/ai/llmProvider.ts`: Provider abstraction selection.
@@ -212,14 +209,12 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/lib/ai/jsonStreamHelper.ts`: Streamed JSON parsing utilities.
 
 - State & utilities (Section 6)
-
   - `src/lib/state/useLocalStorage.svelte.ts`: Local storage rune-based state util. Keys listed in Section 6.
   - `src/lib/state/versionMigration.ts`: Versioned migrations for persisted state.
   - `src/lib/state/errorState.svelte.ts`: Centralized error state handling.
   - `src/lib/util.svelte.ts`: Shared UI/utility helpers.
 
 - UI components (Section 1 & 9)
-
   - `src/lib/components/StoryProgressionWithImage.svelte`: Story + image area.
   - `src/lib/components/AIGeneratedImage.svelte`: Image rendering (Pollinations).
   - `src/lib/components/TTSComponent.svelte`: Text-to-speech (msedge).
@@ -228,7 +223,6 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/lib/components/ResourcesComponent.svelte`: Player resources.
 
 - Tests (Section 10)
-
   - Unit: `src/index.test.ts`, `src/routes/game/*.test.ts`, `src/lib/ai/agents/storyAgent.test.ts`.
   - E2E: `tests/test.ts` (Playwright). Config: `playwright.config.ts`.
 

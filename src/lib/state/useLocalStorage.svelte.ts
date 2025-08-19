@@ -29,13 +29,21 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
 				// Validate that parsed value has a compatible type with initialValue
 				if (Array.isArray(initialValue) && !Array.isArray(parsedValue)) {
 					// If initial value is array but parsed is not, reset to initial
-					console.warn(`localStorage key "${key}" expected array but got:`, typeof parsedValue, ', resetting to initial value');
+					console.warn(
+						`localStorage key "${key}" expected array but got:`,
+						typeof parsedValue,
+						', resetting to initial value'
+					);
 					value = getInitial() as T;
 				} else {
 					value = parsedValue;
 				}
 			} catch (error) {
-				console.warn(`Failed to parse localStorage value for key "${key}":`, error, ', resetting to initial value');
+				console.warn(
+					`Failed to parse localStorage value for key "${key}":`,
+					error,
+					', resetting to initial value'
+				);
 				value = getInitial() as T;
 			}
 		}

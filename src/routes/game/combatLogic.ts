@@ -47,6 +47,7 @@ function getMaxMPFromRank(npc: NPCStats): number {
 }
 
 export function addResourceValues(npcState: NPCState) {
+	if (!npcState) return;
 	Object.keys(npcState).forEach(
 		(key) =>
 			(npcState[key] = {

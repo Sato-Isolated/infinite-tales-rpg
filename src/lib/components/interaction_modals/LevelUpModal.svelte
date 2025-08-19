@@ -17,9 +17,9 @@
 
 	let {
 		onclose
-    }: {
-	    onclose?: (levelUp?: any) => void;
-    } = $props();
+	}: {
+		onclose?: (levelUp?: any) => void;
+	} = $props();
 
 	const storyState = useLocalStorage<Story>('storyState');
 	const characterState = useLocalStorage<CharacterDescription>('characterState');
@@ -97,7 +97,7 @@
 	<LoadingModal loadingText="AI is choosing the level up..." />
 {/if}
 {#if aiLevelUp}
-	<dialog open class="z-100 modal" style="background: rgba(0, 0, 0, 0.3);">
+	<dialog open class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
 		<div class="modal-box flex flex-col items-center text-center">
 			<form method="dialog">
 				<span class="m-auto font-bold">Leveled up to {characterStatsState.value.level + 1}!</span>
@@ -122,7 +122,11 @@
 				<p class="mt-2 font-bold">New ability gained:</p>
 			{/if}
 			<AbilityComponent ability={aiLevelUp.ability} />
-			<button type="button" class="components btn btn-primary mt-2 btn-md" onclick={acceptAILevelUp}>
+			<button
+				type="button"
+				class="components btn btn-primary btn-md mt-2"
+				onclick={acceptAILevelUp}
+			>
 				Accept
 			</button>
 			<p class="mt-4">
@@ -131,7 +135,7 @@
 			</p>
 			<button
 				type="button"
-				class="components btn btn-neutral mt-2 btn-md"
+				class="components btn btn-neutral btn-md mt-2"
 				onclick={() => {
 					if (onclose) {
 						onclose();

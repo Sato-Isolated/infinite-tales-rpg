@@ -4,13 +4,13 @@
 @plugin 'daisyui';
 
 @theme {
-  --color-infinity-blue: #339af0;
-  /* Restore v4-like rounded shapes for components in daisyUI v5 */
-  /* Unify default height for buttons/inputs/tabs (approx v4 md: 3rem) */
-  --size-field: 3rem;
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+	--color-infinity-blue: #339af0;
+	/* Restore v4-like rounded shapes for components in daisyUI v5 */
+	/* Unify default height for buttons/inputs/tabs (approx v4 md: 3rem) */
+	--size-field: 3rem;
+	--radius-selector: 0.5rem;
+	--radius-field: 0.5rem;
+	--radius-box: 0.75rem;
 }
 
 @config "./daisyui.config.js";
@@ -24,11 +24,11 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentcolor);
+	}
 }

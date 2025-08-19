@@ -19,7 +19,7 @@
 </script>
 
 {#if isMounted}
-	<fieldset class="fieldset mt-3 w-full border bg-base-200 p-4">
+	<fieldset class="fieldset bg-base-200 mt-3 w-full border p-4">
 		<div
 			class:sm:grid-cols-6={!aiConfigState.value?.disableImagesState}
 			class="grid-cols mt-2 grid truncate text-center"

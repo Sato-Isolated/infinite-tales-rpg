@@ -4,13 +4,13 @@
 	let {
 		onclose,
 		action
-    }: {
-	    onclose?: (tryAnyway: boolean) => void;
-	    action: Action;
-    } = $props();
+	}: {
+		onclose?: (tryAnyway: boolean) => void;
+		action: Action;
+	} = $props();
 </script>
 
-<dialog open class="z-100 modal" style="background: rgba(0, 0, 0, 0.3);">
+<dialog open class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center text-center">
 		<span class="m-auto font-bold">Action is not possible!</span>
 		{#if action.is_possible !== false}
@@ -23,7 +23,7 @@
 		{/if}
 		<button
 			type="button"
-			class="components btn btn-neutral mt-2 w-1/2 btn-md"
+			class="components btn btn-neutral btn-md mt-2 w-1/2"
 			onclick={() => onclose?.(false)}
 		>
 			Ok
@@ -37,7 +37,7 @@
 		</p>
 		<button
 			type="button"
-			class="components btn btn-primary mt-2 w-1/2 btn-md"
+			class="components btn btn-primary btn-md mt-2 w-1/2"
 			onclick={() => onclose?.(true)}
 		>
 			Try anyway

@@ -11,7 +11,7 @@
 <dialog
 	bind:this={disclaimer}
 	open={disclaimerOpen}
-	class="z-100 modal"
+	class="modal z-100"
 	style="background: rgba(0, 0, 0, 0.3);"
 >
 	<div class="modal-box flex flex-col items-center">
@@ -46,7 +46,7 @@
 		>
 
 		<button
-			class="btn btn-info mt-3 btn-md"
+			class="btn btn-info btn-md mt-3"
 			onclick={() => {
 				disclaimer.close();
 				onAgree();

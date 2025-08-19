@@ -293,7 +293,7 @@ export function applyGameActionState(
 	prohibitNPCChange = false
 ) {
 	function getResourceIfPresent(resources: ResourcesWithCurrentValue, key: string) {
-		if (!key) return undefined;
+		if (!key || !resources) return undefined;
 		// Fast path: direct and simple case-insensitive lookups
 		let resource = resources[key] || resources[key.toUpperCase()];
 		if (resource) return resource;
@@ -417,6 +417,11 @@ export function isEnoughResource(
 	resources: ResourcesWithCurrentValue,
 	inventory: InventoryState
 ): boolean {
+	// Defensive programming: handle null/undefined inputs
+	if (!action || !resources || !inventory) {
+		return false;
+	}
+
 	const cost = parseInt(action.resource_cost?.cost as unknown as string) || 0;
 	if (cost === 0) {
 		return true;

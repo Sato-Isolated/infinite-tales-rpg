@@ -19,8 +19,9 @@
 	let ttsVoices: Voice[] = $state([]);
 
 	onMount(async () => {
-		ttsVoices = (await (await fetch('/api/edgeTTSStream/voices')).json()).sort((a: Voice, b: Voice) =>
-			a.Locale === b.Locale ? 0 : a.Locale.includes(navigator.language) ? -1 : 1
+		ttsVoices = (await (await fetch('/api/edgeTTSStream/voices')).json()).sort(
+			(a: Voice, b: Voice) =>
+				a.Locale === b.Locale ? 0 : a.Locale.includes(navigator.language) ? -1 : 1
 		);
 	});
 </script>

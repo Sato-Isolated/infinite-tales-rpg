@@ -60,7 +60,7 @@
 		{@html cleanedStory}
 
 		{#if !stream_finished}
-			<span class="loading loading-dots loading-sm ml-2 text-primary"></span>
+			<span class="loading loading-dots loading-sm text-primary ml-2"></span>
 		{/if}
 	</article>
 

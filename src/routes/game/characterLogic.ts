@@ -60,8 +60,8 @@ export async function applyCharacterChange(
 }
 
 function hasCaseInsensitiveKey(obj: Record<string, any>, key: string): boolean {
-	// Ensure key is a non-empty string before proceeding
-	if (!key) return false;
+	// Ensure key is a non-empty string and obj is valid before proceeding
+	if (!key || !obj) return false;
 	const lowerKey = key.toLowerCase();
 	return Object.keys(obj).some((k) => k.toLowerCase() === lowerKey);
 }
@@ -184,6 +184,7 @@ export function getCharacterTechnicalId(
 	playerCharactersIdToNamesMapState: PlayerCharactersIdToNamesMap,
 	characterName: string
 ): string | undefined {
+	if (!playerCharactersIdToNamesMapState || !characterName) return undefined;
 	const characterId = Object.keys(playerCharactersIdToNamesMapState).find((key) =>
 		playerCharactersIdToNamesMapState[key].includes(characterName)
 	);

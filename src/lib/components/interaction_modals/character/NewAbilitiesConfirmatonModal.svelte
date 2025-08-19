@@ -67,11 +67,11 @@
 {#if isGeneratingState}
 	<LoadingModal loadingText="AI is generating new Spells & Abilities..." />
 {:else}
-	<dialog open class="z-100 modal" style="background: rgba(0, 0, 0, 0.3);">
+	<dialog open class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
 		<div class="modal-box flex flex-col items-center text-center">
 			<span class="m-auto">New Abilities Learned</span>
 			<button
-				class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2"
+				class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2"
 				onclick={() => onclose()}
 				>✕
 			</button>
@@ -83,20 +83,20 @@
 					<AbilityComponent {ability} />
 				{/each}
 				<div class="mt-4 flex gap-2">
-					<button class="btn btn-primary flex-1 btn-md" onclick={() => onclose([])}>Decline</button>
-					<button class="btn btn-accent flex-1 btn-md" onclick={onConfirm}>Learn</button>
+					<button class="btn btn-primary btn-md flex-1" onclick={() => onclose([])}>Decline</button>
+					<button class="btn btn-accent btn-md flex-1" onclick={onConfirm}>Learn</button>
 				</div>
 			{:else}
 				<span class="m-auto mt-4">Details will be generated after confirmation.</span>
 				{#each spells_abilities as ability (ability.name)}
-					<fieldset class="fieldset mt-3 w-full border bg-base-200 p-4">
+					<fieldset class="fieldset bg-base-200 mt-3 w-full border p-4">
 						<legend class="fieldset-legend font-bold">{ability.name}</legend>
 						<span class="m-auto mt-2">{ability.effect}</span>
 					</fieldset>
 				{/each}
 				<div class="mt-4 flex gap-2">
-					<button class="btn btn-primary flex-1 btn-md" onclick={() => onclose([])}>Decline</button>
-					<button class="btn btn-accent flex-1 btn-md" onclick={onGenerate}>Generate</button>
+					<button class="btn btn-primary btn-md flex-1" onclick={() => onclose([])}>Decline</button>
+					<button class="btn btn-accent btn-md flex-1" onclick={onGenerate}>Generate</button>
 				</div>
 			{/if}
 		</div>

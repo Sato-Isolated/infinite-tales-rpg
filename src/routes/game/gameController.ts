@@ -268,7 +268,7 @@ export function createGameController(ctx: ControllerCtx) {
 		}
 
 		// Traiter le temps initial généré par l'IA pour la première fois
-	if (newState.initial_game_time) {
+		if (newState.initial_game_time) {
 			try {
 				const newGameTime = {
 					day: newState.initial_game_time.day,
@@ -286,7 +286,7 @@ export function createGameController(ctx: ControllerCtx) {
 						description: 'Pleasant weather'
 					}
 				};
-		ctx.state.gameTimeState.value = normalizeGameTime(newGameTime as GameTime);
+				ctx.state.gameTimeState.value = normalizeGameTime(newGameTime as GameTime);
 				console.log(
 					`🎯 Temps initial généré par l'IA: ${newGameTime.dayName} ${newGameTime.day} ${newGameTime.monthName} ${newGameTime.year}, ${newGameTime.hour}:${newGameTime.minute.toString().padStart(2, '0')} (${newGameTime.timeOfDay})`
 				);

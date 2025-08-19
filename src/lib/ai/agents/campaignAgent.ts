@@ -2,7 +2,7 @@ import { getRandomInteger, stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { Action } from '$lib/ai/agents/gameAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
-import isEqual from 'lodash.isequal';
+import isEqual from 'fast-deep-equal';
 import { exampleGameSystems, TROPES_CLICHE_PROMPT } from '$lib/ai/agents/storyAgent';
 
 export type CampaignChapterPlotPoint = {

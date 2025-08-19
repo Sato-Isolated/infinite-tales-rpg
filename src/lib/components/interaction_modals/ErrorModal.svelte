@@ -26,7 +26,7 @@
 			</span>
 		{/if}
 		<button
-			class="btn btn-info mt-3 btn-md"
+			class="btn btn-info btn-md mt-3"
 			onclick={() => {
 				dialog.close();
 				errorState.clear();
@@ -36,7 +36,7 @@
 			Go To Settings
 		</button>
 		<button
-			class="btn btn-info mt-3 btn-md"
+			class="btn btn-info btn-md mt-3"
 			onclick={() => {
 				dialog.close();
 				errorState.clear();

@@ -1,9 +1,9 @@
 <script>
 	import '../../app.css';
 	import { page } from '$app/stores';
-	import { errorState } from '$lib/state/errorState.svelte.ts';
+	import { errorState } from '$lib/state/errorState.svelte';
 	import ErrorModal from '$lib/components/interaction_modals/ErrorModal.svelte';
-	import { handleError } from '$lib/util.svelte.ts';
+	import { handleError } from '$lib/util.svelte';
 	import { onMount } from 'svelte';
 	import { stringifyPretty } from '$lib/util.svelte';
 
@@ -18,10 +18,10 @@
 	onMount(() => {
 		window.onerror = (event, source, lineno, colno, error) => {
 			let text = '';
-			if (error.message) {
+			if (error?.message) {
 				text += error.message;
 			}
-			if (error.stack) {
+			if (error?.stack) {
 				text += '\n' + error.stack;
 			} else {
 				text += '\n' + stringifyPretty({ event, source, lineno, colno, error });
@@ -46,7 +46,7 @@
 </script>
 
 {#if errorState.userMessage && activeUrl !== '/game'}
-	<ErrorModal />
+	<ErrorModal onclose={() => errorState.clear()} />
 {/if}
 
 <nav class="dock bg-base-300 h-[7vh] w-screen overflow-hidden">

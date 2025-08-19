@@ -9,7 +9,7 @@
 	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { getRowsForTextarea, navigate } from '$lib/util.svelte';
-	import isEqual from 'lodash.isequal';
+	import isEqual from 'fast-deep-equal';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { initialStoryState, type Story } from '$lib/ai/agents/storyAgent';
@@ -182,7 +182,8 @@
 				rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
 				placeholder=""
 				oninput={(evt) => {
-					characterStateOverwrites[stateValue] = (evt.currentTarget as HTMLTextAreaElement).value as any;
+					characterStateOverwrites[stateValue] = (evt.currentTarget as HTMLTextAreaElement)
+						.value as any;
 				}}
 				class="textarea textarea-md mt-2 w-full"
 			>

@@ -53,7 +53,7 @@
 		<button
 			onclick={() => _onClose(rollResult)}
 			id="dice-rolling-dialog-continue"
-			class="btn btn-neutral m-3 btn-md"
+			class="btn btn-neutral btn-md m-3"
 			>Continue
 		</button>
 	</div>

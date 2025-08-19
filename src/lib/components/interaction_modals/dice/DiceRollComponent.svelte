@@ -106,7 +106,7 @@
 		//rolledValueState.value = getRandomInteger(1, 20);
 		//return;
 		evt.currentTarget.disabled = true;
-	diceBox.roll('1d20').then((results: Array<{ value: number }>) => {
+		diceBox.roll('1d20').then((results: Array<{ value: number }>) => {
 			rolledValueState.value = results[0].value;
 		});
 	};
@@ -175,7 +175,7 @@
 			onclick={onClose}
 			id="dice-rolling-dialog-continue"
 			disabled={!rolledValueState.value}
-			class="btn btn-neutral m-3 btn-md"
+			class="btn btn-neutral btn-md m-3"
 			>Continue
 		</button>
 		{#if getModifier() === 10 || getModifier() === -10}

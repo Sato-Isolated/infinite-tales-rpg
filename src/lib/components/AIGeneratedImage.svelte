@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useLocalStorage } from '../state/useLocalStorage.svelte';
-	import isEqual from 'lodash.isequal';
+	import isEqual from 'fast-deep-equal';
 	import { onMount } from 'svelte';
 	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
 

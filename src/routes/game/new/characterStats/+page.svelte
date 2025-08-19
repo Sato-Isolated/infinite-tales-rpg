@@ -15,7 +15,7 @@
 	import { navigate, parseState, removeEmptyValues } from '$lib/util.svelte';
 	import { onMount } from 'svelte';
 	import cloneDeep from 'lodash/cloneDeep';
-	import isEqual from 'lodash/isEqual';
+	import isEqual from 'fast-deep-equal';
 	import LoadingModal from '$lib/components/LoadingModal.svelte';
 	import { defaultGameSettings, type GameSettings } from '$lib/ai/agents/gameAgent';
 	import type { AIConfig } from '$lib';

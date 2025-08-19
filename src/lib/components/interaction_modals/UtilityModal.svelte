@@ -21,12 +21,12 @@
 	<div class="modal-box flex flex-col items-center">
 		<form method="dialog">
 			<span class="m-auto">Utility</span>
-			<button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2">✕</button>
+			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2">✕</button>
 		</form>
 		<div class="py-4">
 			{#each actions as action}
 				<button
-					class="btn btn-primary mb-2 w-full btn-md"
+					class="btn btn-primary btn-md mb-2 w-full"
 					disabled={is_character_in_combat}
 					onclick={() => close(action.value)}
 				>
@@ -34,7 +34,7 @@
 				</button>
 			{/each}
 			{#if is_character_in_combat}
-				<p class="mt-2 text-center text-error">Cannot perform utility actions while in combat.</p>
+				<p class="text-error mt-2 text-center">Cannot perform utility actions while in combat.</p>
 			{/if}
 		</div>
 	</div>

@@ -6,7 +6,15 @@ import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
 import type { GameSettings } from '$lib/ai/agents/gameAgent';
 
 // --- Time helpers (normalization & math) ---
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+const DAY_NAMES = [
+	'Sunday',
+	'Monday',
+	'Tuesday',
+	'Wednesday',
+	'Thursday',
+	'Friday',
+	'Saturday'
+] as const;
 const MONTH_NAMES = [
 	'January',
 	'February',
@@ -35,25 +43,25 @@ export const getTimeOfDay = (hour: number): GameTime['timeOfDay'] => {
 export const getSeasonForMonth = (month: number): GameTime['season'] => {
 	// month is 1..12
 	switch (month) {
- 		case 12:
- 		case 1:
- 		case 2:
- 			return 'winter';
- 		case 3:
- 		case 4:
- 		case 5:
- 			return 'spring';
- 		case 6:
- 		case 7:
- 		case 8:
- 			return 'summer';
- 		case 9:
- 		case 10:
- 		case 11:
- 			return 'autumn';
- 		default:
- 			return 'spring';
- 	}
+		case 12:
+		case 1:
+		case 2:
+			return 'winter';
+		case 3:
+		case 4:
+		case 5:
+			return 'spring';
+		case 6:
+		case 7:
+		case 8:
+			return 'summer';
+		case 9:
+		case 10:
+		case 11:
+			return 'autumn';
+		default:
+			return 'spring';
+	}
 };
 
 /**
@@ -61,37 +69,37 @@ export const getSeasonForMonth = (month: number): GameTime['season'] => {
  * Uses a proleptic Gregorian mapping via JS Date for rollover; does not change fiction calendar names if custom.
  */
 export function addMinutesToGameTime(time: GameTime, minutes: number): GameTime {
-    // Map GameTime to a JS Date in UTC to avoid timezone surprises
-    const y = Math.max(0, time.year); // guard negative years
-    const mIndex = Math.min(11, Math.max(0, time.month - 1));
-    const d = Math.max(1, time.day);
-    const date = new Date(Date.UTC(y, mIndex, d, time.hour, time.minute, 0, 0));
-    const newMs = date.getTime() + minutes * 60_000;
-    const nd = new Date(newMs);
+	// Map GameTime to a JS Date in UTC to avoid timezone surprises
+	const y = Math.max(0, time.year); // guard negative years
+	const mIndex = Math.min(11, Math.max(0, time.month - 1));
+	const d = Math.max(1, time.day);
+	const date = new Date(Date.UTC(y, mIndex, d, time.hour, time.minute, 0, 0));
+	const newMs = date.getTime() + minutes * 60_000;
+	const nd = new Date(newMs);
 
-    const newYear = nd.getUTCFullYear();
-    const newMonthIndex = nd.getUTCMonth();
-    const newMonth = newMonthIndex + 1;
-    const newDay = nd.getUTCDate();
-    const newHour = nd.getUTCHours();
-    const newMinute = nd.getUTCMinutes();
-    const newDayName = DAY_NAMES[nd.getUTCDay()];
-    const newMonthName = MONTH_NAMES[newMonthIndex];
+	const newYear = nd.getUTCFullYear();
+	const newMonthIndex = nd.getUTCMonth();
+	const newMonth = newMonthIndex + 1;
+	const newDay = nd.getUTCDate();
+	const newHour = nd.getUTCHours();
+	const newMinute = nd.getUTCMinutes();
+	const newDayName = DAY_NAMES[nd.getUTCDay()];
+	const newMonthName = MONTH_NAMES[newMonthIndex];
 
-    const updated: GameTime = {
-        ...time,
-        year: newYear,
-        month: newMonth,
-        day: newDay,
-        hour: newHour,
-        minute: newMinute,
-        dayName: time.dayName && time.dayName !== '' ? newDayName : newDayName,
-        monthName: time.monthName && time.monthName !== '' ? newMonthName : newMonthName,
-        timeOfDay: getTimeOfDay(newHour),
-        season: getSeasonForMonth(newMonth),
-        weather: time.weather // keep weather as-is; other systems may change it
-    };
-    return updated;
+	const updated: GameTime = {
+		...time,
+		year: newYear,
+		month: newMonth,
+		day: newDay,
+		hour: newHour,
+		minute: newMinute,
+		dayName: time.dayName && time.dayName !== '' ? newDayName : newDayName,
+		monthName: time.monthName && time.monthName !== '' ? newMonthName : newMonthName,
+		timeOfDay: getTimeOfDay(newHour),
+		season: getSeasonForMonth(newMonth),
+		weather: time.weather // keep weather as-is; other systems may change it
+	};
+	return updated;
 }
 
 /**

@@ -11,7 +11,8 @@ export function getRequiredValue(
 	gameDifficulty: keyof typeof difficultyDiceRollModifier
 ): number {
 	let requiredValue = 0;
-	const difficultyKey = (action_difficulty?.toLowerCase() || 'medium') as keyof typeof ActionDifficulty;
+	const difficultyKey = (action_difficulty?.toLowerCase() ||
+		'medium') as keyof typeof ActionDifficulty;
 	const difficulty: ActionDifficulty = ActionDifficulty[difficultyKey];
 	switch (difficulty) {
 		case ActionDifficulty.simple:

@@ -3,6 +3,7 @@ import type { Targets } from '$lib/ai/agents/gameAgent';
 import { getAllNpcsIds } from './gameLogic';
 
 export function removeDeadNPCs(npcState: NPCState): string[] {
+	if (!npcState) return [];
 	return Object.keys(npcState)
 		.filter((npc) => npcState[npc].resources && npcState[npc].resources.current_hp <= 0)
 		.map((deadNPC) => {

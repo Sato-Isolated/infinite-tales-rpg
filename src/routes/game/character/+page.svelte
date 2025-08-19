@@ -32,7 +32,7 @@
 				</div>
 			{/if}
 			<div class="section mb-6">
-				<h2 class="mb-2 mt-2 border-b border-gray-600 pb-1 text-xl font-semibold">
+				<h2 class="mt-2 mb-2 border-b border-gray-600 pb-1 text-xl font-semibold">
 					Basic Information
 				</h2>
 				<div class="flex flex-col space-y-1 text-start">

@@ -75,6 +75,10 @@ To develop **Infinite Tales RPG**, you'll need to set up a few things:
    npm run dev
    ```
 
+### Notes for contributors
+
+- Deep equality: We replaced deprecated `lodash.isequal` with `fast-deep-equal` for browser-safe, small, and fast deep comparisons.
+
 ## 🎉 Acknowledgements
 
 - Many thanks to the developers of Svelte, Tailwind CSS, and DaisyUI for their amazing tools.

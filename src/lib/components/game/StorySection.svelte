@@ -28,7 +28,7 @@
 	const handleShowPrev = () => setShowXLastStoryProgressions(showXLastStoryProgressions + 1);
 </script>
 
-<div id="story" class="mt-4 justify-items-center rounded-lg bg-base-100 p-4 shadow-md">
+<div id="story" class="bg-base-100 mt-4 justify-items-center rounded-lg p-4 shadow-md">
 	<button onclick={handleShowPrev} class="btn-xs w-full">Show Previous Story</button>
 	{#if currentGameActionState?.story}
 		{#each !latestStoryProgressionState.stream_finished ? [currentGameActionState] : gameActions.slice(-2 + showXLastStoryProgressions * -1, -1) as gameActionState (gameActionState.id)}

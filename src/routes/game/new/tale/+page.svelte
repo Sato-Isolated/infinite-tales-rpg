@@ -10,7 +10,7 @@
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { getRowsForTextarea, navigate, loadPDF } from '$lib/util.svelte';
-	import isEqual from 'lodash.isequal';
+	import isEqual from 'fast-deep-equal';
 	import { goto } from '$app/navigation';
 	import ImportExportSaveGame from '$lib/components/ImportExportSaveGame.svelte';
 	import { type CharacterDescription, initialCharacterState } from '$lib/ai/agents/characterAgent';
@@ -23,7 +23,7 @@
 	const storyState = useLocalStorage<Story>('storyState', { ...initialStoryState });
 	const textAreaRowsDerived = $derived(getRowsForTextarea(storyState.value));
 	// Allow dynamic keys like 'gameBook' used during PDF import
-	let storyStateOverwrites: (Partial<Story> & Record<string, any>) = $state({});
+	let storyStateOverwrites: Partial<Story> & Record<string, any> = $state({});
 	const storyKeys = Object.keys(storyStateForPrompt) as Array<keyof Story>;
 	const characterState = useLocalStorage<CharacterDescription>('characterState', {
 		...initialCharacterState

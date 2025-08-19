@@ -25,7 +25,9 @@
 		resources,
 		itemForSuggestActionsState
 	}: {
-		onclose?: (action?: Action | { characterName: string; text: string; is_custom_action: boolean }) => void;
+		onclose?: (
+			action?: Action | { characterName: string; text: string; is_custom_action: boolean }
+		) => void;
 		currentGameActionState: GameActionState;
 		resources: ResourcesWithCurrentValue;
 		itemForSuggestActionsState: ItemWithId;
@@ -87,8 +89,9 @@
 <dialog open class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center text-center">
 		<span class="m-auto font-bold">Suggested Actions</span>
-		<button onclick={() => onclose?.()} class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2"
-			>✕</button
+		<button
+			onclick={() => onclose?.()}
+			class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2">✕</button
 		>
 		{#if isGeneratingState}
 			<div class="mt-2 flex flex-col">

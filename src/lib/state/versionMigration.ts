@@ -22,9 +22,9 @@ function migrate11to11_1(key: string, state: any) {
 
 function migrate09to10(key: string, state: any) {
 	if (key === 'gameActionsState') {
-	(state as GameActionState[]).forEach((action: any) => {
+		(state as GameActionState[]).forEach((action: any) => {
 			if (action.stats_update) {
-		action.stats_update.forEach((stat: any) => {
+				action.stats_update.forEach((stat: any) => {
 					if (stat.targetName) {
 						return;
 					}
@@ -63,7 +63,7 @@ function migrate062to07(key: string, state: any) {
 			delete state.resources.MAX_HP;
 			delete state.resources.MAX_MP;
 		}
-	state.spells_and_abilities.forEach((spell: any) => {
+		state.spells_and_abilities.forEach((spell: any) => {
 			if (spell.mp_cost) {
 				spell.resource_cost = { cost: spell.mp_cost, resource_key: 'MP' };
 				delete spell.mp_cost;
