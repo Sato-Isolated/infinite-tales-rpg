@@ -197,22 +197,29 @@ export function getTTSUrl(text: string, voice: string) {
 }
 
 export function getTextForActionButton(action: Action) {
+	// Handle undefined action.text gracefully with logging
+	if (!action.text) {
+		console.warn('Action with undefined text found:', JSON.stringify(action, null, 2));
+		return action.characterName ? `${action.characterName} - Action manquante` : 'Action manquante';
+	}
+	
+	const actionText = action.text;
 	let text = '';
 	const cost = parseInt(action.resource_cost?.cost as unknown as string) || 0;
 
 	if (cost > 0) {
 		const costString = ` (${cost} ${action.resource_cost?.resource_key?.replaceAll('_', ' ')}).`;
-		text = action.text.replaceAll('.', '');
+		text = actionText.replaceAll('.', '');
 		text += costString;
 	} else {
 		const hasEndingChar =
-			action.text.endsWith('.') ||
-			action.text.endsWith('. ') ||
-			action.text.endsWith('! ') ||
-			action.text.endsWith('!') ||
-			action.text.endsWith('? ') ||
-			action.text.endsWith('?');
-		text += hasEndingChar ? action.text : action.text + '.';
+			actionText.endsWith('.') ||
+			actionText.endsWith('. ') ||
+			actionText.endsWith('! ') ||
+			actionText.endsWith('!') ||
+			actionText.endsWith('? ') ||
+			actionText.endsWith('?');
+		text += hasEndingChar ? actionText : actionText + '.';
 	}
 	return text;
 }

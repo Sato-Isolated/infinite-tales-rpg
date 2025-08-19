@@ -266,10 +266,57 @@ export class ActionAgent {
 		const response = (await this.llm.generateContent(request)) as any;
 		console.log('actions response: ', response);
 		//can get not directly arrays but wrapped responses from ai sometimes...
-		const actions = response?.content.actions || response?.content.jsonArray || response.content;
+		const rawActions = response?.content.actions || response?.content.jsonArray || response.content;
+		
+		// Validate and filter actions
+		const validActions = this.validateAndFilterActions(rawActions);
+		
 		// if actions were adjusted via custom prompt, make sure that they do not have an order
-		shuffleArray(actions);
-		return { thoughts: response?.thoughts, actions };
+		shuffleArray(validActions);
+		return { thoughts: response?.thoughts, actions: validActions };
+	}
+
+	private validateAndFilterActions(rawActions: any[]): Action[] {
+		if (!Array.isArray(rawActions)) {
+			console.error('Actions response is not an array:', rawActions);
+			return [];
+		}
+
+		return rawActions.map((action, index) => {
+			// Transform incorrect AI format to correct format
+			let transformedAction = { ...action };
+			
+			// If AI generated 'action' instead of 'text', convert it
+			if (action.action && !action.text) {
+				transformedAction.text = action.action;
+				console.warn(`Converted 'action' to 'text' for action at index ${index}`);
+			}
+			
+			// If no characterName is provided, try to extract from text or use default
+			if (!transformedAction.characterName) {
+				// Try to extract character name from the beginning of the text
+				const textMatch = transformedAction.text?.match(/^(\w+)\s+(?:pourrait|va|peut|doit)/);
+				if (textMatch) {
+					transformedAction.characterName = textMatch[1];
+				} else {
+					transformedAction.characterName = 'Personnage';
+				}
+				console.warn(`Generated characterName for action at index ${index}: ${transformedAction.characterName}`);
+			}
+			
+			return transformedAction;
+		}).filter((action, index) => {
+			// Check required fields after transformation
+			if (!action.text || typeof action.text !== 'string') {
+				console.warn(`Action at index ${index} missing or invalid text after transformation:`, action);
+				return false;
+			}
+			if (!action.characterName || typeof action.characterName !== 'string') {
+				console.warn(`Action at index ${index} missing or invalid characterName after transformation:`, action);
+				return false;
+			}
+			return true;
+		});
 	}
 
 	async generateActionsForItem(
@@ -344,10 +391,14 @@ export class ActionAgent {
 		const response = (await this.llm.generateContent(request)) as any;
 
 		//can get not directly arrays but wrapped responses from ai sometimes...
-		const actions = response?.content.actions || response?.content.jsonArray || response.content;
+		const rawActions = response?.content.actions || response?.content.jsonArray || response.content;
+		
+		// Validate and filter actions
+		const validActions = this.validateAndFilterActions(rawActions);
+		
 		// if actions were adjusted via custom prompt, make sure that they do not have an order
-		shuffleArray(actions);
-		return { thoughts: response?.thoughts, actions };
+		shuffleArray(validActions);
+		return { thoughts: response?.thoughts, actions: validActions };
 	}
 
 	private getCurrentGameStateMapped(currentGameState: GameActionState) {

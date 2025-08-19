@@ -240,7 +240,7 @@
 	);
 
 	// Controller instance
-	let controller: ReturnType<typeof createGameController> | undefined;
+	let controller = $state<ReturnType<typeof createGameController> | undefined>(undefined);
 
 	//feature toggles
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
@@ -921,6 +921,7 @@
 		isGameEnded={isGameEnded.value}
 		playerResources={playerCharactersGameState.value[playerCharacterIdState]}
 		inventoryState={inventoryState.value}
+		regenerateActions={controller?.regenerateActions}
 	/>
 	{#if Object.keys(currentGameActionState).length !== 0}
 		{#if !isGameEnded.value}
