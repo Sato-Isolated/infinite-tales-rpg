@@ -32,6 +32,7 @@ import { refillResourcesFully } from './resourceLogic';
 import type { AiLevelUp, Ability } from '$lib/ai/agents/characterStatsAgent';
 import type { ModalManager } from './modalManager.svelte';
 import type { GameTime } from '$lib/types/gameTime';
+import { addMinutesToGameTime, normalizeGameTime } from './timeLogic';
 
 export type ControllerCtx = {
 	agents: {
@@ -254,34 +255,7 @@ export function createGameController(ctx: ControllerCtx) {
 		// Traiter la progression du temps depuis la réponse du gameAgent
 		if (newState.time_passed_minutes && ctx.state.gameTimeState.value) {
 			try {
-				const addMinutes = (time: GameTime, minutes: number): GameTime => {
-					const totalMinutes = time.hour * 60 + time.minute + minutes;
-					const days = Math.floor(totalMinutes / 1440);
-					const remainingMinutes = totalMinutes % 1440;
-
-					const newHour = Math.floor(remainingMinutes / 60);
-					const newMinute = remainingMinutes % 60;
-
-					const getTimeOfDay = (hour: number): GameTime['timeOfDay'] => {
-						if (hour >= 5 && hour < 7) return 'dawn';
-						if (hour >= 7 && hour < 12) return 'morning';
-						if (hour >= 12 && hour < 14) return 'midday';
-						if (hour >= 14 && hour < 18) return 'afternoon';
-						if (hour >= 18 && hour < 21) return 'evening';
-						if (hour >= 21 && hour < 24) return 'night';
-						return 'deep_night';
-					};
-
-					return {
-						...time,
-						day: time.day + days,
-						hour: newHour,
-						minute: newMinute,
-						timeOfDay: getTimeOfDay(newHour)
-					};
-				};
-
-				ctx.state.gameTimeState.value = addMinutes(
+				ctx.state.gameTimeState.value = addMinutesToGameTime(
 					ctx.state.gameTimeState.value,
 					newState.time_passed_minutes
 				);
@@ -294,7 +268,7 @@ export function createGameController(ctx: ControllerCtx) {
 		}
 
 		// Traiter le temps initial généré par l'IA pour la première fois
-		if (newState.initial_game_time) {
+	if (newState.initial_game_time) {
 			try {
 				const newGameTime = {
 					day: newState.initial_game_time.day,
@@ -312,7 +286,7 @@ export function createGameController(ctx: ControllerCtx) {
 						description: 'Pleasant weather'
 					}
 				};
-				ctx.state.gameTimeState.value = newGameTime;
+		ctx.state.gameTimeState.value = normalizeGameTime(newGameTime as GameTime);
 				console.log(
 					`🎯 Temps initial généré par l'IA: ${newGameTime.dayName} ${newGameTime.day} ${newGameTime.monthName} ${newGameTime.year}, ${newGameTime.hour}:${newGameTime.minute.toString().padStart(2, '0')} (${newGameTime.timeOfDay})`
 				);

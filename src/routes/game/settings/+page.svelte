@@ -6,7 +6,7 @@
 	import GameSettingsModal from '$lib/components/interaction_modals/settings/GameSettingsModal.svelte';
 	import AiGameSettingsModal from '$lib/components/interaction_modals/settings/AiGameSettings.svelte';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
-	import { generateStoryAppropriateTime } from '../timeLogic';
+	import { generateStoryAppropriateTime, normalizeGameTime } from '../timeLogic';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { GameSettings } from '$lib/ai/agents/gameAgent';
@@ -52,7 +52,7 @@
 				aiLanguage.value,
 				aiConfigState.value?.useFallbackLlmState
 			);
-			gameTimeState.value = newGameTime;
+			gameTimeState.value = normalizeGameTime(newGameTime);
 			alert(
 				`New game time generated: ${newGameTime.dayName} ${newGameTime.day} ${newGameTime.monthName} ${newGameTime.year}, ${newGameTime.hour}:${newGameTime.minute.toString().padStart(2, '0')} (${newGameTime.timeOfDay})`
 			);
