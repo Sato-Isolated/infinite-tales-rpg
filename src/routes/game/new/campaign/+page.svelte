@@ -354,9 +354,11 @@
 																					</div>
 																					<textarea
 																						bind:value={
-																							((campaignState.value as any)[stateValue as string][
-																								chapterNumber
-																							][chapterProperty] as any)[plotPoint][plotPointProperty] as any
+
+																								(campaignState.value as any)[stateValue as string][
+																									chapterNumber
+																								][chapterProperty] as any
+																							)[plotPoint][plotPointProperty] as any
 																						}
 																						rows={(
 																							(
@@ -482,7 +484,7 @@
 															</div>
 															<textarea
 																bind:value={
-																	(campaignState.value as any)[stateValue as string][chapterNumber][
+																	campaignState.value as any)[stateValue as string][chapterNumber][
 																		chapterProperty
 																	] as any
 																}
