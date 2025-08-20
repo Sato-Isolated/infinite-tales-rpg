@@ -10,6 +10,7 @@ export const migrateIfApplicable = (key: string, state: unknown) => {
 	migrated = migrate062to07(key, migrated);
 	migrated = migrate09to10(key, migrated);
 	migrated = migrate11to11_1(key, migrated);
+	migrated = migrateNPCState(key, migrated);
 	return migrated;
 };
 
@@ -69,6 +70,17 @@ function migrate062to07(key: string, state: any) {
 				delete spell.mp_cost;
 			}
 		});
+	}
+	return state;
+}
+
+function migrateNPCState(key: string, state: any) {
+	if (key === 'npcState') {
+		// If the state is an array (old format), convert to object (new format)
+		if (Array.isArray(state)) {
+			console.log('Migrating npcState from array to object format. Previous array data will be reset to empty object.');
+			return {};
+		}
 	}
 	return state;
 }
