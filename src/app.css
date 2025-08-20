@@ -40,7 +40,8 @@
 	}
 
 	@keyframes gentle-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 			transform: scale(1);
 		}
@@ -65,7 +66,7 @@
 	}
 
 	.prose-story p {
-		@apply leading-relaxed mb-4 transition-colors duration-200;
+		@apply mb-4 leading-relaxed transition-colors duration-200;
 	}
 
 	.prose-story p:hover {
@@ -79,7 +80,7 @@
 	}
 
 	.dialogue-card:hover {
-		@apply shadow-lg scale-[1.01];
+		@apply scale-[1.01] shadow-lg;
 		backdrop-filter: blur(8px);
 	}
 
@@ -101,17 +102,25 @@
 	}
 
 	.story-alert:hover {
-		@apply shadow-md scale-[1.01];
+		@apply scale-[1.01] shadow-md;
 	}
 
 	/* Environmental description styling */
 	.environment-block {
 		@apply transition-all duration-300 ease-in-out;
-		background: linear-gradient(135deg, rgb(from var(--color-base-200) r g b / 0.3), rgb(from var(--color-base-300) r g b / 0.2));
+		background: linear-gradient(
+			135deg,
+			rgb(from var(--color-base-200) r g b / 0.3),
+			rgb(from var(--color-base-300) r g b / 0.2)
+		);
 	}
 
 	.environment-block:hover {
 		@apply shadow-lg;
-		background: linear-gradient(135deg, rgb(from var(--color-base-200) r g b / 0.5), rgb(from var(--color-base-300) r g b / 0.3));
+		background: linear-gradient(
+			135deg,
+			rgb(from var(--color-base-200) r g b / 0.5),
+			rgb(from var(--color-base-300) r g b / 0.3)
+		);
 	}
 }

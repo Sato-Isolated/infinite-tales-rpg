@@ -371,9 +371,9 @@
 <ul class="steps mt-3 w-full">
 	<li class="step step-primary">Campaign</li>
 	<li class="step">
-		<button 
-			type="button" 
-			class="cursor-pointer bg-transparent border-none p-0 text-inherit hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-primary"
+		<button
+			type="button"
+			class="focus:ring-primary cursor-pointer border-none bg-transparent p-0 text-inherit hover:opacity-75 focus:ring-2 focus:outline-none"
 			onclick={() => _goto('character')}
 			onkeydown={(e) => e.key === 'Enter' && _goto('character')}
 			aria-label="Go to Character step"
@@ -382,9 +382,9 @@
 		</button>
 	</li>
 	<li class="step">
-		<button 
-			type="button" 
-			class="cursor-pointer bg-transparent border-none p-0 text-inherit hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-primary"
+		<button
+			type="button"
+			class="focus:ring-primary cursor-pointer border-none bg-transparent p-0 text-inherit hover:opacity-75 focus:ring-2 focus:outline-none"
 			onclick={() => _goto('characterStats')}
 			onkeydown={(e) => e.key === 'Enter' && _goto('characterStats')}
 			aria-label="Go to Stats step"
@@ -393,9 +393,9 @@
 		</button>
 	</li>
 	<li class="step">
-		<button 
-			type="button" 
-			class="cursor-pointer bg-transparent border-none p-0 text-inherit hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-primary"
+		<button
+			type="button"
+			class="focus:ring-primary cursor-pointer border-none bg-transparent p-0 text-inherit hover:opacity-75 focus:ring-2 focus:outline-none"
 			onclick={() => _goto('character')}
 			onkeydown={(e) => e.key === 'Enter' && _goto('character')}
 			aria-label="Start the game"

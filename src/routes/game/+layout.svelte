@@ -52,40 +52,40 @@
 <nav class="dock bg-base-300 h-[7vh] w-screen overflow-hidden">
 	<a
 		href="/game"
-		class="transition-all duration-300 ease-in-out
-		hover:bg-base-100 hover:scale-105 hover:shadow-lg
-		active:scale-95 
-		focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:outline-none"
+		class="hover:bg-base-100 focus:ring-primary focus:ring-opacity-50
+		transition-all duration-300 ease-in-out
+		hover:scale-105
+		hover:shadow-lg focus:ring-2 focus:outline-none active:scale-95"
 		class:dock-active={activeUrl === '/game'}
 	>
 		<span class="dock-label">Tale</span>
 	</a>
 	<a
 		href="/game/debugstate"
-		class="transition-all duration-300 ease-in-out
-		hover:bg-base-100 hover:scale-105 hover:shadow-lg
-		active:scale-95
-		focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:outline-none"
+		class="hover:bg-base-100 focus:ring-primary focus:ring-opacity-50
+		transition-all duration-300 ease-in-out
+		hover:scale-105
+		hover:shadow-lg focus:ring-2 focus:outline-none active:scale-95"
 		class:dock-active={activeUrl === '/game/debugstate'}
 	>
 		<span class="dock-label">Debug Info</span>
 	</a>
 	<a
 		href="/game/character"
-		class="transition-all duration-300 ease-in-out
-		hover:bg-base-100 hover:scale-105 hover:shadow-lg
-		active:scale-95
-		focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:outline-none"
+		class="hover:bg-base-100 focus:ring-primary focus:ring-opacity-50
+		transition-all duration-300 ease-in-out
+		hover:scale-105
+		hover:shadow-lg focus:ring-2 focus:outline-none active:scale-95"
 		class:dock-active={activeUrl === '/game/character'}
 	>
 		<span class="dock-label">Character</span>
 	</a>
 	<a
 		href="/game/settings/ai"
-		class="transition-all duration-300 ease-in-out
-		hover:bg-base-100 hover:scale-105 hover:shadow-lg
-		active:scale-95
-		focus:ring-2 focus:ring-primary focus:ring-opacity-50 focus:outline-none"
+		class="hover:bg-base-100 focus:ring-primary focus:ring-opacity-50
+		transition-all duration-300 ease-in-out
+		hover:scale-105
+		hover:shadow-lg focus:ring-2 focus:outline-none active:scale-95"
 		class:dock-active={activeUrl.includes('/game/settings')}
 	>
 		<span class="dock-label">Menu</span>

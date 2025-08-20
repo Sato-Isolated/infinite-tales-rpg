@@ -13,7 +13,7 @@ function cleanHtmlFromText(text: string): string {
 		// If no JSON structure, remove all HTML
 		const htmlTagRegex = /<[^>]*>/g;
 		const hasHtmlTags = htmlTagRegex.test(text);
-		
+
 		if (hasHtmlTags) {
 			console.warn('HTML/XML tags detected in non-JSON response, removing all HTML...');
 			let cleaned = text.replace(/<[^>]*>/g, '');
@@ -26,13 +26,13 @@ function cleanHtmlFromText(text: string): string {
 	// Remove HTML tags that appear before the first { or after the last }
 	const firstBrace = text.indexOf('{');
 	const lastBrace = text.lastIndexOf('}');
-	
+
 	if (firstBrace === -1 || lastBrace === -1) {
 		return text;
 	}
 
 	let cleaned = text;
-	
+
 	// Clean HTML before first brace
 	const beforeJson = text.substring(0, firstBrace);
 	const htmlTagRegex = /<[^>]*>/g;
@@ -41,7 +41,7 @@ function cleanHtmlFromText(text: string): string {
 		const cleanedBefore = beforeJson.replace(htmlTagRegex, '').trim();
 		cleaned = cleanedBefore + text.substring(firstBrace);
 	}
-	
+
 	// Clean HTML after last brace
 	const afterJson = text.substring(lastBrace + 1);
 	if (htmlTagRegex.test(afterJson)) {
@@ -60,7 +60,7 @@ function cleanHtmlFromText(text: string): string {
 function validateAndRepairJson(text: string): string {
 	// Only clean HTML if it's clearly interfering with JSON structure
 	let cleaned = text;
-	
+
 	// Check if we have basic JSON structure
 	if (!text.includes('{') || !text.includes('}')) {
 		// No JSON structure found, try cleaning HTML
@@ -70,11 +70,11 @@ function validateAndRepairJson(text: string): string {
 	// Remove common non-JSON prefixes/suffixes, but be careful not to remove content within quotes
 	const firstBrace = cleaned.indexOf('{');
 	const lastBrace = cleaned.lastIndexOf('}');
-	
+
 	if (firstBrace === -1 || lastBrace === -1) {
 		throw new Error('Content does not appear to contain valid JSON structure');
 	}
-	
+
 	// Only trim content outside of the JSON object boundaries
 	cleaned = cleaned.substring(firstBrace, lastBrace + 1);
 
@@ -150,7 +150,9 @@ export async function requestLLMJsonStream(
 
 			// Enhanced error handling for HTML/XML content
 			if (err.message?.includes('Unexpected') && err.message?.includes('>')) {
-				console.warn('--> JSON parser encountered HTML/XML content. This will be handled in final parsing.');
+				console.warn(
+					'--> JSON parser encountered HTML/XML content. This will be handled in final parsing.'
+				);
 				return; // Don't throw here, let final parsing handle it
 			}
 

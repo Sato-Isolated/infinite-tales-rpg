@@ -43,7 +43,8 @@
 				class:mr-3={isDisplayedInGrid}
 				class:text-red-500={resourceValue.game_ends_when_zero}
 				class:text-blue-500={!resourceValue.game_ends_when_zero}
-				class:animate-pulse={resourceValue.game_ends_when_zero && resourceValue.current_value <= resourceValue.max_value * 0.2}
+				class:animate-pulse={resourceValue.game_ends_when_zero &&
+					resourceValue.current_value <= resourceValue.max_value * 0.2}
 			>
 				{resourceKey.replaceAll('_', ' ')}
 			</output>
@@ -54,7 +55,8 @@
 				class:ml-3={isDisplayedInGrid}
 				class:text-red-500={resourceValue.game_ends_when_zero}
 				class:text-blue-500={!resourceValue.game_ends_when_zero}
-				class:animate-pulse={resourceValue.game_ends_when_zero && resourceValue.current_value <= resourceValue.max_value * 0.2}
+				class:animate-pulse={resourceValue.game_ends_when_zero &&
+					resourceValue.current_value <= resourceValue.max_value * 0.2}
 			>
 				{resourceValue.current_value || 0}/{resourceValue.max_value}
 			</output>
@@ -64,10 +66,15 @@
 
 <MediaQuery query="(max-width: 480px)" let:matches>
 	{#if matches && Object.entries(resources || {}).length > 3}
-		<details open class="collapse-arrow bg-base-200 collapse sticky top-0 z-10 w-full
-		transition-all duration-300 ease-in-out hover:shadow-lg">
-			<summary class="collapse-title text-lg font-bold capitalize
-			transition-colors duration-200 hover:bg-base-300">
+		<details
+			open
+			class="collapse-arrow bg-base-200 collapse sticky top-0 z-10 w-full
+		transition-all duration-300 ease-in-out hover:shadow-lg"
+		>
+			<summary
+				class="collapse-title hover:bg-base-300 text-lg font-bold
+			capitalize transition-colors duration-200"
+			>
 				<p class="pl-8 text-center">Resources</p>
 			</summary>
 			<div class="collapse-content grid grid-cols-2 p-2">
@@ -75,8 +82,10 @@
 			</div>
 		</details>
 	{:else}
-		<div class="bg-base-200 sticky top-0 z-10 grid w-full grid-flow-col grid-rows-2 p-2
-		transition-all duration-300 ease-in-out hover:shadow-md">
+		<div
+			class="bg-base-200 sticky top-0 z-10 grid w-full grid-flow-col grid-rows-2 p-2
+		transition-all duration-300 ease-in-out hover:shadow-md"
+		>
 			{@render resourcesList(false)}
 		</div>
 	{/if}

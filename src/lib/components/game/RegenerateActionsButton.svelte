@@ -35,11 +35,11 @@
 
 <button
 	class="btn btn-{variant} btn-{size} {iconOnly ? 'btn-square' : 'gap-2'}
-	transition-all duration-200 ease-in-out
-	hover:scale-105 hover:shadow-md hover:rotate-12
-	active:scale-95 active:shadow-sm active:rotate-6
-	focus:ring-2 focus:ring-primary focus:ring-opacity-50
-	disabled:hover:scale-100 disabled:hover:shadow-none disabled:hover:rotate-0"
+	focus:ring-primary focus:ring-opacity-50 transition-all
+	duration-200 ease-in-out hover:scale-105
+	hover:rotate-12 hover:shadow-md focus:ring-2
+	active:scale-95 active:rotate-6 active:shadow-sm
+	disabled:hover:scale-100 disabled:hover:rotate-0 disabled:hover:shadow-none"
 	onclick={handleRegenerate}
 	disabled={disabled || isRegenerating}
 	aria-label="Régénérer les actions"

@@ -3,10 +3,12 @@
 	let { loadingText = 'Asking the AI' } = $props();
 </script>
 
-<dialog class="modal z-999 animate-fade-in" open style="background: rgba(0, 0, 0, 0.3);">
-	<div class="modal-box flex flex-col items-center animate-scale-in transition-all duration-300 ease-out">
+<dialog class="modal animate-fade-in z-999" open style="background: rgba(0, 0, 0, 0.3);">
+	<div
+		class="modal-box animate-scale-in flex flex-col items-center transition-all duration-300 ease-out"
+	>
 		<LoadingIcon />
-		<span class="mt-2 text-center animate-pulse">{loadingText}</span>
+		<span class="mt-2 animate-pulse text-center">{loadingText}</span>
 	</div>
 </dialog>
 

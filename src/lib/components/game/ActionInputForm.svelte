@@ -53,12 +53,12 @@
 
 <form id="input-form" class="p-4 pb-2" onsubmit={handleFormSubmit}>
 	<div class="lg:join w-full gap-0 lg:flex">
-		<select 
-			bind:value={receiver} 
-			class="select select-md join-item w-full lg:w-fit
-			transition-all duration-200 ease-in-out
-			hover:shadow-md focus:ring-2 focus:ring-primary focus:ring-opacity-50
-			focus:scale-105 focus:shadow-lg"
+		<select
+			bind:value={receiver}
+			class="select select-md join-item focus:ring-primary focus:ring-opacity-50
+			w-full transition-all duration-200
+			ease-in-out hover:shadow-md focus:scale-105 focus:shadow-lg
+			focus:ring-2 lg:w-fit"
 		>
 			<option value="Character Action">Character Action</option>
 			<option value="Game Command">Game Command</option>
@@ -69,21 +69,21 @@
 			type="text"
 			bind:this={inputRef}
 			bind:value={inputValue}
-			class="input input-md join-item w-full lg:flex-1
-			transition-all duration-200 ease-in-out
-			hover:shadow-md focus:ring-2 focus:ring-primary focus:ring-opacity-50
-			focus:scale-105 focus:shadow-lg focus:border-primary"
+			class="input input-md join-item focus:ring-primary focus:ring-opacity-50
+			focus:border-primary w-full transition-all
+			duration-200 ease-in-out hover:shadow-md focus:scale-105
+			focus:shadow-lg focus:ring-2 lg:flex-1"
 			id="user-input"
 			placeholder={placeholder()}
 			autocomplete="off"
 		/>
 		<button
-			class="btn btn-neutral btn-md join-item w-full shrink-0 lg:w-1/4
-			transition-all duration-200 ease-in-out
-			hover:scale-105 hover:shadow-lg hover:bg-neutral-focus
-			active:scale-95 active:shadow-sm
-			focus:ring-2 focus:ring-primary focus:ring-opacity-50
-			disabled:hover:scale-100 disabled:hover:shadow-none disabled:opacity-50"
+			class="btn btn-neutral btn-md join-item hover:bg-neutral-focus focus:ring-primary focus:ring-opacity-50
+			w-full shrink-0 transition-all
+			duration-200 ease-in-out hover:scale-105
+			hover:shadow-lg focus:ring-2
+			active:scale-95 active:shadow-sm disabled:opacity-50
+			disabled:hover:scale-100 disabled:hover:shadow-none lg:w-1/4"
 			id="submit-button"
 			type="submit"
 			disabled={!inputValue.trim()}

@@ -78,7 +78,9 @@ function migrateNPCState(key: string, state: any) {
 	if (key === 'npcState') {
 		// If the state is an array (old format), convert to object (new format)
 		if (Array.isArray(state)) {
-			console.log('Migrating npcState from array to object format. Previous array data will be reset to empty object.');
+			console.log(
+				'Migrating npcState from array to object format. Previous array data will be reset to empty object.'
+			);
 			return {};
 		}
 	}

@@ -851,10 +851,7 @@
 			'gameSettingsState',
 			$state.snapshot(gameSettingsState.value)
 		);
-		npcState.value = migrateIfApplicable(
-			'npcState',
-			$state.snapshot(npcState.value)
-		);
+		npcState.value = migrateIfApplicable('npcState', $state.snapshot(npcState.value));
 	}
 </script>
 

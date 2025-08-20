@@ -13,11 +13,11 @@
 <dialog
 	bind:this={dialog}
 	{onclose}
-	class="modal z-1000 animate-fade-in"
+	class="modal animate-fade-in z-1000"
 	open
 	style="background: rgba(0, 0, 0, 0.3);"
 >
-	<div class="modal-box flex flex-col animate-scale-in transition-all duration-300 ease-out">
+	<div class="modal-box animate-scale-in flex flex-col transition-all duration-300 ease-out">
 		<span class="text-center font-bold">Error</span>
 		<span class="mt-2 max-w-sm break-words sm:max-w-md">{errorState.userMessage}</span>
 		{#if errorState.exception && errorState.retryable}
@@ -26,11 +26,11 @@
 			</span>
 		{/if}
 		<button
-			class="btn btn-info btn-md mt-3
+			class="btn btn-info btn-md hover:bg-info-focus
+			focus:ring-info focus:ring-opacity-50 mt-3
 			transition-all duration-200 ease-in-out
-			hover:scale-105 hover:shadow-lg hover:bg-info-focus
-			active:scale-95 active:shadow-sm
-			focus:ring-2 focus:ring-info focus:ring-opacity-50"
+			hover:scale-105 hover:shadow-lg
+			focus:ring-2 active:scale-95 active:shadow-sm"
 			onclick={() => {
 				dialog.close();
 				errorState.clear();
@@ -40,11 +40,11 @@
 			Go To Settings
 		</button>
 		<button
-			class="btn btn-info btn-md mt-3
+			class="btn btn-info btn-md hover:bg-info-focus
+			focus:ring-info focus:ring-opacity-50 mt-3
 			transition-all duration-200 ease-in-out
-			hover:scale-105 hover:shadow-lg hover:bg-info-focus
-			active:scale-95 active:shadow-sm
-			focus:ring-2 focus:ring-info focus:ring-opacity-50"
+			hover:scale-105 hover:shadow-lg
+			focus:ring-2 active:scale-95 active:shadow-sm"
 			onclick={() => {
 				dialog.close();
 				errorState.clear();

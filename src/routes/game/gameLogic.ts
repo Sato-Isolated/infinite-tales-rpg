@@ -31,7 +31,7 @@ export function getEmptyCriticalResourceKeys(resources: ResourcesWithCurrentValu
 	if (!resources || typeof resources !== 'object') {
 		return [];
 	}
-	
+
 	return Object.entries(resources)
 		.filter((entry) => entry[1].game_ends_when_zero && entry[1].current_value <= 0)
 		.map((entry) => entry[0]);
