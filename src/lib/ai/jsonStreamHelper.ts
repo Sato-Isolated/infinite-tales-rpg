@@ -4,6 +4,45 @@ import type { GenerateContentResponse } from '@google/genai';
 import { GEMINI_MODELS, getThoughtsFromResponse } from './geminiProvider';
 
 /**
+ * Detects and cleans HTML/XML content from text that should contain JSON
+ */
+function cleanHtmlFromText(text: string): string {
+	// Check if text contains HTML/XML tags
+	const htmlTagRegex = /<[^>]*>/g;
+	const hasHtmlTags = htmlTagRegex.test(text);
+
+	if (hasHtmlTags) {
+		console.warn('HTML/XML tags detected in JSON response, attempting to clean...');
+		// Remove HTML tags and their content
+		let cleaned = text.replace(/<[^>]*>/g, '');
+		// Clean up extra whitespace
+		cleaned = cleaned.replace(/\s+/g, ' ').trim();
+		return cleaned;
+	}
+
+	return text;
+}
+
+/**
+ * Enhanced JSON validation that handles common malformation patterns
+ */
+function validateAndRepairJson(text: string): string {
+	// First clean any HTML content
+	let cleaned = cleanHtmlFromText(text);
+
+	// Remove common non-JSON prefixes/suffixes
+	cleaned = cleaned.replace(/^[^{]*/, ''); // Remove everything before first {
+	cleaned = cleaned.replace(/[^}]*$/, ''); // Remove everything after last }
+
+	// Ensure the text actually looks like JSON
+	if (!cleaned.startsWith('{') || !cleaned.endsWith('}')) {
+		throw new Error('Content does not appear to contain valid JSON structure');
+	}
+
+	return cleaned;
+}
+
+/**
  * Fetches a JSON stream, parses it, calls a callback for progressive
  * updates of the "story" field, and returns the full parsed JSON object.
  * Handles JSON enclosed in ```json ... ``` markers OR starting directly with {.
@@ -58,12 +97,19 @@ export async function requestLLMJsonStream(
 				throw callbackError;
 			}
 		};
-		liveParser.onError = (err) => {
+		liveParser.onError = (err: any) => {
 			// Let errors propagate
 			if (liveParser.isEnded || err.message?.includes('state ENDED')) {
 				console.log('--> Ignoring Live parser ended processing input with error:', err.message);
 				return;
 			}
+
+			// Enhanced error handling for HTML/XML content
+			if (err.message?.includes('Unexpected') && err.message?.includes('>')) {
+				console.warn('--> JSON parser encountered HTML/XML content. This will be handled in final parsing.');
+				return; // Don't throw here, let final parsing handle it
+			}
+
 			throw err;
 		};
 		liveParser.onEnd = () => {
@@ -244,6 +290,15 @@ export async function requestLLMJsonStream(
 		return undefined;
 	}
 
+	// Enhanced validation and repair before parsing
+	try {
+		cleanedJsonText = validateAndRepairJson(cleanedJsonText);
+	} catch (validationError) {
+		console.error('JSON validation failed:', validationError);
+		storyUpdateCallback('', true);
+		return undefined;
+	}
+
 	if (!cleanedJsonText.startsWith('{') || !cleanedJsonText.endsWith('}')) {
 		// This can happen with partial parses if emitPartialValues is on and stream cuts early
 		console.warn("Cleaned text doesn't start with '{' or end with '}'. Attempting to repair.");
@@ -275,8 +330,25 @@ export async function requestLLMJsonStream(
 	}
 
 	cleanedJsonText = cleanedJsonText.replaceAll('```', '').trim();
-	finalJsonObject = JSON.parse(cleanedJsonText);
-	console.log('--> Final JSON object successfully parsed after cleaning.');
+
+	try {
+		finalJsonObject = JSON.parse(cleanedJsonText);
+		console.log('--> Final JSON object successfully parsed after cleaning.');
+	} catch (parseError) {
+		console.error('JSON parse error after cleaning:', parseError);
+		console.error('Problematic JSON text:', cleanedJsonText.substring(0, 200) + '...');
+
+		// Attempt one more repair by removing HTML remnants
+		try {
+			const furtherCleaned = cleanHtmlFromText(cleanedJsonText);
+			finalJsonObject = JSON.parse(furtherCleaned);
+			console.log('--> JSON successfully parsed after additional HTML cleaning.');
+		} catch (secondParseError) {
+			console.error('Final JSON parsing failed completely:', secondParseError);
+			storyUpdateCallback('', true);
+			return undefined;
+		}
+	}
 
 	// Ensure the final story state is sent via callback
 	const finalStory = typeof finalJsonObject?.story === 'string' ? finalJsonObject.story : '';

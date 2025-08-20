@@ -236,14 +236,14 @@ export class GameAgent {
 	): Promise<{ thoughts?: string; answer: GameMasterAnswer }> {
 		const gameAgent = [
 			'You are Reviewer Agent, your task is to answer a players question.\n' +
-				'You can refer to the internal state, rules and previous messages that the Game Master has considered',
+			'You can refer to the internal state, rules and previous messages that the Game Master has considered',
 			'The following is the internal state of the NPCs.' + '\n' + stringifyPretty(npcState)
 		];
 		if (campaignChapterState) {
 			gameAgent.push(
 				'The following is the state of the current campaign chapter.' +
-					'\n' +
-					stringifyPretty(campaignChapterState)
+				'\n' +
+				stringifyPretty(campaignChapterState)
 			);
 		}
 		if (customGmNotes) {
@@ -254,8 +254,8 @@ export class GameAgent {
 		if (thoughtsState.storyThoughts) {
 			gameAgent.push(
 				'The following are thoughts of the Game Master regarding how to progress the story.' +
-					'\n' +
-					JSON.stringify(thoughtsState)
+				'\n' +
+				JSON.stringify(thoughtsState)
 			);
 		}
 		if (relatedHistory.length > 0) {
@@ -308,12 +308,12 @@ export class GameAgent {
 			systemBehaviour(gameSettings),
 			stringifyPretty(storyState),
 			'The following is a description of the player character, always refer to it when considering appearance, reasoning, motives etc.' +
-				'\n' +
-				stringifyPretty(characterState),
+			'\n' +
+			stringifyPretty(characterState),
 			"The following are the character's CURRENT resources, consider it in your response\n" +
-				stringifyPretty(Object.values(playerCharactersGameState)),
+			stringifyPretty(Object.values(playerCharactersGameState)),
 			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.\n" +
-				stringifyPretty(inventoryState)
+			stringifyPretty(inventoryState)
 		];
 		if (customSystemInstruction) {
 			gameAgent.push('Following instructions overrule all others: ' + customSystemInstruction);
@@ -349,8 +349,12 @@ export class GameAgent {
 		const userMessage: LLMMessage = { role: 'user', content: userText };
 
 		// Add temporal context hidden in history to improve narrative consistency
+		const timePassedText = modelStateObject?.time_passed_minutes
+			? ` | Action duration: ${modelStateObject.time_passed_minutes}min`
+			: '';
+
 		const storyWithTimeContext = gameTime
-			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay} | Season: ${gameTime.season || 'Unknown'} | Weather: ${gameTime.weather?.description || `${gameTime.weather?.type || 'clear'} (${gameTime.weather?.intensity || 'light'})`}${modelStateObject.time_passed_minutes ? ` | Action duration: ${modelStateObject.time_passed_minutes}min` : ''}]\n${modelStateObject.story}`
+			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay} | Season: ${gameTime.season || 'Unknown'} | Weather: ${gameTime.weather?.description || `${gameTime.weather?.type || 'clear'} (${gameTime.weather?.intensity || 'light'})`}${timePassedText}]\n${modelStateObject.story}`
 			: modelStateObject.story;
 
 		const modelMessage: LLMMessage = {
