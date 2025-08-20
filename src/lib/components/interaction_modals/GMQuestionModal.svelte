@@ -120,22 +120,24 @@
 {#if isGeneratingState}
 	<LoadingModal />
 {:else}
-	<dialog open class="modal z-100" style="background: rgba(0, 0, 0, 0.3);">
-		<div class="modal-box flex flex-col items-center text-center">
+	<dialog open class="modal z-100 animate-fade-in" style="background: rgba(0, 0, 0, 0.3);">
+		<div class="modal-box flex flex-col items-center text-center animate-scale-in transition-all duration-300 ease-out">
 			<span class="m-auto font-bold">Game Master Answer</span>
 			<p class="mt-4 max-h-48 overflow-y-scroll">{gmAnswerState?.answerToPlayer}</p>
 			<details
-				class="collapse-arrow textarea bg-base-200 textarea-md collapse mt-4 overflow-y-scroll border"
+				class="collapse-arrow textarea bg-base-200 textarea-md collapse mt-4 overflow-y-scroll border
+				transition-all duration-200 ease-in-out hover:shadow-md"
 			>
-				<summary class="collapse-title capitalize">
+				<summary class="collapse-title capitalize transition-colors duration-200 hover:bg-base-300">
 					<p>Considered Game State</p>
 				</summary>
 				<p>{gmAnswerState?.game_state_considered || 'The AI did not return a response...'}</p>
 			</details>
 			<details
-				class="collapse-arrow textarea bg-base-200 textarea-md collapse mt-4 overflow-y-scroll border"
+				class="collapse-arrow textarea bg-base-200 textarea-md collapse mt-4 overflow-y-scroll border
+				transition-all duration-200 ease-in-out hover:shadow-md"
 			>
-				<summary class="collapse-title capitalize">
+				<summary class="collapse-title capitalize transition-colors duration-200 hover:bg-base-300">
 					<p>Considered Rules</p>
 				</summary>
 				<ul class="text-start">
@@ -148,9 +150,10 @@
 			</details>
 			{#if gmThoughtsState}
 				<details
-					class="collapse-arrow textarea bg-base-200 textarea-md collapse mt-4 overflow-y-scroll border"
+					class="collapse-arrow textarea bg-base-200 textarea-md collapse mt-4 overflow-y-scroll border
+					transition-all duration-200 ease-in-out hover:shadow-md"
 				>
-					<summary class="collapse-title capitalize">
+					<summary class="collapse-title capitalize transition-colors duration-200 hover:bg-base-300">
 						<p>Thoughts</p>
 					</summary>
 					<p>{gmThoughtsState}</p>
@@ -158,11 +161,51 @@
 			{/if}
 			<div class="mt-3 flex w-full flex-row gap-2">
 				<button
-					class="btn btn-info btn-md flex-1"
+					class="btn btn-info btn-md flex-1
+					transition-all duration-200 ease-in-out
+					hover:scale-105 hover:shadow-lg hover:bg-info-focus
+					active:scale-95 active:shadow-sm
+					focus:ring-2 focus:ring-info focus:ring-opacity-50"
 					onclick={() => onclose?.(true, { question, ...gmAnswerState })}>Add to context</button
 				>
-				<button class="btn btn-info btn-md flex-1" onclick={() => onclose?.(true)}>Close</button>
+				<button 
+					class="btn btn-info btn-md flex-1
+					transition-all duration-200 ease-in-out
+					hover:scale-105 hover:shadow-lg hover:bg-info-focus
+					active:scale-95 active:shadow-sm
+					focus:ring-2 focus:ring-info focus:ring-opacity-50" 
+					onclick={() => onclose?.(true)}>Close</button>
 			</div>
 		</div>
 	</dialog>
 {/if}
+
+<style>
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes scale-in {
+		from {
+			transform: scale(0.8);
+			opacity: 0;
+		}
+		to {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+
+	.animate-fade-in {
+		animation: fade-in 0.2s ease-out;
+	}
+
+	.animate-scale-in {
+		animation: scale-in 0.3s ease-out;
+	}
+</style>

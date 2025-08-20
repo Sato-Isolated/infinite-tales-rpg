@@ -34,7 +34,12 @@
 </script>
 
 <button
-	class="btn btn-{variant} btn-{size} {iconOnly ? 'btn-square' : 'gap-2'}"
+	class="btn btn-{variant} btn-{size} {iconOnly ? 'btn-square' : 'gap-2'}
+	transition-all duration-200 ease-in-out
+	hover:scale-105 hover:shadow-md hover:rotate-12
+	active:scale-95 active:shadow-sm active:rotate-6
+	focus:ring-2 focus:ring-primary focus:ring-opacity-50
+	disabled:hover:scale-100 disabled:hover:shadow-none disabled:hover:rotate-0"
 	onclick={handleRegenerate}
 	disabled={disabled || isRegenerating}
 	aria-label="Régénérer les actions"
@@ -53,7 +58,7 @@
 			stroke-width="2"
 			stroke-linecap="round"
 			stroke-linejoin="round"
-			class="lucide lucide-refresh-cw"
+			class="lucide lucide-refresh-cw {isRegenerating ? 'animate-spin' : ''}"
 		>
 			<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
 			<path d="M21 3v5h-5" />

@@ -46,7 +46,12 @@
 			{#if index === 0 && regenerateActions}
 				<div class="mb-3 flex gap-2">
 					<button
-						class="text-md ai-gen-action btn btn-neutral btn-md flex-1"
+						class="text-md ai-gen-action btn btn-neutral btn-md flex-1 
+						transition-all duration-200 ease-in-out
+						hover:scale-105 hover:shadow-lg hover:bg-neutral-focus
+						active:scale-95 active:shadow-sm
+						focus:ring-2 focus:ring-primary focus:ring-opacity-50
+						disabled:hover:scale-100 disabled:hover:shadow-none"
 						disabled={!isAvailable}
 						onclick={() => handleActionClick({ action, requiresDice })}
 					>
@@ -56,7 +61,12 @@
 				</div>
 			{:else}
 				<button
-					class="text-md ai-gen-action btn btn-neutral btn-md mb-3 w-full"
+					class="text-md ai-gen-action btn btn-neutral btn-md mb-3 w-full
+					transition-all duration-200 ease-in-out
+					hover:scale-105 hover:shadow-lg hover:bg-neutral-focus
+					active:scale-95 active:shadow-sm
+					focus:ring-2 focus:ring-primary focus:ring-opacity-50
+					disabled:hover:scale-100 disabled:hover:shadow-none"
 					disabled={!isAvailable}
 					onclick={() => handleActionClick({ action, requiresDice })}
 				>

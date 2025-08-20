@@ -4,35 +4,79 @@ import type { GenerateContentResponse } from '@google/genai';
 import { GEMINI_MODELS, getThoughtsFromResponse } from './geminiProvider';
 
 /**
- * Detects and cleans HTML/XML content from text that should contain JSON
+ * Detects and cleans HTML/XML content that interferes with JSON structure
+ * Only removes HTML that appears outside of JSON string values
  */
 function cleanHtmlFromText(text: string): string {
-	// Check if text contains HTML/XML tags
-	const htmlTagRegex = /<[^>]*>/g;
-	const hasHtmlTags = htmlTagRegex.test(text);
-
-	if (hasHtmlTags) {
-		console.warn('HTML/XML tags detected in JSON response, attempting to clean...');
-		// Remove HTML tags and their content
-		let cleaned = text.replace(/<[^>]*>/g, '');
-		// Clean up extra whitespace
-		cleaned = cleaned.replace(/\s+/g, ' ').trim();
-		return cleaned;
+	// Check if we have a basic JSON structure first
+	if (!text.includes('{') || !text.includes('}')) {
+		// If no JSON structure, remove all HTML
+		const htmlTagRegex = /<[^>]*>/g;
+		const hasHtmlTags = htmlTagRegex.test(text);
+		
+		if (hasHtmlTags) {
+			console.warn('HTML/XML tags detected in non-JSON response, removing all HTML...');
+			let cleaned = text.replace(/<[^>]*>/g, '');
+			cleaned = cleaned.replace(/\s+/g, ' ').trim();
+			return cleaned;
+		}
 	}
 
-	return text;
+	// For JSON content, only remove HTML that's clearly outside of string values
+	// Remove HTML tags that appear before the first { or after the last }
+	const firstBrace = text.indexOf('{');
+	const lastBrace = text.lastIndexOf('}');
+	
+	if (firstBrace === -1 || lastBrace === -1) {
+		return text;
+	}
+
+	let cleaned = text;
+	
+	// Clean HTML before first brace
+	const beforeJson = text.substring(0, firstBrace);
+	const htmlTagRegex = /<[^>]*>/g;
+	if (htmlTagRegex.test(beforeJson)) {
+		console.warn('Removing HTML tags before JSON structure...');
+		const cleanedBefore = beforeJson.replace(htmlTagRegex, '').trim();
+		cleaned = cleanedBefore + text.substring(firstBrace);
+	}
+	
+	// Clean HTML after last brace
+	const afterJson = text.substring(lastBrace + 1);
+	if (htmlTagRegex.test(afterJson)) {
+		console.warn('Removing HTML tags after JSON structure...');
+		const cleanedAfter = afterJson.replace(htmlTagRegex, '').trim();
+		cleaned = cleaned.substring(0, lastBrace + 1) + cleanedAfter;
+	}
+
+	return cleaned;
 }
 
 /**
  * Enhanced JSON validation that handles common malformation patterns
+ * Preserves HTML content within JSON string values
  */
 function validateAndRepairJson(text: string): string {
-	// First clean any HTML content
-	let cleaned = cleanHtmlFromText(text);
+	// Only clean HTML if it's clearly interfering with JSON structure
+	let cleaned = text;
+	
+	// Check if we have basic JSON structure
+	if (!text.includes('{') || !text.includes('}')) {
+		// No JSON structure found, try cleaning HTML
+		cleaned = cleanHtmlFromText(text);
+	}
 
-	// Remove common non-JSON prefixes/suffixes
-	cleaned = cleaned.replace(/^[^{]*/, ''); // Remove everything before first {
-	cleaned = cleaned.replace(/[^}]*$/, ''); // Remove everything after last }
+	// Remove common non-JSON prefixes/suffixes, but be careful not to remove content within quotes
+	const firstBrace = cleaned.indexOf('{');
+	const lastBrace = cleaned.lastIndexOf('}');
+	
+	if (firstBrace === -1 || lastBrace === -1) {
+		throw new Error('Content does not appear to contain valid JSON structure');
+	}
+	
+	// Only trim content outside of the JSON object boundaries
+	cleaned = cleaned.substring(firstBrace, lastBrace + 1);
 
 	// Ensure the text actually looks like JSON
 	if (!cleaned.startsWith('{') || !cleaned.endsWith('}')) {
