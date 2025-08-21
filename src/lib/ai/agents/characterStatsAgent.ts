@@ -134,7 +134,10 @@ export class CharacterStatsAgent {
 			statsPrompt += '\nEXISTING STATS:\n' + stringifyPretty(statsOverwrites);
 			agentInstruction.push(statsPrompt);
 		}
-		agentInstruction.push('CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + characterStatsStateForPrompt);
+		agentInstruction.push(
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
+				characterStatsStateForPrompt
+		);
 		if (!statsOverwrites?.level) {
 			statsOverwrites = { ...statsOverwrites, level: 1 };
 		}
@@ -201,7 +204,8 @@ export class CharacterStatsAgent {
 			'Current character stats:\n' + stringifyPretty(characterStatsMapped),
 			'The level up must be based on the story progression, in which area the player acted well:\n' +
 				latestHistoryTextOnly,
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + levelUpPrompt
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
+				levelUpPrompt
 		];
 
 		const request: LLMRequest = {

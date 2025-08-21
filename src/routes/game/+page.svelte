@@ -111,17 +111,25 @@
 	// Element/component refs (dialogs, child components)
 	let actionInputFormComponent = $state<{ clear?: () => void }>();
 
-	//ai state
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const temperatureState = useLocalStorage<number>('temperatureState');
+	//ai state - proper initialization to prevent hydration mismatches
+	const apiKeyState = useLocalStorage<string>('apiKeyState', '');
+	const temperatureState = useLocalStorage<number>('temperatureState', 0.7);
 	const systemInstructionsState = useLocalStorage<SystemInstructionsState>(
 		'systemInstructionsState',
 		initialSystemInstructionsState
 	);
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
+	const aiLanguage = useLocalStorage<string>('aiLanguage', 'en');
+
+	// AI state management with proper initialization
 	let isAiGeneratingState = $state(false);
-	let didAIProcessDiceRollActionState = useLocalStorage<boolean>('didAIProcessDiceRollAction');
-	let didAIProcessActionState = $state<boolean>(true);
+	const didAIProcessDiceRollActionState = useLocalStorage<boolean>(
+		'didAIProcessDiceRollAction',
+		false
+	);
+	let didAIProcessActionState = $state<boolean>(false);
+
+	// Prevent race conditions by ensuring only one AI operation at a time
+	let aiOperationInProgress = $state(false);
 
 	// Create modal manager après les autres états locaux
 	const modalManager = createModalManager();
@@ -158,13 +166,34 @@
 		{ relatedDetails: [] }
 	);
 	const relatedActionHistoryState = useLocalStorage<string[]>('relatedActionHistoryState', []);
-	const customMemoriesState = useLocalStorage<string>('customMemoriesState');
-	const customGMNotesState = useLocalStorage<string>('customGMNotesState');
-	const currentChapterState = useLocalStorage<number>('currentChapterState');
-	const campaignState = useLocalStorage<Campaign>('campaignState', {} as Campaign);
+	const customMemoriesState = useLocalStorage<string>('customMemoriesState', '');
+	const customGMNotesState = useLocalStorage<string>('customGMNotesState', '');
+	const currentChapterState = useLocalStorage<number>('currentChapterState', 1);
+
+	// Initialize campaign state with proper default instead of unsafe cast
+	const defaultCampaign: Campaign = {
+		game: '',
+		campaign_title: '',
+		campaign_description: '',
+		world_details: '',
+		character_simple_description: '',
+		chapters: [],
+		general_image_prompt: '',
+		theme: '',
+		tonality: ''
+	};
+	const campaignState = useLocalStorage<Campaign>('campaignState', defaultCampaign);
 
 	const npcState = useLocalStorage<NPCState>('npcState', {});
-	const chosenActionState = useLocalStorage<Action>('chosenActionState', {} as Action);
+
+	// Initialize action state with proper default instead of unsafe cast
+	const defaultAction: Action = {
+		characterName: '',
+		text: '',
+		is_possible: true
+	};
+	const chosenActionState = useLocalStorage<Action>('chosenActionState', defaultAction);
+
 	const additionalStoryInputState = useLocalStorage<string>('additionalStoryInputState', '');
 	const additionalActionInputState = useLocalStorage<string>('additionalActionInputState', '');
 	const isGameEnded = useLocalStorage<boolean>('isGameEnded', false);
@@ -187,9 +216,25 @@
 		dialogOpened: false,
 		playerName: ''
 	});
+
+	// Safe derived state with proper fallback instead of unsafe cast
+	const defaultGameActionState: GameActionState = {
+		id: 0,
+		currentPlotPoint: '',
+		nextPlotPoint: '',
+		story: '',
+		image_prompt: '',
+		inventory_update: [],
+		stats_update: [],
+		is_character_in_combat: false,
+		currently_present_npcs: { hostile: [], friendly: [], neutral: [] },
+		story_memory_explanation: ''
+	};
+
 	const currentGameActionState: GameActionState = $derived(
-		(gameActionsState.value && gameActionsState.value[gameActionsState.value.length - 1]) ||
-			({} as GameActionState)
+		gameActionsState.value && gameActionsState.value.length > 0
+			? gameActionsState.value[gameActionsState.value.length - 1]
+			: defaultGameActionState
 	);
 
 	const playerCharacterIdState = $derived(

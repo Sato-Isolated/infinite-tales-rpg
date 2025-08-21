@@ -218,7 +218,10 @@ export class CampaignAgent {
 			'The new chapter must fit within the other chapters, generate a chapter with chapterId: ' +
 				chapterNumberToGenerate
 		);
-		agentInstruction.push('CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + chaptersPrompt);
+		agentInstruction.push(
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
+				chaptersPrompt
+		);
 
 		let userMessage = 'Generate the new chapter.';
 		if (chapter) {

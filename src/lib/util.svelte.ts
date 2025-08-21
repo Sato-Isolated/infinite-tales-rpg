@@ -54,58 +54,162 @@ export function handleError(e: string, retryable = true): void {
  */
 export function navigate(path: string): void {
 	try {
+		// Validate path to prevent XSS
+		if (!path || typeof path !== 'string') {
+			throw new Error('Invalid navigation path');
+		}
+
+		// Sanitize path to prevent malicious URLs
+		const sanitizedPath = path.replace(/[<>'"]/g, '');
+
 		const a = document.createElement('a');
-		a.href = '/game' + path;
+		a.href = '/game' + sanitizedPath;
 		a.click();
+
+		// Clean up DOM element immediately
+		a.remove();
 	} catch (error) {
 		console.error('Navigation failed:', error);
-		// Fallback to window.location
-		window.location.href = '/game' + path;
+		// Fallback to window.location with validation
+		const safePath = path.replace(/[<>'"]/g, '');
+		window.location.href = '/game' + safePath;
 	}
 }
 
+/**
+ * Safely validates localStorage keys to prevent injection
+ */
+function isValidLocalStorageKey(key: string): boolean {
+	return typeof key === 'string' && key.length > 0 && !/[<>'"\\]/.test(key);
+}
+
+/**
+ * Safely downloads localStorage as JSON with proper validation
+ */
 export const downloadLocalStorageAsJson = () => {
-	const toSave: Record<string, string> = { ...(localStorage as any) };
-	delete toSave.apiKeyState;
-	const json = encodeURIComponent(
-		JSON.stringify(
-			(function () {
-				const o: Record<string, any> = {};
-				for (const k of Object.keys(toSave as Record<string, string>)) {
-					o[k] = JSON.parse(toSave[k]);
+	try {
+		const toSave: Record<string, string> = {};
+
+		// Safely copy localStorage with validation
+		for (let i = 0; i < localStorage.length; i++) {
+			const key = localStorage.key(i);
+			if (key && isValidLocalStorageKey(key) && key !== 'apiKeyState') {
+				const value = localStorage.getItem(key);
+				if (value) {
+					toSave[key] = value;
 				}
-				return o;
-			})(),
-			null,
-			2
-		)
-	);
-	const dataStr = 'data:application/json;charset=utf-8,' + json;
-	const dlAnchorElem = document.createElement('a');
-	dlAnchorElem.setAttribute('href', dataStr);
-	dlAnchorElem.setAttribute('download', 'infinite-tales-rpg.json');
-	dlAnchorElem.click();
+			}
+		}
+
+		const parsedData: Record<string, unknown> = {};
+		for (const [key, value] of Object.entries(toSave)) {
+			try {
+				parsedData[key] = JSON.parse(value);
+			} catch (parseError) {
+				console.warn(`Failed to parse localStorage value for key "${key}":`, parseError);
+				// Skip invalid JSON rather than including raw string
+				continue;
+			}
+		}
+
+		const json = encodeURIComponent(JSON.stringify(parsedData, null, 2));
+		const dataStr = 'data:application/json;charset=utf-8,' + json;
+
+		const dlAnchorElem = document.createElement('a');
+		dlAnchorElem.setAttribute('href', dataStr);
+		dlAnchorElem.setAttribute('download', 'infinite-tales-rpg.json');
+		dlAnchorElem.click();
+
+		// Clean up DOM element immediately
+		dlAnchorElem.remove();
+	} catch (error) {
+		console.error('Failed to download localStorage:', error);
+		handleError('Failed to export game data. Please try again.');
+	}
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export const importJsonFromFile = (callback: Function) => {
+/**
+ * Enhanced file import with proper validation and security checks
+ */
+export const importJsonFromFile = (callback: (data: unknown) => void) => {
 	const fileInput = document.createElement('input');
 	fileInput.type = 'file';
 	fileInput.accept = 'application/json';
-	fileInput.click();
+
+	// Add size limit (10MB max)
+	const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 	fileInput.addEventListener('change', function (event) {
-		// @ts-expect-error can never be null
-		const file = (<HTMLInputElement>event.target).files[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (evt) => {
-				// @ts-expect-error can never be null
-				const parsed = JSON.parse(new TextDecoder('utf-8').decode(evt.target.result));
-				callback(parsed);
-			};
-			reader.readAsArrayBuffer(file);
+		const target = event.target as HTMLInputElement;
+		const file = target?.files?.[0];
+
+		if (!file) {
+			return;
 		}
+
+		// Validate file size
+		if (file.size > MAX_FILE_SIZE) {
+			handleError('File size too large. Maximum allowed size is 10MB.');
+			return;
+		}
+
+		// Validate file type
+		if (!file.type.includes('application/json') && !file.name.endsWith('.json')) {
+			handleError('Invalid file type. Please select a JSON file.');
+			return;
+		}
+
+		const reader = new FileReader();
+
+		reader.onload = (evt) => {
+			try {
+				const result = evt.target?.result;
+				if (!result) {
+					handleError('Failed to read file.');
+					return;
+				}
+
+				let jsonText: string;
+				if (result instanceof ArrayBuffer) {
+					jsonText = new TextDecoder('utf-8').decode(result);
+				} else {
+					jsonText = result;
+				}
+
+				// Validate JSON size in memory
+				if (jsonText.length > MAX_FILE_SIZE) {
+					handleError('File content too large after reading.');
+					return;
+				}
+
+				const parsed = JSON.parse(jsonText);
+
+				// Basic validation that it's an object (expected for localStorage export)
+				if (typeof parsed !== 'object' || parsed === null) {
+					handleError('Invalid file format. Expected JSON object.');
+					return;
+				}
+
+				callback(parsed);
+			} catch (error) {
+				console.error('Failed to parse imported file:', error);
+				handleError('Failed to parse JSON file. Please check the file format.');
+			}
+		};
+
+		reader.onerror = () => {
+			handleError('Failed to read file.');
+		};
+
+		reader.readAsArrayBuffer(file);
 	});
+
+	fileInput.click();
+
+	// Clean up DOM element after use
+	setTimeout(() => {
+		fileInput.remove();
+	}, 1000);
 };
 
 let worker: pdfjs.PDFWorker | undefined;

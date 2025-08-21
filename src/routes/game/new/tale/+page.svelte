@@ -9,7 +9,7 @@
 	import LoadingModal from '$lib/components/LoadingModal.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { getRowsForTextarea, navigate, loadPDF } from '$lib/util.svelte';
+	import { getRowsForTextarea, navigate, loadPDF, handleError } from '$lib/util.svelte';
 	import isEqual from 'fast-deep-equal';
 	import { goto } from '$app/navigation';
 	import ImportExportSaveGame from '$lib/components/ImportExportSaveGame.svelte';
@@ -65,15 +65,16 @@
 	};
 	const onRandomizeSingle = async (stateValue: keyof Story) => {
 		isGeneratingState = true;
-		const currentStory = { ...storyState.value } as any;
+		const currentStory = { ...storyState.value };
 		// Intentionally clear a single field to ask the agent to regenerate it
-		currentStory[stateValue as string] = undefined;
-		const agentInput = { ...currentStory, ...storyStateOverwrites };
+		const modifiableStory = currentStory as Record<string, unknown>;
+		modifiableStory[stateValue as string] = undefined;
+		const agentInput = { ...modifiableStory, ...storyStateOverwrites };
 		const newState = await storyAgent.generateRandomStorySettings(
 			agentInput,
 			getCharacterDescription()
 		);
-		if (newState) {
+		if (newState && newState[stateValue] !== undefined) {
 			// Index via keyof to satisfy TS when writing a single property
 			storyState.value[stateValue] = newState[stateValue];
 		}
@@ -81,7 +82,11 @@
 	};
 
 	function handleInput(evt: Event, stateValue: keyof Story) {
-		storyStateOverwrites[stateValue] = (evt.target as HTMLTextAreaElement).value as any;
+		const target = evt.target as HTMLTextAreaElement;
+		if (target && target.value !== undefined) {
+			// Type-safe assignment based on the expected type for this story property
+			storyStateOverwrites[stateValue] = target.value as Story[typeof stateValue];
+		}
 	}
 
 	function onUploadClicked() {
@@ -90,14 +95,19 @@
 		fileInput.accept = 'application/pdf';
 		fileInput.click();
 		fileInput.addEventListener('change', function (event) {
-			// @ts-expect-error can never be null
-			const file = event.target.files[0];
+			const target = event.target as HTMLInputElement;
+			const file = target?.files?.[0];
 			if (file) {
 				const reader = new FileReader();
 				reader.onload = async () => {
-					const text = await loadPDF(file);
-					storyStateOverwrites = { ...storyStateOverwrites, gameBook: text };
-					await onRandomize();
+					try {
+						const text = await loadPDF(file);
+						storyStateOverwrites = { ...storyStateOverwrites, gameBook: text };
+						await onRandomize();
+					} catch (error) {
+						console.error('Failed to load PDF:', error);
+						handleError('Failed to load PDF file. Please try again.');
+					}
 				};
 				reader.readAsArrayBuffer(file);
 			}

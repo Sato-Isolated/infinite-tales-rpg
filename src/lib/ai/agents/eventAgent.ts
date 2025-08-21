@@ -73,7 +73,8 @@ export class EventAgent {
     *   Do not list abilities already known: ${currentAbilitiesNames.join(', ')}
     *   If yes, describe the new ability/spell/skill.
     *   If no, empty array.`,
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + jsonFormat
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
+				jsonFormat
 		];
 
 		const request: LLMRequest = {
