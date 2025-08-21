@@ -76,7 +76,7 @@ export class CombatAgent {
 			'The following is a description of the story setting to keep the actions consistent on.' +
 				'\n' +
 				stringifyPretty(storyState),
-			`Most important instruction! You must always respond with following JSON format! 
+			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
                  {
                   "actions": [
                     # You must include one object for each npc and one for the player character

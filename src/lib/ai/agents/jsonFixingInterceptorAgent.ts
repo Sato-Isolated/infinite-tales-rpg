@@ -11,7 +11,8 @@ export class JsonFixingInterceptorAgent {
 	async fixJSON(json: string, error: string): Promise<object | undefined> {
 		const agent =
 			'You are JSON fixing agent, who is responsible for fixing JSON errors. ' +
-			'You will be given JSON with errors and an error message and must fix it. Respond only with the fixed JSON, do not explain errors!';
+			'You will be given JSON with errors and an error message and must fix it. ' +
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.';
 
 		const request: LLMRequest = {
 			userMessage: error,

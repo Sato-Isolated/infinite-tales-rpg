@@ -134,7 +134,7 @@ export class CharacterStatsAgent {
 			statsPrompt += '\nEXISTING STATS:\n' + stringifyPretty(statsOverwrites);
 			agentInstruction.push(statsPrompt);
 		}
-		agentInstruction.push('Always respond with following JSON!\n' + characterStatsStateForPrompt);
+		agentInstruction.push('CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + characterStatsStateForPrompt);
 		if (!statsOverwrites?.level) {
 			statsOverwrites = { ...statsOverwrites, level: 1 };
 		}
@@ -201,7 +201,7 @@ export class CharacterStatsAgent {
 			'Current character stats:\n' + stringifyPretty(characterStatsMapped),
 			'The level up must be based on the story progression, in which area the player acted well:\n' +
 				latestHistoryTextOnly,
-			'Always respond with following JSON!\n' + levelUpPrompt
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + levelUpPrompt
 		];
 
 		const request: LLMRequest = {
@@ -241,7 +241,7 @@ export class CharacterStatsAgent {
 				characterStats.level +
 				'\n',
 			TROPES_CLICHE_PROMPT,
-			`Most important instruction! You must always respond with following JSON format! 
+			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
                             {"uniqueTechnicalNameId": ${npcStatsStateForPromptAsString}, ...}`
 		];
 		if (customSystemInstruction) {
@@ -273,7 +273,7 @@ export class CharacterStatsAgent {
 			'You are RPG character ability agent, generating new abilities without restrictions on thematic consistency. Generate them according to game system, adventure and character description.\n' +
 				'Scale the ability according to the level',
 			usePartialAsBasePrompt,
-			`Always respond with following JSON!\n Array length ${abilities.filter((a) => !!a).length} of type ${abilityFormatForPrompt}`
+			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n Array length ${abilities.filter((a) => !!a).length} of type ${abilityFormatForPrompt}`
 		];
 
 		const request: LLMRequest = {

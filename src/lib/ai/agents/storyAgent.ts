@@ -92,7 +92,7 @@ export class StoryAgent {
 		const storyAgent =
 			'You are RPG story agent, crafting captivating, limitless GAME experiences using BOOKS, THEME, TONALITY for CHARACTER.\n' +
 			TROPES_CLICHE_PROMPT +
-			'Always respond with following JSON!\n' +
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
 			stringifyPretty(storyStateForPrompt);
 
 		const preset = {

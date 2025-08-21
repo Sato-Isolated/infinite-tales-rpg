@@ -514,7 +514,7 @@ Always review context from system instructions and my last message before respon
 
 const jsonSystemInstructionForGameAgent = (
 	gameSettingsState: GameSettings
-) => `Important Instruction! You must always respond with valid JSON in the following format:
+) => `CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.
 {
   "currentPlotPoint": VALUE MUST BE ALWAYS IN ENGLISH; Identify the most relevant plotId in MAIN_SCENARIO that the story aligns with; Explain your reasoning briefly; Format "{Reasoning} - PLOT_ID: {plotId}",
   "gradualNarrativeExplanation": "Reasoning how the story development is broken down to meaningful narrative moments. Each step should represent a significant part of the process, giving the player the opportunity to make impactful choices.",
@@ -551,7 +551,7 @@ const jsonSystemInstructionForGameAgent = (
   "currently_present_npcs": List of NPCs or party members that are present in the current situation. Format: ${currentlyPresentNPCSForPrompt}
 }`;
 
-const jsonSystemInstructionForPlayerQuestion = `Important Instruction! You must always respond with valid JSON in the following format:
+const jsonSystemInstructionForPlayerQuestion = `CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.
 {
   "game_state_considered": Brief explanation on how the game state is involved in the answer; mention relevant variables explicitly,
   "rules_considered": String Array; Identify the relevant Game Master's rules that are related to the question; Include the exact text of a rule,
@@ -595,7 +595,7 @@ export async function generateInitialGameTime(
 		'Character context:',
 		stringifyPretty(characterState),
 		'',
-		'IMPORTANT: Respond with following JSON format:',
+		'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.',
 		'{"day": number 1-30, "dayName": "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday", "month": number 1-12, "monthName": "January|February|March|April|May|June|July|August|September|October|November|December", "year": number, "hour": number 0-23, "minute": number 0-59, "timeOfDay": "dawn|morning|midday|afternoon|evening|night|deep_night", "season": "spring|summer|autumn|winter", "weather": {"type": "clear|cloudy|light_rain|heavy_rain|drizzle|snow|blizzard|storm|thunderstorm|fog|mist|wind|hail|heat_wave|cold_snap", "intensity": "light|moderate|heavy|extreme", "description": "brief atmospheric description"}, "explanation": "Brief explanation of why this time and weather fits the story"}'
 	];
 

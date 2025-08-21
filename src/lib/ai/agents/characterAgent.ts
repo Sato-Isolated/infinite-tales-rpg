@@ -61,7 +61,7 @@ export class CharacterAgent {
 					transformInto
 			);
 		}
-		agentInstruction.push('Always respond with following JSON!\n' + characterDescriptionForPrompt);
+		agentInstruction.push('CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + characterDescriptionForPrompt);
 
 		const preset = {
 			...storyState,

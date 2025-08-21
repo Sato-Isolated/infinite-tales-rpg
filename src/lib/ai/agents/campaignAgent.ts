@@ -123,7 +123,7 @@ export class CampaignAgent {
 			mainAgent +
 			'\nProvide 3 - 6 chapters.\n' +
 			plotPointNumberPrompt +
-			'\nAlways respond with following JSON!\n' +
+			'\nCRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
 			jsonPrompt;
 
 		const preset: Partial<Campaign> = {
@@ -168,7 +168,7 @@ export class CampaignAgent {
 			'You will be given a plan for a campaign as plannedCampaign and how the actual campaign unfolded during the play session as actualCampaign.\n' +
 			'Then you must decide if the actualCampaign has deviated too much from plannedCampaign and create a nudge that gently guides the character back to follow the chapter plot.\n' +
 			'Do not micro manage every single plot point but only take care that the overall chapter and campaign stay on track.\n' +
-			'Always respond with following JSON!\n' +
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
 			`{
 				"currentChapter": Identify the most relevant chapterId in plannedCampaign that the story aligns with; Explain your reasoning briefly; Format "{Reasoning} - CHAPTER_ID: {chapterId}",
 				"currentPlotPoint": Identify the most relevant plotId in plannedCampaign that the story aligns with; Explain your reasoning briefly; Format "{Reasoning} - PLOT_ID: {plotId}",
@@ -218,7 +218,7 @@ export class CampaignAgent {
 			'The new chapter must fit within the other chapters, generate a chapter with chapterId: ' +
 				chapterNumberToGenerate
 		);
-		agentInstruction.push('Always respond with following JSON!\n' + chaptersPrompt);
+		agentInstruction.push('CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' + chaptersPrompt);
 
 		let userMessage = 'Generate the new chapter.';
 		if (chapter) {

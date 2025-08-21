@@ -34,7 +34,7 @@ export class SummaryAgent {
 			' Emphasize on the most important events, and include their details.\n' +
 			' IMPORTANT: Preserve temporal context and chronological order in your summary. Include time references (day/night, duration, sequence) when mentioned in the story.' +
 			' If you see [Time: ...] markers in the content, extract and incorporate the temporal flow into your narrative summary.' +
-			' Always respond with following JSON! {"keyDetails": string array, "story": "", "timelineEvents": [{"event": "", "timeContext": ""}]}';
+			' CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. {"keyDetails": string array, "story": "", "timelineEvents": [{"event": "", "timeContext": ""}]}';
 
 		const toSummarize = historyMessages.slice(2, (numOfLastActions + 1) * -1);
 		console.log('toSummarize', toSummarize);
@@ -68,7 +68,7 @@ export class SummaryAgent {
 			return { relatedDetails: [] };
 		}
 		const jsonPrompt =
-			'Always respond with following JSON! {"relatedDetails": [{"storyReference": string, "relevanceScore": decimal number; 0-1}] array length ' +
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. {"relatedDetails": [{"storyReference": string, "relevanceScore": decimal number; 0-1}] array length ' +
 			maxRelatedDetails +
 			'}';
 		const agent =

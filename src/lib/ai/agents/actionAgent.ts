@@ -125,7 +125,7 @@ export class ActionAgent {
 			'dice_roll modifier can be applied based on high or low resources:' +
 				'\n' +
 				stringifyPretty(characterStats.resources),
-			`Most important instruction! You must always respond with following JSON format! 
+			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)}`
 		];
 		this.addRestrainingStateToAgent(agent, restrainingState);
@@ -218,7 +218,7 @@ export class ActionAgent {
 			'dice_roll modifier can be applied based on high or low resources:' +
 				'\n' +
 				stringifyPretty(characterStats.resources),
-			`Most important instruction! You must always respond with following JSON format! 
+			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
       [
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},
 				...
@@ -363,7 +363,7 @@ export class ActionAgent {
 			'dice_roll modifier can be applied based on high or low resources:' +
 				'\n' +
 				stringifyPretty(characterStats.resources),
-			`Most important instruction! You must always respond with following JSON format! 
+			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
       [
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},
 				...
