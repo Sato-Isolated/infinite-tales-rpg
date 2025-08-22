@@ -12,13 +12,8 @@ import {
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { GEMINI_MODELS, THINKING_BUDGET } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
-
-export const diceRollPrompt = `"dice_roll": {
-						"modifier_explanation": "Keep the text short, max 15 words. Never based on attributes and skills, they are already applied! Instead based on situational factors specific to the story progression or passive attributes in spells_and_abilities and inventory. Give an in game story explanation why a modifier is applied or not and how you decided that.",
-						# If action_difficulty is difficult apply a bonus.
-						"modifier": "none|bonus|malus",
-						"modifier_value": negative number for malus, 0 if none, positive number for bonus
-					}`;
+import { diceRollPrompt } from '$lib/ai/prompts/formats';
+import { actionRules } from '$lib/ai/prompts/system';
 
 export enum InterruptProbability {
 	NEVER = 'NEVER',
@@ -172,18 +167,6 @@ export class ActionAgent {
 		return actionGenerated;
 	}
 
-	private readonly actionRules = `Action Rules:
-		- Always provide at least 3 potential actions the CHARACTER can take, fitting the THEME.
-		- Actions must be branching choices for the character, not a sequence.
-		- Keep the actions text short, max 20 words.
-		- as action text never mention meta elements like stats or difficulty, only use an in-game story driven description
-		- Review the character's spells_and_abilities and inventory for passive attributes that could alter the dice_roll
-		- NPCs and CHARACTER cannot simply be finished off with a single attack.
-		- Any action is allowed to target anything per game rules.
-		- Suggest actions that make creative use of environmental features or interactions with NPCs when possible.
-		- Only suggest actions that are plausible in the current situation.
-		- Do not suggest actions that include information the players do not know, such as undiscovered secrets or future plot points`;
-
 	async generateActions(
 		currentGameState: GameActionState,
 		historyMessages: Array<LLMMessage>,
@@ -205,7 +188,7 @@ export class ActionAgent {
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
 		const agent = [
 			'You are RPG action agent, you are given a RPG story and then suggest actions the player character can take, considering the story, currently_present_npcs and character stats.',
-			this.actionRules,
+			actionRules,
 			'The suggested actions must fit to the setting of the story:' +
 				'\n' +
 				stringifyPretty(storySettingsMapped),
@@ -350,7 +333,7 @@ export class ActionAgent {
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
 		const agent = [
 			'You are RPG action agent, you are given an item description and then suggest the actions the player character can take with that item, considering the story, currently_present_npcs and character stats.',
-			this.actionRules,
+			actionRules,
 			'The suggested actions must fit to the setting of the story:' +
 				'\n' +
 				stringifyPretty(storySettingsMapped),

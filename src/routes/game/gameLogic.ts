@@ -7,9 +7,9 @@ import {
 	type PlayerCharactersIdToNamesMap,
 	type RandomEventsHandling,
 	type ResourcesWithCurrentValue,
-	SLOW_STORY_PROMPT,
 	type Targets
 } from '$lib/ai/agents/gameAgent';
+import { SLOW_STORY_PROMPT } from '$lib/ai/prompts/shared';
 import type { StatsUpdate } from '$lib/ai/agents/combatAgent';
 import type { NpcID, NPCState, NPCStats } from '$lib/ai/agents/characterStatsAgent';
 import isPlainObject from 'lodash.isplainobject';

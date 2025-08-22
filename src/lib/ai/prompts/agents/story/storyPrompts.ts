@@ -1,11 +1,8 @@
-import { getRandomInteger, stringifyPretty } from '$lib/util.svelte';
-import type { LLM, LLMRequest } from '$lib/ai/llm';
-import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
-import isEqual from 'fast-deep-equal';
-import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
+import { TROPES_CLICHE_PROMPT } from '../../shared';
 
-export type Story = typeof storyStateForPrompt;
-
+/**
+ * Example game systems for story generation
+ */
 export const exampleGameSystems = [
 	'Pathfinder',
 	'Call of Cthulhu',
@@ -19,10 +16,9 @@ export const exampleGameSystems = [
 	'Dungeons & Dragons'
 ];
 
-// TROPES_CLICHE_PROMPT moved to prompts/shared/tropesPrompt.ts
-
-// stringifyPretty(storyStateForPrompt) works because no json included in the values
-//TODO if we remove this as object new tale form placeholder wont work anymore...
+/**
+ * Story state template for prompts
+ */
 export const storyStateForPrompt = {
 	game: 'Any Pen & Paper System e.g. Pathfinder, Call of Cthulhu, Star Wars, Fate Core, World of Darkness, GURPS, Mutants & Masterminds, Dungeons & Dragons',
 	world_details:
@@ -57,66 +53,10 @@ export const storyStateForPrompt = {
 	tags: 'Provide 4-6 keywords describing preferred genres, themes, or mood (e.g., slice-of-life, dark fantasy, political intrigue, mystery, romance, comedy, survival, etc.). These guide story tone and content.'
 };
 
-export const initialStoryState: Story = {
-	game: '',
-	world_details: '',
-	story_pace: '',
-	main_scenario: '',
-	character_simple_description: '',
-	general_image_prompt: '',
-	theme: '',
-	tonality: '',
-	background_context: '',
-	social_dynamics: '',
-	locations: '',
-	npcs: '',
-	story_catalyst: '',
-	potential_developments: '',
-	narrative_flexibility: '',
-	player_agency: '',
-	content_rating: '',
-	tags: ''
-};
-
-export class StoryAgent {
-	llm: LLM;
-
-	constructor(llm: LLM) {
-		this.llm = llm;
-	}
-
-	async generateRandomStorySettings(
-		overwrites = {},
-		characterDescription: CharacterDescription | undefined = undefined
-	): Promise<Story> {
-		const storyAgent =
-			'You are RPG story agent, crafting captivating, limitless GAME experiences using BOOKS, THEME, TONALITY for CHARACTER.\n' +
-			TROPES_CLICHE_PROMPT +
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-			stringifyPretty(storyStateForPrompt);
-
-		const preset = {
-			...storyStateForPrompt,
-			...overwrites
-		};
-		if (isEqual(overwrites, {}) && characterDescription === undefined) {
-			preset.game = exampleGameSystems[getRandomInteger(0, exampleGameSystems.length - 1)];
-		}
-		const request: LLMRequest = {
-			userMessage:
-				'Create a new randomized story considering the following settings: ' +
-				stringifyPretty(preset),
-			historyMessages: [],
-			systemInstruction: storyAgent
-		};
-		if (characterDescription) {
-			request.historyMessages?.push({
-				role: 'user',
-				content:
-					'Set following to character_simple_description; The main_scenario must be based on this;\n' +
-					stringifyPretty(characterDescription)
-			});
-		}
-		return (await this.llm.generateContent(request))?.content as Story;
-	}
-}
+/**
+ * Story agent instruction prompt
+ */
+export const storyAgentInstruction = 
+	'You are RPG story agent, crafting captivating, limitless GAME experiences using BOOKS, THEME, TONALITY for CHARACTER.\n' +
+	TROPES_CLICHE_PROMPT +
+	'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n';

@@ -2,6 +2,7 @@ import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
 import type { Ability } from './characterStatsAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
+import { eventJsonFormat } from '$lib/ai/prompts/formats';
 
 export const initialCharacterTransformState: CharacterChangedInto = {
 	changed_into: '',
@@ -34,12 +35,6 @@ export type EventEvaluation = {
 	character_changed?: CharacterChangedInto;
 	abilities_learned?: AbilitiesLearned;
 };
-
-const jsonFormat = `{
-	"reasoning": "string; Briefly explain how the character changed from the CURRENT CHARACTER DESCRIPTION and how abilities learned if any",
-	"character_changed": null | {"changed_into": "string; single word only what the character transformed into", "description": string},
-	"abilities_learned": [{"uniqueTechnicalId": string, "name": string, "effect": string}, ...]
-}`;
 
 export class EventAgent {
 	llm: LLM;
@@ -74,7 +69,7 @@ export class EventAgent {
     *   If yes, describe the new ability/spell/skill.
     *   If no, empty array.`,
 			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-				jsonFormat
+				eventJsonFormat
 		];
 
 		const request: LLMRequest = {

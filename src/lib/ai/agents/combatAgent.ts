@@ -9,6 +9,7 @@ import type {
 import { ActionDifficulty, getEmptyCriticalResourceKeys } from '../../../routes/game/gameLogic';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapStatsUpdates } from '$lib/ai/agents/mappers';
+import { statsUpdatePromptObject } from '$lib/ai/prompts/formats';
 
 export type DiceRoll = {
 	result: any;
@@ -23,26 +24,6 @@ export type StatsUpdate = {
 	value: DiceRoll;
 	type: string;
 };
-export const statsUpdatePromptObject = `
-    "stats_update": [
-        # You must include one update for each action
-        # Also include one update per turn effect like poisoned or bleeding
-        {
-        		"explanation": "Short explanation for the reason of this change",
-        		# if targetName is a NPC then resourceKey must be one of hp,mp else one of related CHARACTER resources
-        		"type": "{resourceKey}_lost|{resourceKey}_gained",
-            "sourceName": "NPC name or player CHARACTER name, who is the initiator of this action",
-            "targetName": "NPC name or player CHARACTER name, whose stats must be updated.",
-            "value": "must be dice roll notation in format 1d6+3 or 3d4 etc."
-        },
-        {
-        	 "targetName": "Player CHARACTER name who gains XP.",
-        	 "explanation": "Short explanation for the reason of this change",
-           "type": "xp_gained",
-           "value": "SMALL|MEDIUM|HIGH"
-        },
-        ...
-        ]`;
 
 export class CombatAgent {
 	llm: LLM;

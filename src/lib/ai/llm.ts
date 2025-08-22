@@ -49,8 +49,9 @@ export interface LLMconfig {
 	returnFallbackProperty?: boolean;
 }
 
-export const LANGUAGE_PROMPT =
-	'Important! Each JSON key must stay as english but the value must be translated; Enums (LOW, MEDIUM, HIGH, or any fully capitalized value) must always remain in English! Translate to following language: ';
+// LANGUAGE_PROMPT moved to prompts/shared/languagePrompt.ts
+// Re-export for backward compatibility
+export { LANGUAGE_PROMPT } from './prompts/shared';
 
 export abstract class LLM {
 	llmConfig: LLMconfig;

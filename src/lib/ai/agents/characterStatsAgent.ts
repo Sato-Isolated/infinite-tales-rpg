@@ -1,8 +1,19 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
-import { type Story, TROPES_CLICHE_PROMPT } from '$lib/ai/agents/storyAgent';
+import { type Story } from '$lib/ai/agents/storyAgent';
+import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
 import { GEMINI_MODELS } from '../geminiProvider';
+import { 
+	abilityFormatForPrompt, 
+	npcIDForPrompt, 
+	currentlyPresentNPCSForPrompt, 
+	characterStatsStateForPrompt, 
+	levelUpPrompt, 
+	npcStatsStateForPromptAsString,
+	ATTRIBUTE_MAX_VALUE,
+	ATTRIBUTE_MIN_VALUE 
+} from '$lib/ai/prompts/formats';
 
 export type Ability = {
 	name: string;
@@ -13,8 +24,6 @@ export type Ability = {
 	};
 	image_prompt: string;
 };
-export const abilityFormatForPrompt =
-	'{"name": string, "effect": "Clearly state the effect caused. If causing damage include the dice notation like 1d6+2 or 2d4", "resource_cost": if no cost null else { "resource_key": "the resource to pay for this action; one of character_stats.resources", "cost": number}, "image_prompt": short prompt for an image ai that generates an RPG game icon}';
 
 export type Resource = { max_value: number; start_value: number; game_ends_when_zero: boolean };
 
@@ -27,12 +36,8 @@ export type NPCResources = {
 	current_mp: number;
 };
 
-export const npcIDForPrompt = `{"uniqueTechnicalNameId": "A fixed, unchanging identifier that remains the same for the same NPC, regardless of state or context.", "displayName": "The name displayed to the player, which CAN change based on state or context"}`;
 export type NpcID = { uniqueTechnicalNameId: string; displayName: string };
-export const currentlyPresentNPCSForPrompt = `{"hostile": array of ${npcIDForPrompt}, "friendly": array of ${npcIDForPrompt}, "neutral": array of ${npcIDForPrompt}}`;
 
-export const ATTRIBUTE_MAX_VALUE = 10;
-export const ATTRIBUTE_MIN_VALUE = -10;
 export type CharacterStats = {
 	level: number;
 	resources: Resources;
@@ -44,14 +49,6 @@ export type CharacterStats = {
 export type SkillsProgression = {
 	[skill: string]: number;
 };
-//need to stringify ourselves because JSON stringify would double escape the string JSON
-const characterStatsStateForPrompt = `{
-	"level": Number; Level of the character according to Description of the story and character,
-    "resources": "Starting resources, based on GAME System, MAIN_SCENARIO, description and level of the character. 2 - 4 different resources, e.g. for a survival game HUNGER, WARMTH, ...; as a vampire BLOOD, etc...) Format: {"{resourceKey}": {"max_value": number, "start_value": number, "game_ends_when_zero": true if this is a critical resource; else false}, ...}",
-    "attributes": "Attributes that affect dice roll modifiers. Analyze character description to determine appropriate Attributes like Strength, Dexterity, etc. Stats can be positive (1 to ${ATTRIBUTE_MAX_VALUE}), neutral (0), or negative (${ATTRIBUTE_MIN_VALUE} to -1) based on character's strengths and weaknesses. Format: {"stat1": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, "stat2": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, ...}",
-    "skills": "Skills that affect dice roll modifiers. Analyze character description to determine appropriate skills like Swordfighting, Swimming, Thunder Magic, etc. Stats can be positive (1 to ${ATTRIBUTE_MAX_VALUE}), neutral (0), or negative (${ATTRIBUTE_MIN_VALUE} to -1) based on character's strengths and weaknesses. Format: {"stat1": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, "stat2": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, ...}",
-	"spells_and_abilities": "Array of spells and abilities according to game system and level. List 2-4 actively usable spells and abilities. They should have a cost of one resource type, although some can be without cost. At last include a 'Standard Attack' without cost. Format: [${abilityFormatForPrompt}]"
-}`;
 
 export type AiLevelUp = {
 	character_name: string;
@@ -61,13 +58,6 @@ export type AiLevelUp = {
 	ability: Ability;
 	resources: { [resourceKey: string]: number };
 };
-const levelUpPrompt = `{
-		"level_up_explanation": "Explanation why exactly this stat and ability have been increased. If already existing ability changed explain the ability changes.",
-		"attribute": "attribute name",
-		"resources": {"resourceKey": newMaximumValue, ...},
-		"ability": Existing ability leveled up or new ability according to game system and level; Format: ${abilityFormatForPrompt}
-		"formerAbilityName": "refers an already existing ability name that is changed, null if new ability is gained",
-}`;
 
 export const initialCharacterStatsState: CharacterStats = {
 	level: 0,
@@ -89,14 +79,6 @@ export type NPCStats = {
 	level: number;
 	spells_and_abilities: Array<Ability>;
 };
-
-export const npcStatsStateForPromptAsString = `{
-    "class": string,
-    "rank_enum_english": "Power ranking of the NPC. Must be one of " + ${npcRank.join('|')},
-    "level": number; scale the level to the rank and player character level,
-    "is_party_member": boolean; true if the NPC is a party member,
-    "spells_and_abilities": List 2 actively usable spells or abilities according to game system and level. The damage must be limited to only 1 dice, 1d6 or 1d8 etc. At last include a 'Standard Attack'. Format: [${abilityFormatForPrompt}]
-}`;
 
 export class CharacterStatsAgent {
 	llm: LLM;

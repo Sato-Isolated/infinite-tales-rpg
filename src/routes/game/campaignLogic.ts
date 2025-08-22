@@ -1,6 +1,7 @@
 import type { Campaign, CampaignAgent, CampaignChapter } from '$lib/ai/agents/campaignAgent';
 import type { Action } from '$lib/ai/agents/gameAgent';
-import { type GameActionState, SLOW_STORY_PROMPT } from '$lib/ai/agents/gameAgent';
+import { type GameActionState } from '$lib/ai/agents/gameAgent';
+import { SLOW_STORY_PROMPT } from '$lib/ai/prompts/shared';
 import type { LLMMessage } from '$lib/ai/llm';
 import { stringifyPretty } from '$lib/util.svelte';
 import type { Story } from '$lib/ai/agents/storyAgent';
