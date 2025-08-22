@@ -24,6 +24,7 @@ import {
 	setIsGeminiThinkingOverloaded
 } from '$lib/state/errorState.svelte';
 import { requestLLMJsonStream } from './jsonStreamHelper';
+import { parseCleanedJson } from './jsonUtils';
 
 export const GEMINI_MODELS = {
 	FLASH_THINKING_2_5: 'gemini-2.5-flash-preview-05-20',
@@ -61,7 +62,7 @@ const safetySettings: Array<SafetySetting> = [
 
 export const defaultGeminiJsonConfig: GenerationConfig = {
 	temperature: 1,
-	responseMimeType: 'text/plain'
+	responseMimeType: 'application/json'
 };
 
 export const getThoughtsFromResponse = (response: GenerateContentResponse): string => {
@@ -250,7 +251,9 @@ export class GeminiProvider extends LLM {
 				...request.config,
 				safetySettings,
 				systemInstruction,
-				temperature
+				temperature,
+				// Force JSON response for non-streaming requests
+				responseMimeType: request.stream ? 'text/plain' : 'application/json'
 			};
 			if (this.supportsThinkingBudget(modelToUse)) {
 				config.thinkingConfig = request.thinkingConfig;
@@ -291,11 +294,10 @@ export class GeminiProvider extends LLM {
 				return undefined;
 			}
 			try {
+				// Use the comprehensive JSON cleaning utility
 				return {
 					thoughts,
-					content: JSON.parse(
-						json.replaceAll('```json', '').replaceAll('```html', '').replaceAll('```', '').trim()
-					)
+					content: parseCleanedJson(json)
 				};
 			} catch (firstError) {
 				try {

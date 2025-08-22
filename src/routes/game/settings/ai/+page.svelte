@@ -8,7 +8,8 @@
 	import { goto } from '$app/navigation';
 	import {
 		CharacterStatsAgent,
-		initialCharacterStatsState
+		initialCharacterStatsState,
+		type NPCState
 	} from '$lib/ai/agents/characterStatsAgent';
 	import { initialCampaignState } from '$lib/ai/agents/campaignAgent';
 	import { onMount } from 'svelte';
@@ -46,7 +47,7 @@
 	const inventoryState = useLocalStorage('inventoryState', {});
 	const characterImageState = useLocalStorage('characterImageState');
 	const characterStatsState = useLocalStorage('characterStatsState', initialCharacterStatsState);
-	const npcState = useLocalStorage('npcState', []);
+	const npcState = useLocalStorage<NPCState>('npcState', {});
 	const storyState = useLocalStorage('storyState', initialStoryState);
 	const isGameEnded = useLocalStorage('isGameEnded', false);
 	const rollDifferenceHistoryState = useLocalStorage('rollDifferenceHistoryState', []);

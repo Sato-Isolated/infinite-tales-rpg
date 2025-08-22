@@ -2,89 +2,7 @@ import JSONParser from '@streamparser/json/jsonparser.js';
 import type { LLM, LLMRequest } from './llm';
 import type { GenerateContentResponse } from '@google/genai';
 import { GEMINI_MODELS, getThoughtsFromResponse } from './geminiProvider';
-
-/**
- * Detects and cleans HTML/XML content that interferes with JSON structure
- * Only removes HTML that appears outside of JSON string values
- */
-function cleanHtmlFromText(text: string): string {
-	// Check if we have a basic JSON structure first
-	if (!text.includes('{') || !text.includes('}')) {
-		// If no JSON structure, remove all HTML
-		const htmlTagRegex = /<[^>]*>/g;
-		const hasHtmlTags = htmlTagRegex.test(text);
-
-		if (hasHtmlTags) {
-			console.warn('HTML/XML tags detected in non-JSON response, removing all HTML...');
-			let cleaned = text.replace(/<[^>]*>/g, '');
-			cleaned = cleaned.replace(/\s+/g, ' ').trim();
-			return cleaned;
-		}
-	}
-
-	// For JSON content, only remove HTML that's clearly outside of string values
-	// Remove HTML tags that appear before the first { or after the last }
-	const firstBrace = text.indexOf('{');
-	const lastBrace = text.lastIndexOf('}');
-
-	if (firstBrace === -1 || lastBrace === -1) {
-		return text;
-	}
-
-	let cleaned = text;
-
-	// Clean HTML before first brace
-	const beforeJson = text.substring(0, firstBrace);
-	const htmlTagRegex = /<[^>]*>/g;
-	if (htmlTagRegex.test(beforeJson)) {
-		console.warn('Removing HTML tags before JSON structure...');
-		const cleanedBefore = beforeJson.replace(htmlTagRegex, '').trim();
-		cleaned = cleanedBefore + text.substring(firstBrace);
-	}
-
-	// Clean HTML after last brace
-	const afterJson = text.substring(lastBrace + 1);
-	if (htmlTagRegex.test(afterJson)) {
-		console.warn('Removing HTML tags after JSON structure...');
-		const cleanedAfter = afterJson.replace(htmlTagRegex, '').trim();
-		cleaned = cleaned.substring(0, lastBrace + 1) + cleanedAfter;
-	}
-
-	return cleaned;
-}
-
-/**
- * Enhanced JSON validation that handles common malformation patterns
- * Preserves HTML content within JSON string values
- */
-function validateAndRepairJson(text: string): string {
-	// Only clean HTML if it's clearly interfering with JSON structure
-	let cleaned = text;
-
-	// Check if we have basic JSON structure
-	if (!text.includes('{') || !text.includes('}')) {
-		// No JSON structure found, try cleaning HTML
-		cleaned = cleanHtmlFromText(text);
-	}
-
-	// Remove common non-JSON prefixes/suffixes, but be careful not to remove content within quotes
-	const firstBrace = cleaned.indexOf('{');
-	const lastBrace = cleaned.lastIndexOf('}');
-
-	if (firstBrace === -1 || lastBrace === -1) {
-		throw new Error('Content does not appear to contain valid JSON structure');
-	}
-
-	// Only trim content outside of the JSON object boundaries
-	cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-
-	// Ensure the text actually looks like JSON
-	if (!cleaned.startsWith('{') || !cleaned.endsWith('}')) {
-		throw new Error('Content does not appear to contain valid JSON structure');
-	}
-
-	return cleaned;
-}
+import { extractAndCleanJson, removeMarkdownCodeBlocks } from './jsonUtils';
 
 /**
  * Fetches a JSON stream, parses it, calls a callback for progressive
@@ -278,14 +196,24 @@ export async function requestLLMJsonStream(
 				const jsonPartInCurrentChunk = textToProcess.substring(jsonContentStartIndexInOriginal);
 				if (jsonPartInCurrentChunk.length > 0) {
 					accumulatedJsonText += jsonPartInCurrentChunk;
-					liveParser.write(jsonPartInCurrentChunk);
+					// Only write to live parser if it's not ended
+					if (!liveParser.isEnded) {
+						liveParser.write(jsonPartInCurrentChunk);
+					} else {
+						console.debug('Skipping live parser write - parser already ended');
+					}
 				}
 			}
 		} else {
 			// --- JSON already started in a previous chunk, process the whole current chunk ---
 			if (textToProcess.length > 0) {
 				accumulatedJsonText += textToProcess;
-				liveParser.write(textToProcess);
+				// Only write to live parser if it's not ended
+				if (!liveParser.isEnded) {
+					liveParser.write(textToProcess);
+				} else {
+					console.debug('Skipping live parser write - parser already ended');
+				}
 			}
 		}
 	} // End of stream loop
@@ -293,6 +221,9 @@ export async function requestLLMJsonStream(
 	console.log('--- Gemini stream ended ---');
 	liveParser.end(); // Signal end of input to the parser
 	await liveParserPromise; // Wait for the parser to finish processing buffered data
+
+	console.debug('Accumulated JSON text length:', accumulatedJsonText.length);
+	console.debug('Accumulated JSON text preview:', accumulatedJsonText.substring(0, 200));
 
 	// --- Final Cleaning and Parsing ---
 	console.log('--- Performing final cleaning and parsing ---');
@@ -338,9 +269,12 @@ export async function requestLLMJsonStream(
 
 	// Enhanced validation and repair before parsing
 	try {
-		cleanedJsonText = validateAndRepairJson(cleanedJsonText);
+		console.debug('Attempting to clean JSON with extractAndCleanJson...');
+		cleanedJsonText = extractAndCleanJson(cleanedJsonText);
+		console.debug('JSON successfully cleaned, length:', cleanedJsonText.length);
 	} catch (validationError) {
 		console.error('JSON validation failed:', validationError);
+		console.error('Failed text preview:', cleanedJsonText.substring(0, 300));
 		storyUpdateCallback('', true);
 		return undefined;
 	}
@@ -384,11 +318,11 @@ export async function requestLLMJsonStream(
 		console.error('JSON parse error after cleaning:', parseError);
 		console.error('Problematic JSON text:', cleanedJsonText.substring(0, 200) + '...');
 
-		// Attempt one more repair by removing HTML remnants
+		// Attempt one more repair by removing markdown blocks more aggressively
 		try {
-			const furtherCleaned = cleanHtmlFromText(cleanedJsonText);
+			const furtherCleaned = removeMarkdownCodeBlocks(cleanedJsonText);
 			finalJsonObject = JSON.parse(furtherCleaned);
-			console.log('--> JSON successfully parsed after additional HTML cleaning.');
+			console.log('--> JSON successfully parsed after additional markdown cleaning.');
 		} catch (secondParseError) {
 			console.error('Final JSON parsing failed completely:', secondParseError);
 			storyUpdateCallback('', true);
