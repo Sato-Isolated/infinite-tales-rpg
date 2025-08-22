@@ -224,9 +224,12 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/lib/ai/agents/*.ts`: All core agents (see Section 4 table). Do not change JSON contracts (Section 8).
   - `src/lib/ai/llm.ts`: Shared prompt fragments and language constants.
   - `src/lib/ai/llmProvider.ts`: Provider abstraction selection.
-  - `src/lib/ai/geminiProvider.ts`: Streaming story/thoughts, retries, safety settings.
+  - `src/lib/ai/geminiProvider.ts`: Modern provider using @google/genai SDK with structured output.
   - `src/lib/ai/pollinationsProvider.ts`: Image prompt build + retrieval fallback.
-  - `src/lib/ai/jsonStreamHelper.ts`: Streamed JSON parsing utilities.
+  - `src/lib/ai/config/GeminiConfigBuilder.ts`: Centralized configuration with THINKING_BUDGETS.
+  - `src/lib/ai/errors/GeminiErrorHandler.ts`: Consolidated error handling utilities.
+  - `src/lib/ai/streaming/StructuredStreamHandler.ts`: SDK-native structured streaming (replaces manual parsing).
+  - `src/lib/ai/schemas/ResponseSchemas.ts`: Type-safe response schemas using SDK Types.
 
 - State & utilities (Section 6)
   - `src/lib/state/useLocalStorage.svelte.ts`: Local storage rune-based state util. Keys listed in Section 6.

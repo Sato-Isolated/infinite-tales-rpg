@@ -10,7 +10,8 @@ import {
 	type Item
 } from '$lib/ai/agents/gameAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import { GEMINI_MODELS, THINKING_BUDGET } from '../geminiProvider';
+import { GEMINI_MODELS } from '../geminiProvider';
+import { THINKING_BUDGETS } from '../config/GeminiConfigBuilder';
 import { CombatAgent } from './combatAgent';
 import { diceRollPrompt } from '$lib/ai/prompts/formats';
 import { actionRules } from '$lib/ai/prompts/system';
@@ -109,17 +110,17 @@ export class ActionAgent {
 				- For puzzles, the player —not the character— must solve them. Offer a set of possible actions, including both correct and incorrect choices.
 				- Any action is allowed to target anything per game rules.`,
 			'The suggested action must fit to the setting of the story:' +
-				'\n' +
-				stringifyPretty(storySettingsMapped),
+			'\n' +
+			stringifyPretty(storySettingsMapped),
 			'dice_roll can be modified by following description of the character, e.g. acting smart or with force, ...' +
-				'\n' +
-				stringifyPretty(characterDescription),
+			'\n' +
+			stringifyPretty(characterDescription),
 			'dice_roll can be modified by items from the inventory:' +
-				'\n' +
-				stringifyPretty(inventoryState),
+			'\n' +
+			stringifyPretty(inventoryState),
 			'dice_roll modifier can be applied based on high or low resources:' +
-				'\n' +
-				stringifyPretty(characterStats.resources),
+			'\n' +
+			stringifyPretty(characterStats.resources),
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)}`
 		];
@@ -158,7 +159,7 @@ export class ActionAgent {
 			historyMessages,
 			systemInstruction: agent,
 			thinkingConfig: {
-				thinkingBudget: THINKING_BUDGET.FAST
+				thinkingBudget: THINKING_BUDGETS.FAST
 			}
 		};
 		console.log('action generate start time: ', new Date());
@@ -190,17 +191,17 @@ export class ActionAgent {
 			'You are RPG action agent, you are given a RPG story and then suggest actions the player character can take, considering the story, currently_present_npcs and character stats.',
 			actionRules,
 			'The suggested actions must fit to the setting of the story:' +
-				'\n' +
-				stringifyPretty(storySettingsMapped),
+			'\n' +
+			stringifyPretty(storySettingsMapped),
 			'Suggest actions according to the following description of the character temper, e.g. acting smart or with force, ...' +
-				'\n' +
-				stringifyPretty(characterDescription),
+			'\n' +
+			stringifyPretty(characterDescription),
 			'As an action, the character can make use of items from the inventory:' +
-				'\n' +
-				stringifyPretty(inventoryState),
+			'\n' +
+			stringifyPretty(inventoryState),
 			'dice_roll modifier can be applied based on high or low resources:' +
-				'\n' +
-				stringifyPretty(characterStats.resources),
+			'\n' +
+			stringifyPretty(characterStats.resources),
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
       [
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},
@@ -212,10 +213,10 @@ export class ActionAgent {
 		if (relatedHistory && relatedHistory.length > 0) {
 			agent.push(
 				'The actions must be plausible with PAST STORY PLOT;\n' +
-					'Never suggest actions to investigate PAST STORY PLOT as they are already known;\n' +
-					//make sure custom player history takes precedence
-					'If PAST STORY PLOT contradict each other, the earliest takes precedence, and the later conflicting detail must be ignored;\nPAST STORY PLOT:\n' +
-					relatedHistory.join('\n')
+				'Never suggest actions to investigate PAST STORY PLOT as they are already known;\n' +
+				//make sure custom player history takes precedence
+				'If PAST STORY PLOT contradict each other, the earliest takes precedence, and the later conflicting detail must be ignored;\nPAST STORY PLOT:\n' +
+				relatedHistory.join('\n')
 			);
 		}
 		if (customSystemInstruction) {
@@ -335,17 +336,17 @@ export class ActionAgent {
 			'You are RPG action agent, you are given an item description and then suggest the actions the player character can take with that item, considering the story, currently_present_npcs and character stats.',
 			actionRules,
 			'The suggested actions must fit to the setting of the story:' +
-				'\n' +
-				stringifyPretty(storySettingsMapped),
+			'\n' +
+			stringifyPretty(storySettingsMapped),
 			'Suggest actions according to the following description of the character temper, e.g. acting smart or with force, ...' +
-				'\n' +
-				stringifyPretty(characterDescription),
+			'\n' +
+			stringifyPretty(characterDescription),
 			'As an action, the character could also combine the item with other items from the inventory:' +
-				'\n' +
-				stringifyPretty(inventoryState),
+			'\n' +
+			stringifyPretty(inventoryState),
 			'dice_roll modifier can be applied based on high or low resources:' +
-				'\n' +
-				stringifyPretty(characterStats.resources),
+			'\n' +
+			stringifyPretty(characterStats.resources),
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
       [
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},

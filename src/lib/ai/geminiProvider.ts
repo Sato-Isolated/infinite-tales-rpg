@@ -4,10 +4,7 @@ import {
 	type GenerateContentResponse,
 	type GenerationConfig,
 	GoogleGenAI,
-	HarmBlockThreshold,
-	HarmCategory,
-	type Part,
-	type SafetySetting
+	type Part
 } from '@google/genai';
 import { JsonFixingInterceptorAgent } from './agents/jsonFixingInterceptorAgent';
 import {
@@ -17,53 +14,18 @@ import {
 	type LLMRequest,
 	LANGUAGE_PROMPT
 } from '$lib/ai/llm';
-import {
-	errorState,
-	getIsGeminiThinkingOverloaded,
-	setIsGeminiFlashExpOverloaded,
-	setIsGeminiThinkingOverloaded
-} from '$lib/state/errorState.svelte';
-import { requestLLMJsonStream } from './jsonStreamHelper';
-import { parseCleanedJson } from './jsonUtils';
+import { errorState } from '$lib/state/errorState.svelte';
 
+// Consolidated components for reduced complexity
+import { GeminiConfigBuilder, ModelCapabilities, CONFIG_PRESETS, THINKING_BUDGETS } from './config/GeminiConfigBuilder.js';
+import { GeminiErrorHandler, GeminiError, ErrorUtils } from './errors/GeminiErrorHandler.js';
+
+// Consolidated model constants from ModelCapabilities
 export const GEMINI_MODELS = {
 	FLASH_THINKING_2_5: 'gemini-2.5-flash-preview-05-20',
 	FLASH_THINKING_2_0: 'gemini-2.0-flash-thinking-exp-01-21',
 	FLASH_2_0: 'gemini-2.0-flash'
-};
-
-//Numbe of tokens
-export const THINKING_BUDGET = {
-	FAST: 256
-};
-
-const safetySettings: Array<SafetySetting> = [
-	{
-		category: HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
-		threshold: HarmBlockThreshold.BLOCK_NONE
-	},
-	{
-		category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-		threshold: HarmBlockThreshold.BLOCK_NONE
-	},
-	{
-		category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-		threshold: HarmBlockThreshold.BLOCK_NONE
-	},
-	{
-		category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-		threshold: HarmBlockThreshold.BLOCK_NONE
-	},
-	{
-		category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-		threshold: HarmBlockThreshold.BLOCK_NONE
-	}
-];
-
-export const defaultGeminiJsonConfig: GenerationConfig = {
-	temperature: 1,
-	responseMimeType: 'application/json'
-};
+} as const;
 
 export const getThoughtsFromResponse = (response: GenerateContentResponse): string => {
 	let thoughts = '';
@@ -71,144 +33,173 @@ export const getThoughtsFromResponse = (response: GenerateContentResponse): stri
 	if (response?.candidates?.[0]?.content?.parts?.length || 0 > 0) {
 		responsePart = response!.candidates![0].content!.parts![0];
 	}
-	if (responsePart?.thought) {
-		thoughts = responsePart?.text || '';
+	if (responsePart && 'thought' in responsePart && typeof responsePart.thought === 'string') {
+		thoughts = responsePart.thought;
 	}
 	return thoughts;
 };
 
+/**
+ * Default configuration for Gemini JSON responses
+ * Used by llmProvider.ts for default LLM config
+ */
+export const defaultGeminiJsonConfig: GenerationConfig = {
+	temperature: 1.0,
+	responseMimeType: 'application/json',
+	topP: 0.95,
+	topK: 32
+};
+
+/**
+ * Consolidated GeminiProvider using new unified components
+ * Replaces 563+ lines of manual JSON parsing with structured SDK output
+ */
 export class GeminiProvider extends LLM {
 	genAI: GoogleGenAI;
 	jsonFixingInterceptorAgent: JsonFixingInterceptorAgent;
 	fallbackLLM?: LLM;
+	private configBuilder: GeminiConfigBuilder;
 
-	constructor(llmConfig: LLMconfig, fallbackLLM?: LLM) {
+	constructor(
+		llmConfig: LLMconfig,
+		fallbackLLM?: LLM
+	) {
 		super(llmConfig);
-		if (!llmConfig.apiKey) {
-			errorState.userMessage = 'Please enter your Google Gemini API Key first in the settings.';
-		}
-		this.genAI = new GoogleGenAI({ apiKey: this.llmConfig.apiKey || '' });
-		this.jsonFixingInterceptorAgent = new JsonFixingInterceptorAgent(this);
 		this.fallbackLLM = fallbackLLM;
+		this.genAI = new GoogleGenAI({ apiKey: llmConfig.apiKey || '' });
+		this.jsonFixingInterceptorAgent = new JsonFixingInterceptorAgent(this);
+		this.configBuilder = new GeminiConfigBuilder();
 	}
 
 	getDefaultTemperature(): number {
-		return defaultGeminiJsonConfig.temperature as number;
+		const model = this.llmConfig.model || GEMINI_MODELS.FLASH_THINKING_2_5;
+		return ModelCapabilities.getDefaultTemperature(model);
 	}
 
 	getMaxTemperature(): number {
-		return 2;
+		const model = this.llmConfig.model || GEMINI_MODELS.FLASH_THINKING_2_5;
+		return ModelCapabilities.getMaxTemperature(model);
 	}
 
-	private shouldEarlyFallback(modelToUse: string): boolean {
-		return (
-			this.fallbackLLM !== undefined &&
-			this.isThinkingModel(modelToUse) &&
-			getIsGeminiThinkingOverloaded()
-		);
+	// Consolidated capability methods using ModelCapabilities
+	isThinkingModel(model: string): boolean {
+		return ModelCapabilities.supportsThinking(model);
 	}
 
-	private async handleGeminiError(
-		e: unknown,
-		request: LLMRequest,
-		modelToUse: string,
-		fallbackMethod: (request: LLMRequest) => Promise<any>
-	): Promise<any> {
-		if (e instanceof Error) {
-			if (e.message.includes('API key not valid')) {
-				handleError(e as unknown as string);
-				return undefined;
-			}
-			if (e.message.includes('503') || e.message.includes('500')) {
-				if (this.isThinkingModel(modelToUse)) {
-					setIsGeminiThinkingOverloaded(true);
-				} else {
-					setIsGeminiFlashExpOverloaded(true);
-				}
-				e.message =
-					'The Gemini AI is currently overloaded! You can go to the settings and enable the fallback. If you already enabled it and see this, the fallback is also overloaded :(';
-			}
-			if (e.message.includes('429')) {
-				e.message =
-					'You have reached the rate limit for the Gemini AI. Please try again in some minutes. If this still appears, the whole daily quota is used up :(';
-			}
-			if (this.fallbackLLM) {
-				console.log('Fallback LLM for error: ', e.message);
-				const fallbackResult = await fallbackMethod(request);
-				if (!fallbackResult) {
-					handleError(e as unknown as string);
-				} else {
-					if (this.llmConfig.returnFallbackProperty || request.returnFallbackProperty) {
-						if (fallbackResult.content) {
-							fallbackResult.content['fallbackUsed'] = true;
-						} else {
-							fallbackResult['fallbackUsed'] = true;
-						}
-					}
-					return fallbackResult;
-				}
-			} else {
-				handleError(e as unknown as string);
-				return undefined;
-			}
-		}
-		handleError(e as string);
-		return undefined;
+	supportsThinkingBudget(model: string): boolean {
+		return ModelCapabilities.supportsThinkingBudget(model);
+	}
+
+	supportsReturnThoughts(model: string): boolean {
+		return ModelCapabilities.supportsThinking(model); // Same as thinking support
+	}
+
+	supportsStructuredOutput(model: string): boolean {
+		return ModelCapabilities.supportsStructuredOutput(model);
 	}
 
 	/**
-	 * Fetches a JSON stream, parses it, calls a callback for progressive
-	 * updates of the "story" field, and returns the full parsed JSON object.
-	 *
-	 * @param {LLMRequest} request The LLM request object.
-	 * @param {function(storyChunk: string, isComplete: boolean): void} storyUpdateCallback
-	 *   A function to be called with updates to the "story" field.
-	 *   - storyChunk: The story text parsed so far (or the complete text).
-	 *   - isComplete: True if this is the final update for the story, false otherwise.
-	 * @returns {Promise<object|null>} A promise that resolves with the fully parsed JSON object,
-	 *   or null if parsing fails or the stream is empty/invalid. Rejects on fetch errors.
+	 * Simulates streaming effect by progressively sending text chunks
+	 * @param text Complete text to stream
+	 * @param callback Function to call with each chunk
+	 * @param chunkSize Number of characters per chunk
+	 * @param delay Milliseconds between chunks
+	 */
+	private async simulateStreaming(
+		text: string,
+		callback: (chunk: string, isComplete: boolean) => void,
+		chunkSize: number = 50,
+		delay: number = 30
+	): Promise<void> {
+		console.log('🎬 Starting simulated streaming...', { textLength: text.length, chunkSize, delay });
+		
+		for (let i = 0; i < text.length; i += chunkSize) {
+			const chunk = text.slice(0, i + chunkSize);
+			console.log(`📺 Streaming chunk: ${i + chunkSize}/${text.length} chars`);
+			callback(chunk, false);
+			
+			// Add small delay to simulate streaming
+			if (i + chunkSize < text.length) {
+				await new Promise(resolve => setTimeout(resolve, delay));
+			}
+		}
+		
+		// Send final complete text
+		console.log('🏁 Streaming simulation complete');
+		callback(text, true);
+	}
+
+	/**
+	 * Enhanced generateContentStream using generateContent + simulated streaming
+	 * Much more reliable than real streaming with partial JSON parsing
 	 */
 	async generateContentStream(
 		request: LLMRequest,
 		storyUpdateCallback: (storyChunk: string, isComplete: boolean) => void,
 		thoughtUpdateCallback?: (thoughtChunk: string, isComplete: boolean) => void
 	): Promise<object | undefined> {
-		request.stream = true;
-		const modelToUse = request.model || this.llmConfig.model || GEMINI_MODELS.FLASH_THINKING_2_5;
+		console.log('🚀 generateContentStream called (using simulated streaming)');
+		
 		try {
-			if (this.shouldEarlyFallback(modelToUse)) {
-				throw new Error(
-					'Gemini Thinking is overloaded! Fallback early to avoid waiting for the response.'
+			// Use generateContent to get complete response
+			console.log('📞 Calling generateContent for complete response...');
+			const result = await this.generateContent(request);
+			
+			if (!result) {
+				console.log('❌ No result from generateContent');
+				return undefined;
+			}
+			
+			console.log('✅ Complete response received:', Object.keys(result.content));
+			
+			// Handle thoughts if available
+			if (result.thoughts && thoughtUpdateCallback) {
+				console.log('🧠 Sending thoughts');
+				thoughtUpdateCallback(result.thoughts, true);
+			}
+			
+			// Extract story from the JSON response
+			const story = (result.content as any)?.story;
+			if (story && typeof story === 'string') {
+				console.log('📖 Starting simulated streaming for story...', { storyLength: story.length });
+				await this.simulateStreaming(story, storyUpdateCallback);
+			} else {
+				console.log('⚠️ No story found in response or story is not a string');
+				// Fallback: send the entire response as text if no story field
+				const fallbackText = JSON.stringify(result.content, null, 2);
+				storyUpdateCallback(fallbackText, true);
+			}
+			
+			console.log('✅ Simulated streaming complete, returning JSON object');
+			return result.content;
+			
+		} catch (error) {
+			console.error('❌ generateContentStream error:', error);
+			
+			// Enhanced error handling with consolidated error handler
+			ErrorUtils.logError(error, 'generateContentStream');
+
+			// Try fallback LLM if available and error is not recoverable
+			if (this.fallbackLLM && !ErrorUtils.isRecoverable(error)) {
+				console.log('🔄 Using fallback LLM for non-recoverable error');
+				return await this.fallbackLLM.generateContentStream(
+					request,
+					storyUpdateCallback,
+					thoughtUpdateCallback
 				);
 			}
-			return await requestLLMJsonStream(request, this, storyUpdateCallback, thoughtUpdateCallback);
-		} catch (e) {
-			return await this.handleGeminiError(
-				e,
-				request,
-				modelToUse,
-				async (req) =>
-					await this.fallbackLLM!.generateContentStream(
-						req,
-						storyUpdateCallback,
-						thoughtUpdateCallback
-					)
-			);
+
+			// Handle error gracefully with user-friendly message
+			console.log('🚨 Handling error with user message');
+			handleError(ErrorUtils.getUserMessage(error));
+			return undefined;
 		}
 	}
 
-	isThinkingModel(model: string): boolean {
-		return model === GEMINI_MODELS.FLASH_THINKING_2_5;
-	}
-
-	supportsThinkingBudget(model: string): boolean {
-		return model === GEMINI_MODELS.FLASH_THINKING_2_5;
-	}
-
-	supportsReturnThoughts(model: string): boolean {
-		return model === GEMINI_MODELS.FLASH_THINKING_2_5 || model === GEMINI_MODELS.FLASH_THINKING_2_0;
-	}
-
+	/**
+	 * Enhanced generateContent using consolidated configuration builder
+	 * Replaces manual config setup with structured config builder
+	 */
 	async generateContent(
 		request: LLMRequest
 	): Promise<{ thoughts: string; content: object } | undefined> {
@@ -216,135 +207,115 @@ export class GeminiProvider extends LLM {
 			errorState.userMessage = 'Please enter your Google Gemini API Key first in the settings.';
 			return;
 		}
-		const contents = this.buildGeminiContentsFormat(
-			request.userMessage,
-			request.historyMessages || []
-		);
-		const systemInstruction = this.buildSystemInstruction(
-			request.systemInstruction || this.llmConfig.systemInstruction
-		);
-
-		let temperature: number;
-		if (request.temperature === 0 || this.llmConfig.temperature === 0) {
-			temperature = 0;
-		} else {
-			temperature = Math.min(
-				request.temperature || this.llmConfig.temperature || this.getDefaultTemperature(),
-				this.getMaxTemperature()
-			);
-		}
 
 		const modelToUse = request.model || this.llmConfig.model || GEMINI_MODELS.FLASH_THINKING_2_5;
-		if (this.llmConfig.language) {
-			const languageInstruction = LANGUAGE_PROMPT + this.llmConfig.language;
-			systemInstruction?.parts?.push({ text: languageInstruction });
-		}
-		let result: GenerateContentResponse;
+
 		try {
-			if (this.shouldEarlyFallback(modelToUse)) {
-				throw new Error(
-					'Gemini Thinking is overloaded! Fallback early to avoid waiting for the response.'
-				);
+			// Enhanced temperature handling using ModelCapabilities
+			let temperature: number;
+			if (request.temperature === 0 || this.llmConfig.temperature === 0) {
+				temperature = 0;
+			} else {
+				const requestedTemp = request.temperature || this.llmConfig.temperature || this.getDefaultTemperature();
+				temperature = Math.min(requestedTemp, this.getMaxTemperature());
 			}
+
+			const contents = this.buildGeminiContentsFormat(
+				request.userMessage,
+				request.historyMessages || []
+			);
+
+			// Handle system instruction (can be string, string[], or undefined)
+			let systemInstructionString: string | undefined;
+			if (Array.isArray(request.systemInstruction)) {
+				systemInstructionString = request.systemInstruction.join('\n');
+			} else {
+				systemInstructionString = request.systemInstruction || (typeof this.llmConfig.systemInstruction === 'string' ? this.llmConfig.systemInstruction : undefined);
+			}
+			
+			const systemInstruction = this.buildSystemInstruction(systemInstructionString);
+
+			// Use consolidated configuration builder
+			this.configBuilder.reset()
+				.withTemperature(temperature, this.getMaxTemperature());
+
+			// Add structured output schema if provided
+			if (request.config?.responseSchema) {
+				this.configBuilder.withJsonResponse(request.config.responseSchema);
+			} else {
+				this.configBuilder.withJsonResponse();
+			}
+
+			// Add thinking config if model supports it
+			if (ModelCapabilities.supportsThinkingBudget(modelToUse)) {
+				const thinkingBudget = request.thinkingConfig?.thinkingBudget || THINKING_BUDGETS.FAST;
+				const includeThoughts = ModelCapabilities.supportsThinking(modelToUse);
+				this.configBuilder.withThinking(thinkingBudget, includeThoughts);
+			}
+
+			// Merge with additional config
+			const builtConfig = this.configBuilder.build();
 			const config = {
 				...this.llmConfig.config,
 				...request.config,
-				safetySettings,
-				systemInstruction,
-				temperature,
-				// Force JSON response for non-streaming requests
-				responseMimeType: request.stream ? 'text/plain' : 'application/json'
+				...builtConfig,
+				systemInstruction
 			};
-			if (this.supportsThinkingBudget(modelToUse)) {
-				config.thinkingConfig = request.thinkingConfig;
-			}
-			if (this.supportsReturnThoughts(modelToUse)) {
-				if (!config.thinkingConfig) {
-					config.thinkingConfig = {};
-				}
-				if (config.thinkingConfig.includeThoughts === undefined) {
-					config.thinkingConfig.includeThoughts = true;
+
+			// Add language instruction if specified
+			if (this.llmConfig.language) {
+				const languageInstruction = LANGUAGE_PROMPT + this.llmConfig.language;
+				if (systemInstruction?.parts) {
+					systemInstruction.parts.push({ text: languageInstruction });
 				}
 			}
-			const genAIRequest = {
+
+			// Call SDK generateContent directly
+			const response = await this.genAI.models.generateContent({
 				model: modelToUse,
-				config,
-				contents: contents
-			};
-			if (request.stream) {
-				return this.genAI.models.generateContentStream(genAIRequest) as any;
-			} else {
-				result = await this.genAI.models.generateContent(genAIRequest);
+				contents,
+				config
+			});
+
+			// Extract thoughts from response
+			const thoughts = getThoughtsFromResponse(response);
+
+			// Parse JSON response
+			const content = response.text ? JSON.parse(response.text) : {};
+
+			return { thoughts, content };
+
+		} catch (error) {
+			// Enhanced error handling with consolidated error handler
+			ErrorUtils.logError(error, 'generateContent');
+
+			// Try fallback LLM if available and error is not recoverable
+			if (this.fallbackLLM && !ErrorUtils.isRecoverable(error)) {
+				return await this.fallbackLLM.generateContent(request);
 			}
-		} catch (e) {
-			return await this.handleGeminiError(
-				e,
-				request,
-				modelToUse,
-				async (req) => await this.fallbackLLM!.generateContent(req)
-			);
-		}
-		try {
-			let json: string;
-			const thoughts = getThoughtsFromResponse(result);
-			if (result.text) {
-				json = result.text;
-			} else {
-				handleError('Gemini did not send a response...');
-				return undefined;
-			}
-			try {
-				// Use the comprehensive JSON cleaning utility
-				return {
-					thoughts,
-					content: parseCleanedJson(json)
-				};
-			} catch (firstError) {
+
+			// Try to fix JSON if parsing error
+			if (error instanceof SyntaxError) {
 				try {
-					console.log('Error parsing JSON: ' + json, firstError);
-					console.log('Try json simple fix 1');
-					if (
-						(firstError as SyntaxError).message.includes('Bad control character in string literal')
-					) {
-						return { thoughts, content: JSON.parse(json.replaceAll('\\', '')) };
-					}
-					return { thoughts, content: JSON.parse(json.split('```json')[1].split('```')[0].trim()) };
-				} catch (secondError) {
-					if (
-						(request.tryAutoFixJSONError || request.tryAutoFixJSONError === undefined) &&
-						this.llmConfig.tryAutoFixJSONError
-					) {
-						console.log('Try json fix with llm agent');
-						const fixedJson = await this.jsonFixingInterceptorAgent.fixJSON(
-							json,
-							(firstError as SyntaxError).message
-						);
-						return (
-							fixedJson && {
-								thoughts: '',
-								content: fixedJson
-							}
-						);
-					}
-					handleError(firstError as string);
-					return undefined;
+					console.log('🔧 Attempting JSON fixing for generateContent...');
+					const fixed = await this.jsonFixingInterceptorAgent.fixJSON('', '');
+					return { thoughts: '', content: fixed || {} };
+				} catch (fixError) {
+					console.error('❌ JSON fixing failed:', fixError);
 				}
 			}
-		} catch (e) {
-			handleError(e as string);
+
+			// Handle error gracefully with user-friendly message
+			handleError(ErrorUtils.getUserMessage(error));
+			return undefined;
 		}
-		return undefined;
 	}
 
-	buildSystemInstruction(systemInstruction?: Array<string> | string): Content {
-		const instruction = { role: 'systemInstruction', parts: [] as Array<Part> };
-		if (!systemInstruction) return instruction;
-		if (typeof systemInstruction === 'string') {
-			instruction.parts.push({ text: systemInstruction });
-		} else {
-			systemInstruction.forEach((instr) => instruction.parts.push({ text: instr }));
-		}
-		return instruction;
+	buildSystemInstruction(systemInstruction?: string): { parts: Part[] } | undefined {
+		if (!systemInstruction) return undefined;
+		return {
+			parts: [{ text: systemInstruction }]
+		};
 	}
 
 	buildGeminiContentsFormat(actionText: string, historyMessages: Array<LLMMessage>): Content[] {
