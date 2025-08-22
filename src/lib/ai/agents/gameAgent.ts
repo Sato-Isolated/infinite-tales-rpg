@@ -204,6 +204,14 @@ export class GameAgent {
 			storyUpdateCallback,
 			thoughtUpdateCallback
 		)) as GameActionState;
+
+		// Validate that we got a valid response from the LLM
+		if (!newState) {
+			console.error('GameAgent: LLM generateContentStream returned undefined/null');
+			throw new Error('Game generation failed: No response from AI model');
+		}
+
+		console.log('GameAgent: Successfully generated new state, building history messages...');
 		const { userMessage, modelMessage } = this.buildHistoryMessages(
 			playerActionTextForHistory,
 			newState,
@@ -344,14 +352,29 @@ export class GameAgent {
 	) {
 		const userMessage: LLMMessage = { role: 'user', content: userText };
 
+		// Secure access to modelStateObject properties with null safety
+		if (!modelStateObject) {
+			console.warn('GameAgent: modelStateObject is undefined, using fallback');
+			return {
+				userMessage,
+				modelMessage: {
+					role: 'model' as const,
+					content: stringifyPretty({
+						story: '[No previous story available]',
+						error: 'Model state object was undefined'
+					})
+				}
+			};
+		}
+
 		// Add temporal context hidden in history to improve narrative consistency
 		const timePassedText = modelStateObject?.time_passed_minutes
 			? ` | Action duration: ${modelStateObject.time_passed_minutes}min`
 			: '';
 
 		const storyWithTimeContext = gameTime
-			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay} | Season: ${gameTime.season || 'Unknown'} | Weather: ${gameTime.weather?.description || `${gameTime.weather?.type || 'clear'} (${gameTime.weather?.intensity || 'light'})`}${timePassedText}]\n${modelStateObject.story}`
-			: modelStateObject.story;
+			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay} | Season: ${gameTime.season || 'Unknown'} | Weather: ${gameTime.weather?.description || `${gameTime.weather?.type || 'clear'} (${gameTime.weather?.intensity || 'light'})`}${timePassedText}]\n${modelStateObject?.story || '[No story content]'}`
+			: (modelStateObject?.story || '[No story content]');
 
 		const modelMessage: LLMMessage = {
 			role: 'model',
