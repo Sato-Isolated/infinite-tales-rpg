@@ -4,6 +4,99 @@
  */
 
 /**
+ * Attempts to repair incomplete JSON that may be truncated from streaming
+ * Tries to close unclosed objects and arrays
+ */
+function tryRepairIncompleteJson(jsonText: string): string | null {
+	try {
+		// Try parsing as-is first
+		JSON.parse(jsonText);
+		return jsonText; // Already valid
+	} catch {
+		// Not valid JSON, try to repair
+	}
+
+	// Track braces and brackets to repair incomplete JSON
+	let braceCount = 0;
+	let bracketCount = 0;
+	let lastCompletePosition = -1;
+
+	for (let i = 0; i < jsonText.length; i++) {
+		const char = jsonText[i];
+		if (char === '{') braceCount++;
+		else if (char === '}') braceCount--;
+		else if (char === '[') bracketCount++;
+		else if (char === ']') bracketCount--;
+
+		// Track the last position where all braces/brackets were balanced
+		if (braceCount === 0 && bracketCount === 0) {
+			lastCompletePosition = i;
+		}
+	}
+
+	// If we found a balanced position, truncate there
+	if (lastCompletePosition > 0) {
+		const truncated = jsonText.substring(0, lastCompletePosition + 1);
+		try {
+			JSON.parse(truncated);
+			console.debug('Successfully truncated incomplete JSON');
+			return truncated;
+		} catch {
+			// Truncation didn't help
+		}
+	}
+
+	// Try to close unclosed braces/brackets
+	let repaired = jsonText.trim();
+	
+	// Remove any incomplete trailing content that's clearly not JSON
+	const lastValidChar = Math.max(
+		repaired.lastIndexOf('}'),
+		repaired.lastIndexOf(']'),
+		repaired.lastIndexOf('"')
+	);
+	
+	if (lastValidChar > 0) {
+		// Find if there's incomplete content after the last valid character
+		const afterLast = repaired.substring(lastValidChar + 1).trim();
+		if (afterLast && !afterLast.match(/^[,\s}]]*$/)) {
+			// There's incomplete content, truncate it
+			repaired = repaired.substring(0, lastValidChar + 1);
+		}
+	}
+
+	// Try to balance braces
+	braceCount = 0;
+	bracketCount = 0;
+	
+	for (const char of repaired) {
+		if (char === '{') braceCount++;
+		else if (char === '}') braceCount--;
+		else if (char === '[') bracketCount++;
+		else if (char === ']') bracketCount--;
+	}
+
+	// Add missing closing braces and brackets
+	while (bracketCount > 0) {
+		repaired += ']';
+		bracketCount--;
+	}
+	while (braceCount > 0) {
+		repaired += '}';
+		braceCount--;
+	}
+
+	try {
+		JSON.parse(repaired);
+		console.debug('Successfully repaired incomplete JSON');
+		return repaired;
+	} catch {
+		console.debug('Could not repair incomplete JSON');
+		return null;
+	}
+}
+
+/**
  * Conservative markdown code block removal - only removes clear markdown wrappers
  * Preserves any content that might be legitimate JSON data
  */
@@ -87,8 +180,23 @@ export function extractJsonConservatively(text: string): string {
 		// Continue to next step
 	}
 
-	// Step 4: Extract content between first { and last } (most invasive)
+	// Step 4: Try to repair incomplete JSON (for streaming issues)
 	const firstBrace = cleaned.indexOf('{');
+	if (firstBrace !== -1) {
+		const fromFirstBrace = cleaned.substring(firstBrace);
+		const repairedJson = tryRepairIncompleteJson(fromFirstBrace);
+		if (repairedJson) {
+			try {
+				JSON.parse(repairedJson);
+				console.debug('JSON repaired successfully');
+				return repairedJson;
+			} catch {
+				console.debug('Repaired JSON still invalid');
+			}
+		}
+	}
+
+	// Step 5: Extract content between first { and last } (most invasive)
 	const lastBrace = cleaned.lastIndexOf('}');
 	
 	if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
@@ -104,7 +212,7 @@ export function extractJsonConservatively(text: string): string {
 		}
 	}
 	
-	// Step 5: Try to extract from original text (fallback for streaming issues)
+	// Step 6: Try to extract from original text (fallback for streaming issues)
 	const originalFirstBrace = text.indexOf('{');
 	const originalLastBrace = text.lastIndexOf('}');
 	

@@ -69,6 +69,15 @@ export const initialCharacterStatsState: CharacterStats = {
 
 export const npcRank = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
 
+export type Relationship = {
+	target_npc_id?: string; // ID du NPC cible (undefined si relation avec le joueur)
+	target_name: string; // Nom de la cible (joueur ou autre NPC)
+	relationship_type: 'family' | 'friend' | 'romantic' | 'enemy' | 'acquaintance' | 'professional' | 'other';
+	specific_role?: string; // Ex: "sister", "brother", "father", "mother", "colleague", "boss", etc.
+	emotional_bond: 'very_negative' | 'negative' | 'neutral' | 'positive' | 'very_positive';
+	description: string; // Description de la relation et comment elle doit influencer les interactions
+};
+
 export type NPCState = { [uniqueTechnicalNameId: string]: NPCStats };
 export type NPCStats = {
 	known_names?: string[];
@@ -78,6 +87,10 @@ export type NPCStats = {
 	rank_enum_english: string;
 	level: number;
 	spells_and_abilities: Array<Ability>;
+	relationships?: Array<Relationship>; // Relations avec d'autres NPCs et le joueur
+	personality_traits?: string[]; // Traits de personnalité qui influencent le comportement
+	speech_patterns?: string; // Façon de parler spécifique (accent, expressions, etc.)
+	background_notes?: string; // Notes sur l'histoire personnelle et les motivations
 };
 
 export class CharacterStatsAgent {
@@ -226,6 +239,10 @@ export class CharacterStatsAgent {
 			'Scale the stats and abilities according to the player character level: ' +
 				characterStats.level +
 				'\n',
+			'IMPORTANT: Generate meaningful relationships between NPCs and with the player character based on the story context.',
+			'Family relationships must be logical and consistent (sister/brother, parent/child, etc.).',
+			'Include personality traits and speech patterns that make each NPC unique and memorable.',
+			'Background notes should explain WHY each NPC behaves the way they do.',
 			TROPES_CLICHE_PROMPT,
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
                             {"uniqueTechnicalNameId": ${npcStatsStateForPromptAsString}, ...}`

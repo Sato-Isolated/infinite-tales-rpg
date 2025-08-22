@@ -52,27 +52,32 @@
 				aiConfigState.value?.useFallbackLlmState
 			)
 		);
-		
+
 		beforeNavigate(() => {
 			// For new character creation, we need to generate a unique ID
 			let playerCharacterId = getCharacterTechnicalId(
 				playerCharactersIdToNamesMapState.value,
 				characterState.value.name
 			);
-			
+
 			// If character doesn't exist yet, create a new unique ID
 			if (!playerCharacterId) {
 				playerCharacterId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 				console.log('Generated new player character ID:', playerCharacterId);
 			}
-			
+
 			if (playerCharacterId) {
 				addCharacterToPlayerCharactersIdToNamesMap(
 					playerCharactersIdToNamesMapState.value,
 					playerCharacterId,
 					characterState.value.name
 				);
-				console.log('Added character to player map:', characterState.value.name, 'with ID:', playerCharacterId);
+				console.log(
+					'Added character to player map:',
+					characterState.value.name,
+					'with ID:',
+					playerCharacterId
+				);
 			} else {
 				console.error('Player character id not found to add new name');
 			}

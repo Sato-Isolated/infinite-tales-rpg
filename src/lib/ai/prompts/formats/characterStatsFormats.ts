@@ -53,7 +53,20 @@ export const npcStatsStateForPromptAsString = `{
 	"rank": "Very Weak|Weak|Average|Strong|Boss|Legendary",
 	"is_friendly": true if friendly,
 	"hp": "The NPCs Hit Points. Always use the key 'hp', not 'health' or any other variation",
-	"mp": "The NPCs Mana Points. Always use the key 'mp', not 'mana' or any other variation"
+	"mp": "The NPCs Mana Points. Always use the key 'mp', not 'mana' or any other variation",
+	"relationships": [
+		{
+			"target_npc_id": "ID of target NPC (optional, undefined if relation with player)",
+			"target_name": "Name of target (player or other NPC)",
+			"relationship_type": "family|friend|romantic|enemy|acquaintance|professional|other",
+			"specific_role": "Specific role like 'sister', 'brother', 'father', 'mother', 'colleague', 'boss', etc.",
+			"emotional_bond": "very_negative|negative|neutral|positive|very_positive",
+			"description": "Detailed description of the relationship and how it influences interactions"
+		}
+	],
+	"personality_traits": ["Array of personality traits that influence behavior"],
+	"speech_patterns": "How the NPC speaks (accent, expressions, tone, specific words they use)",
+	"background_notes": "Personal history, motivations, and context that explains their behavior"
 }`;
 
 export const npcRank = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];

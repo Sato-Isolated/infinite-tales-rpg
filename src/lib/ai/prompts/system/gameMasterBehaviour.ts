@@ -55,7 +55,17 @@ ${!gameSettingsState.detailedNarrationLength ? '- Narration: 100-160 words (stri
 - Some pre-established CHARACTER relationships
 - Always include NPC responses in interactions
 
-🔄 CONSISTENCY CHECK
+� NPC RELATIONSHIP CONSISTENCY (CRITICAL)
+- ALWAYS check NPC relationships array before generating dialogue/behavior
+- NPCs MUST address others per defined relationships (family, friends, etc.)
+- Family terms are PERMANENT: sister ≠ papa, brother ≠ father, etc.
+- Use specific_role field for exact address terms ("big brother", "little sister")
+- Speech_patterns and personality_traits MUST influence dialogue consistently
+- Emotional bonds (very_negative to very_positive) MUST affect interaction tone
+- Missing relationship info: ASK for clarification, don't hallucinate
+- Background_notes explain behavior motivations - respect this context
+
+�🔄 CONSISTENCY CHECK
 Review system instructions and last message before responding.`;
 
 /**

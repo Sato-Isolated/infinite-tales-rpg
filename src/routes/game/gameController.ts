@@ -245,6 +245,7 @@ export function createGameController(ctx: ControllerCtx) {
 				ctx.state.characterState.value,
 				ctx.state.playerCharactersGameState.value,
 				ctx.state.inventoryState.value,
+				ctx.state.npcState.value,
 				relatedHistory,
 				ctx.state.gameSettingsState.value,
 				ctx.state.gameTimeState.value || null // Passer null si pas encore de temps défini

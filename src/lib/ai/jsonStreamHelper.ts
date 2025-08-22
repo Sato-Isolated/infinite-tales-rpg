@@ -275,6 +275,24 @@ export async function requestLLMJsonStream(
 	} catch (validationError) {
 		console.error('JSON validation failed:', validationError);
 		console.error('Failed text preview:', cleanedJsonText.substring(0, 300));
+		
+		// Try to use the JSON fixing agent if available on the LLM provider
+		if ('jsonFixingInterceptorAgent' in llm && (llm as any).jsonFixingInterceptorAgent) {
+			console.log('Attempting JSON repair with JsonFixingInterceptorAgent...');
+			try {
+				const fixedJson = await (llm as any).jsonFixingInterceptorAgent.fixJSON(
+					cleanedJsonText,
+					(validationError as Error).message
+				);
+				if (fixedJson) {
+					console.log('JSON successfully repaired by agent');
+					return fixedJson;
+				}
+			} catch (agentError) {
+				console.warn('JSON fixing agent failed:', agentError);
+			}
+		}
+		
 		storyUpdateCallback('', true);
 		return undefined;
 	}
