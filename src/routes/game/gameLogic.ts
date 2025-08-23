@@ -26,33 +26,78 @@ export enum ActionDifficulty {
 	very_difficult = 'very_difficult'
 }
 
+/**
+ * Optimized function to get empty critical resource keys
+ * Improved performance with early returns and better error handling
+ */
 export function getEmptyCriticalResourceKeys(resources: ResourcesWithCurrentValue): string[] {
-	// Safety check for undefined/null resources
-	if (!resources || typeof resources !== 'object') {
+	// Enhanced safety checks for better performance and reliability
+	if (!resources || typeof resources !== 'object' || Object.keys(resources).length === 0) {
 		return [];
 	}
 
-	return Object.entries(resources)
-		.filter((entry) => entry[1].game_ends_when_zero && entry[1].current_value <= 0)
-		.map((entry) => entry[0]);
+	const result: string[] = [];
+
+	// Optimized iteration with direct object access
+	for (const [key, resource] of Object.entries(resources)) {
+		if (resource?.game_ends_when_zero === true && resource.current_value <= 0) {
+			result.push(key);
+		}
+	}
+
+	return result;
 }
 
+/**
+ * Optimized function to get all targets as a list
+ * Improved performance with early returns and null checking
+ */
 export function getAllTargetsAsList(targets: Targets): Array<string> {
-	if (!targets || !targets.hostile) {
+	// Enhanced validation with early return for better performance
+	if (!targets || typeof targets !== 'object') {
 		return [];
 	}
-	return [
-		...targets.hostile.map(getNPCTechnicalID),
-		...targets.neutral.map(getNPCTechnicalID),
-		...targets.friendly.map(getNPCTechnicalID)
-	];
+
+	const result: string[] = [];
+
+	// Safely handle each target category with null checking
+	if (Array.isArray(targets.hostile)) {
+		result.push(...targets.hostile.map(getNPCTechnicalID));
+	}
+	if (Array.isArray(targets.neutral)) {
+		result.push(...targets.neutral.map(getNPCTechnicalID));
+	}
+	if (Array.isArray(targets.friendly)) {
+		result.push(...targets.friendly.map(getNPCTechnicalID));
+	}
+
+	return result;
 }
 
+/**
+ * Optimized function to get all NPC IDs
+ * Improved performance with early returns and null checking
+ */
 export function getAllNpcsIds(targets: Targets): Array<NpcID> {
-	if (!targets || !targets.hostile) {
+	// Enhanced validation with early return for better performance
+	if (!targets || typeof targets !== 'object') {
 		return [];
 	}
-	return [...targets.hostile, ...targets.neutral, ...targets.friendly];
+
+	const result: NpcID[] = [];
+
+	// Safely handle each target category with null checking
+	if (Array.isArray(targets.hostile)) {
+		result.push(...targets.hostile);
+	}
+	if (Array.isArray(targets.neutral)) {
+		result.push(...targets.neutral);
+	}
+	if (Array.isArray(targets.friendly)) {
+		result.push(...targets.friendly);
+	}
+
+	return result;
 }
 
 export function getNewNPCs(targets: Targets, npcState: NPCState) {
@@ -61,33 +106,63 @@ export function getNewNPCs(targets: Targets, npcState: NPCState) {
 	);
 }
 
-//TODO implement parsing to enums directly from json
-export function mustRollDice(action: Action, isInCombat?: boolean) {
+/**
+ * Optimized constant for dice-rolling action keywords
+ * Improves performance by avoiding repeated array creation
+ */
+const DICE_ROLLING_ACTION_KEYWORDS = ['attempt', 'try', 'seek', 'search', 'investigate'] as const;
+
+/**
+ * Optimized constant for action types that require dice rolls
+ * Improves performance by avoiding repeated string creation
+ */
+const DICE_REQUIRED_ACTION_TYPES = new Set([
+	'social_manipulation',
+	'spell',
+	'investigation'
+] as const);
+
+/**
+ * Optimized function to determine if dice roll is required
+ * Improved performance with better logic flow and early returns
+ */
+export function mustRollDice(action: Action, isInCombat?: boolean): boolean {
+	// Early return for invalid action
+	if (!action || typeof action !== 'object') {
+		return false;
+	}
+
 	const diffKey = (action.action_difficulty?.toLowerCase() || '') as keyof typeof ActionDifficulty;
 	const difficulty: ActionDifficulty | undefined = ActionDifficulty[diffKey];
+
+	// Early return for simple actions
 	if (!difficulty || difficulty === ActionDifficulty.simple) {
 		return false;
 	}
 
-	const actionText = action.text.toLowerCase();
+	const actionText = action.text?.toLowerCase() || '';
+
+	// Early return for continue tale action
 	if (actionText === 'continue the tale') {
 		return false;
 	}
 
-	//TODO this only works for english but can stay for now
-	const listOfDiceRollingActions = ['attempt', 'try', 'seek', 'search', 'investigate'];
-	const includesTrying = listOfDiceRollingActions.some((value) => actionText.includes(value));
-	if (
-		action.type?.toLowerCase() === 'social_manipulation' ||
-		action.type?.toLowerCase() === 'spell' ||
-		action.type?.toLowerCase() === 'investigation'
-	) {
+	// Check if action type requires dice roll
+	const actionType = action.type?.toLowerCase();
+	if (actionType && DICE_REQUIRED_ACTION_TYPES.has(actionType as any)) {
 		return true;
 	}
+
+	// Check for dice-rolling keywords in action text
+	const includesTrying = DICE_ROLLING_ACTION_KEYWORDS.some((keyword) =>
+		actionText.includes(keyword)
+	);
+
+	// Determine if dice roll is needed based on difficulty and other factors
 	return (
 		difficulty !== ActionDifficulty.medium ||
-		('' + action.narration_details).includes('HIGH') ||
-		isInCombat ||
+		String(action.narration_details || '').includes('HIGH') ||
+		isInCombat === true ||
 		includesTrying
 	);
 }

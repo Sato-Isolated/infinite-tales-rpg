@@ -23,12 +23,34 @@ const isString = (value: unknown): value is string =>
 	typeof value === 'string' || value instanceof String;
 
 /**
- * Enhanced JSON stringify with better formatting for debugging
+ * Memoized JSON stringify for better performance with large objects
+ */
+const stringifyCache = new Map<unknown, string>();
+const MAX_STRINGIFY_CACHE_SIZE = 30;
+
+/**
+ * Enhanced JSON stringify with memoization and better formatting for debugging
  * Uses Svelte 5 patterns for optimal performance
  */
 export function stringifyPretty(object: unknown): string {
 	try {
-		return JSON.stringify(object, null, 2);
+		// Check cache first for performance optimization
+		if (stringifyCache.has(object)) {
+			return stringifyCache.get(object) as string;
+		}
+
+		const result = JSON.stringify(object, null, 2);
+
+		// Manage cache size to prevent memory leaks
+		if (stringifyCache.size >= MAX_STRINGIFY_CACHE_SIZE) {
+			const firstKey = stringifyCache.keys().next().value;
+			if (firstKey !== undefined) {
+				stringifyCache.delete(firstKey);
+			}
+		}
+
+		stringifyCache.set(object, result);
+		return result;
 	} catch (error) {
 		console.warn('Failed to stringify object:', error);
 		return String(object);
@@ -49,55 +71,102 @@ export function handleError(e: string, retryable = true): void {
 }
 
 /**
- * Enhanced navigation utility
+ * Path sanitization utility for security
+ */
+function sanitizePath(path: string): string {
+	// Remove potentially dangerous characters
+	return path.replace(/[<>'"\\]/g, '').replace(/\.{2,}/g, '');
+}
+
+/**
+ * Enhanced navigation utility with better security and error handling
  * More robust error handling and modern patterns
  */
 export function navigate(path: string): void {
 	try {
-		// Validate path to prevent XSS
-		if (!path || typeof path !== 'string') {
+		// Enhanced validation to prevent XSS and path traversal
+		if (!path || typeof path !== 'string' || path.trim().length === 0) {
 			throw new Error('Invalid navigation path');
 		}
 
-		// Sanitize path to prevent malicious URLs
-		const sanitizedPath = path.replace(/[<>'"]/g, '');
+		// Sanitize path to prevent malicious URLs and path traversal
+		const sanitizedPath = sanitizePath(path.trim());
 
-		const a = document.createElement('a');
-		a.href = '/game' + sanitizedPath;
-		a.click();
+		// Additional security check for empty path after sanitization
+		if (!sanitizedPath) {
+			throw new Error('Path became empty after sanitization');
+		}
 
-		// Clean up DOM element immediately
-		a.remove();
+		// Use modern navigation approach
+		const targetUrl =
+			'/game' + (sanitizedPath.startsWith('/') ? sanitizedPath : '/' + sanitizedPath);
+
+		// Create temporary link element for programmatic navigation
+		const anchorElement = document.createElement('a');
+		anchorElement.href = targetUrl;
+		anchorElement.style.display = 'none';
+
+		// Append, click, and clean up immediately
+		document.body.appendChild(anchorElement);
+		anchorElement.click();
+		document.body.removeChild(anchorElement);
 	} catch (error) {
 		console.error('Navigation failed:', error);
-		// Fallback to window.location with validation
-		const safePath = path.replace(/[<>'"]/g, '');
-		window.location.href = '/game' + safePath;
+
+		// Enhanced fallback with better error handling
+		try {
+			const safePath = sanitizePath(path || '');
+			if (safePath) {
+				window.location.href = '/game/' + safePath;
+			} else {
+				window.location.href = '/game';
+			}
+		} catch (fallbackError) {
+			console.error('Fallback navigation also failed:', fallbackError);
+			// Last resort: navigate to game root
+			window.location.href = '/game';
+		}
 	}
 }
 
 /**
- * Safely validates localStorage keys to prevent injection
+ * Enhanced localStorage key validation with better security patterns
  */
 function isValidLocalStorageKey(key: string): boolean {
-	return typeof key === 'string' && key.length > 0 && !/[<>'"\\]/.test(key);
+	return (
+		typeof key === 'string' &&
+		key.length > 0 &&
+		key.length <= 256 && // Reasonable length limit
+		!/[<>'"\\]/.test(key) && // Prevent injection attacks
+		!/^(__proto__|constructor|prototype)$/i.test(key) // Prevent prototype pollution
+	);
 }
 
 /**
- * Safely downloads localStorage as JSON with proper validation
+ * Enhanced localStorage export with better performance and security
  */
-export const downloadLocalStorageAsJson = () => {
+export const downloadLocalStorageAsJson = (): void => {
 	try {
 		const toSave: Record<string, string> = {};
+		const excludedKeys = new Set(['apiKeyState']); // Sensitive keys to exclude
 
-		// Safely copy localStorage with validation
+		// Optimized localStorage iteration with validation
 		for (let i = 0; i < localStorage.length; i++) {
 			const key = localStorage.key(i);
-			if (key && isValidLocalStorageKey(key) && key !== 'apiKeyState') {
+			if (!key || !isValidLocalStorageKey(key) || excludedKeys.has(key)) {
+				continue;
+			}
+
+			try {
 				const value = localStorage.getItem(key);
-				if (value) {
+				if (value !== null) {
+					// Validate that the value is valid JSON before including
+					JSON.parse(value);
 					toSave[key] = value;
 				}
+			} catch (parseError) {
+				console.warn(`Skipping invalid JSON for key "${key}":`, parseError);
+				continue;
 			}
 		}
 
