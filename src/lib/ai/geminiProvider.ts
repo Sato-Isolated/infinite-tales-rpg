@@ -280,8 +280,29 @@ export class GeminiProvider extends LLM {
 			// Extract thoughts from response
 			const thoughts = getThoughtsFromResponse(response);
 
-			// Parse JSON response
-			const content = response.text ? JSON.parse(response.text) : {};
+			// Parse JSON response with robust error handling
+			let content: object = {};
+			if (response.text) {
+				try {
+					content = JSON.parse(response.text);
+					console.log('✅ JSON parsed successfully');
+				} catch (jsonError) {
+					console.error('❌ JSON parsing failed:', jsonError);
+					console.log('📝 Raw response text:', response.text.substring(0, 500));
+					
+					// Try to fix the malformed JSON using the interceptor agent
+					try {
+						console.log('🔧 Attempting JSON fixing...');
+						const fixed = await this.jsonFixingInterceptorAgent.fixJSON(response.text, '');
+						content = fixed || {};
+						console.log('✅ JSON successfully fixed');
+					} catch (fixError) {
+						console.error('❌ JSON fixing failed:', fixError);
+						// Return empty object as fallback
+						content = {};
+					}
+				}
+			}
 
 			return { thoughts, content };
 
@@ -292,17 +313,6 @@ export class GeminiProvider extends LLM {
 			// Try fallback LLM if available and error is not recoverable
 			if (this.fallbackLLM && !ErrorUtils.isRecoverable(error)) {
 				return await this.fallbackLLM.generateContent(request);
-			}
-
-			// Try to fix JSON if parsing error
-			if (error instanceof SyntaxError) {
-				try {
-					console.log('🔧 Attempting JSON fixing for generateContent...');
-					const fixed = await this.jsonFixingInterceptorAgent.fixJSON('', '');
-					return { thoughts: '', content: fixed || {} };
-				} catch (fixError) {
-					console.error('❌ JSON fixing failed:', fixError);
-				}
 			}
 
 			// Handle error gracefully with user-friendly message
