@@ -1,4 +1,4 @@
-import { onMount } from 'svelte';
+import { onMount, onDestroy } from 'svelte';
 import cloneDeep from 'lodash.clonedeep';
 
 /**
@@ -162,6 +162,42 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
 		} finally {
 			hasHydrated = true;
 		}
+
+		// Listen for external localStorage changes (from DevTools, other tabs, etc.)
+		const handleStorageChange = (event: StorageEvent) => {
+			// Only process changes for our specific key
+			if (event.key === key && event.storageArea === localStorage) {
+				try {
+					if (event.newValue === null) {
+						// Key was removed
+						value = getInitial();
+					} else {
+						// Key was updated
+						const parsedValue = safeJSONParse(event.newValue, getInitial());
+
+						// Validate type compatibility
+						if (initialValue !== undefined && !isCompatibleType(parsedValue, initialValue)) {
+							console.warn(
+								`External localStorage change for key "${key}" has incompatible type. Ignoring change.`
+							);
+							return;
+						}
+
+						value = parsedValue;
+					}
+				} catch (error) {
+					console.warn(`Failed to handle external storage change for key "${key}":`, error);
+				}
+			}
+		};
+
+		// Add event listener for storage changes
+		window.addEventListener('storage', handleStorageChange);
+
+		// Return cleanup function
+		return () => {
+			window.removeEventListener('storage', handleStorageChange);
+		};
 	});
 
 	return {
