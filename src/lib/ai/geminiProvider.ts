@@ -18,7 +18,7 @@ import { errorState } from '$lib/state/errorState.svelte';
 
 // Consolidated components for reduced complexity
 import { GeminiConfigBuilder, ModelCapabilities, CONFIG_PRESETS, THINKING_BUDGETS } from './config/GeminiConfigBuilder.js';
-import { GeminiErrorHandler, GeminiError, ErrorUtils } from './errors/GeminiErrorHandler.js';
+import { ErrorUtils } from './errors/GeminiErrorHandler.js';
 
 // Consolidated model constants from ModelCapabilities
 export const GEMINI_MODELS = {
