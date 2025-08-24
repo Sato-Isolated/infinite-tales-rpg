@@ -37,7 +37,10 @@
 	import * as combatLogic from '$lib/game/logic/combatLogic';
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { getCurrentCharacterGameState, getRenderedGameUpdates } from '$lib/game/state/gameStateUtils';
+	import {
+		getCurrentCharacterGameState,
+		getRenderedGameUpdates
+	} from '$lib/game/state/gameStateUtils';
 	import GameModals from '$lib/components/game/modals/GameModals.svelte';
 	import {
 		initialSystemInstructionsState,
@@ -101,12 +104,17 @@
 	import StorySection from '$lib/components/game/story/StorySection.svelte';
 	import ActionButtons from '$lib/components/game/actions/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/actions/StaticActionsPanel.svelte';
-	import ActionInputForm, { type Receiver } from '$lib/components/game/actions/ActionInputForm.svelte';
+	import ActionInputForm, {
+		type Receiver
+	} from '$lib/components/game/actions/ActionInputForm.svelte';
 	import { createGameController } from '$lib/game/controllers/gameController';
 	import { createModalManager } from '$lib/game/ui/modalManager.svelte';
 	import TimeWidget from '$lib/components/game/time/TimeWidget.svelte';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
-	import { generateStoryAppropriateTime, shouldRegenerateGameTime } from '$lib/game/logic/timeLogic';
+	import {
+		generateStoryAppropriateTime,
+		shouldRegenerateGameTime
+	} from '$lib/game/logic/timeLogic';
 
 	// Element/component refs (dialogs, child components)
 	let actionInputFormComponent = $state<{ clear?: () => void }>();
@@ -900,12 +908,11 @@
 	}
 </script>
 
-<div id="game-container" class="container mx-auto p-4">
-	<!-- Widget temps en haut à droite -->
-	<div class="mb-4 flex justify-end">
-		<TimeWidget gameTime={gameTimeState.value} />
-	</div>
-
+<div
+	id="game-container"
+	class="from-base-300/20 via-base-200/10 to-base-100 flex h-full flex-col bg-gradient-to-br"
+>
+	<!-- Game Modals (unchanged) -->
 	<GameModals
 		{isAiGeneratingState}
 		{modalManager}
@@ -936,90 +943,185 @@
 		getEventToConfirm={(event) => controller!.getEventToConfirm(event)}
 	/>
 
-	<ResourcesComponent
-		resources={getCurrentCharacterGameState(
-			playerCharactersGameState.value,
-			playerCharactersIdToNamesMapState.value,
-			characterState.value.name
-		)}
-		currentLevel={characterStatsState.value?.level}
-	/>
-	<StorySection
-		{currentGameActionState}
-		gameActions={gameActionsState.value}
-		{latestStoryProgressionState}
-		storyState={storyState.value}
-		isGameEnded={isGameEnded.value}
-		{playerCharacterIdState}
-		getRenderedGameUpdates={getRenderedGameUpdatesWrapper}
-		{showXLastStoryProgressions}
-		setShowXLastStoryProgressions={(n: number) => (showXLastStoryProgressions = n)}
-		bind:storyTextRef={latestStoryProgressionTextComponent}
-	/>
+	<!-- Main Game Content - Uses full available space from layout (93vh) -->
+	<div class="flex flex-1 overflow-hidden">
+		<!-- Left Panel - Controls & Resources (30%) -->
+		<div class="bg-base-200/50 border-base-300 flex w-[30%] flex-col overflow-hidden border-r">
+			<div class="flex-1 space-y-3 overflow-y-auto p-3">
+				<!-- Character Resources -->
+				<div class="card bg-base-100 shadow-lg">
+					<div class="card-body p-3">
+						<h3 class="card-title mb-2 text-sm">
+							<span class="text-base">⚔️</span>
+							Character Status
+						</h3>
+						<ResourcesComponent
+							resources={getCurrentCharacterGameState(
+								playerCharactersGameState.value,
+								playerCharactersIdToNamesMapState.value,
+								characterState.value.name
+							)}
+							currentLevel={characterStatsState.value?.level}
+						/>
+					</div>
+				</div>
 
-	{#if !aiConfigState.value?.disableAudioState && actionsTextForTTS}
-		<div class="mt-4 flex">
-			<TTSComponent
-				text={actionsTextForTTS}
-				voice={ttsVoiceState.value}
-				hidden={!Array.isArray(characterActionsState.value) ||
-					characterActionsState.value.length === 0}
-			></TTSComponent>
+				<!-- Action Buttons -->
+				<div class="card bg-base-100 shadow-lg">
+					<div class="card-body p-3">
+						<h3 class="card-title mb-2 text-sm">
+							<span class="text-base">⚡</span>
+							Available Actions
+						</h3>
+
+						<ActionButtons
+							actions={Array.isArray(characterActionsState.value)
+								? characterActionsState.value
+								: []}
+							{currentGameActionState}
+							sendAction={(a, roll) => {
+								chosenActionState.value = $state.snapshot(a);
+								controller!.sendAction(a, roll);
+							}}
+							isGameEnded={isGameEnded.value}
+							playerResources={playerCharactersGameState.value[playerCharacterIdState]}
+							inventoryState={inventoryState.value}
+							regenerateActions={controller?.regenerateActions}
+						/>
+
+						{#if !Array.isArray(characterActionsState.value) || characterActionsState.value.length === 0}
+							{#if Object.keys(currentGameActionState).length !== 0}
+								<div class="flex flex-col items-center gap-2 py-3">
+									<LoadingIcon />
+									<span class="text-xs opacity-70">Generating actions...</span>
+								</div>
+							{/if}
+						{/if}
+					</div>
+				</div>
+
+				<!-- Game Controls -->
+				<div class="card bg-base-100 shadow-lg">
+					<div class="card-body p-3">
+						<h3 class="card-title mb-2 text-sm">
+							<span class="text-base">🛠️</span>
+							Game Controls
+						</h3>
+
+						{#if Object.keys(currentGameActionState).length !== 0 && !isGameEnded.value}
+							<StaticActionsPanel
+								levelUpEnabled={levelUpState.value.buttonEnabled}
+								handleContinue={() =>
+									controller!.sendAction({
+										characterName: characterState.value.name,
+										text: 'Continue The Tale'
+									})}
+								handleLevelUp={() => levelUpClicked(characterState.value.name)}
+								transformPending={!eventEvaluationState.value.character_changed
+									?.aiProcessingComplete}
+								transformLabel={eventEvaluationState.value.character_changed?.changed_into}
+								handleTransform={() =>
+									(eventEvaluationState.value.character_changed!.showEventConfirmationDialog = true)}
+								abilitiesPending={!eventEvaluationState.value.abilities_learned
+									?.aiProcessingComplete}
+								handleLearnAbilities={() =>
+									(eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = true)}
+								handleOpenSpells={() => modalManager.openUseSpellsAbilitiesModal()}
+								handleOpenInventory={() => modalManager.openUseItemsModal()}
+								handleOpenUtility={() => modalManager.openUtilityModal()}
+								busy={isAiGeneratingState}
+							/>
+						{:else if Object.keys(currentGameActionState).length === 0}
+							<div class="py-3 text-center opacity-60">
+								<div class="mb-1 text-xl">🎬</div>
+								<p class="text-xs">Game controls will appear once your adventure begins</p>
+							</div>
+						{:else}
+							<div class="py-3 text-center opacity-60">
+								<div class="mb-1 text-xl">🏁</div>
+								<p class="text-xs">Adventure completed</p>
+							</div>
+						{/if}
+					</div>
+				</div>
+
+				<!-- TTS Component - Integrated in Left Panel -->
+				{#if !aiConfigState.value?.disableAudioState && actionsTextForTTS}
+					<div class="card bg-base-100 shadow-lg">
+						<div class="card-body p-3">
+							<h3 class="card-title mb-2 text-xs">
+								<span class="text-sm">🔊</span>
+								Audio
+							</h3>
+							<TTSComponent
+								text={actionsTextForTTS}
+								voice={ttsVoiceState.value}
+								hidden={!Array.isArray(characterActionsState.value) ||
+									characterActionsState.value.length === 0}
+							/>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+
+		<!-- Right Panel - Story Section (70%) -->
+		<div class="flex w-[70%] flex-col overflow-hidden">
+			<!-- Story Header - Fixed -->
+			<div class="bg-base-100 border-base-300 flex-shrink-0 border-b p-3">
+				<h3 class="flex items-center gap-2 text-lg font-bold">
+					<span class="text-xl">📖</span>
+					Adventure Story
+				</h3>
+			</div>
+
+			<!-- Story Content - Scrollable -->
+			<div class="bg-base-100 flex-1 overflow-y-auto">
+				<div class="p-3">
+					<StorySection
+						{currentGameActionState}
+						gameActions={gameActionsState.value}
+						{latestStoryProgressionState}
+						storyState={storyState.value}
+						isGameEnded={isGameEnded.value}
+						{playerCharacterIdState}
+						getRenderedGameUpdates={getRenderedGameUpdatesWrapper}
+						{showXLastStoryProgressions}
+						setShowXLastStoryProgressions={(n: number) => (showXLastStoryProgressions = n)}
+						bind:storyTextRef={latestStoryProgressionTextComponent}
+					/>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Custom Action Input - Fixed Bottom -->
+	{#if Object.keys(currentGameActionState).length !== 0}
+		<div
+			class="from-primary/8 to-secondary/8 border-base-300 flex-shrink-0 border-t bg-gradient-to-r shadow-lg"
+		>
+			<div class="container mx-auto px-3 py-2">
+				<div class="grid grid-cols-10 gap-3">
+					<!-- Left Column - Time Widget (30%) -->
+					<div class="col-span-3 flex items-center">
+						<TimeWidget gameTime={gameTimeState.value} />
+					</div>
+
+					<!-- Right Column - Custom Action (70%) -->
+					<div class="col-span-7">
+						<div class="mb-2 flex items-center gap-2">
+							<span class="text-base">✍️</span>
+							<h3 class="text-sm font-semibold">Write Custom Action</h3>
+						</div>
+						<ActionInputForm
+							bind:this={actionInputFormComponent}
+							bind:receiver={customActionReceiver}
+							handleSubmit={(text: string, receiver: Receiver) =>
+								handleCustomActionSubmit(text, receiver === 'Character Action')}
+						/>
+					</div>
+				</div>
+			</div>
 		</div>
 	{/if}
-	<ActionButtons
-		actions={Array.isArray(characterActionsState.value) ? characterActionsState.value : []}
-		{currentGameActionState}
-		sendAction={(a, roll) => {
-			chosenActionState.value = $state.snapshot(a);
-			controller!.sendAction(a, roll);
-		}}
-		isGameEnded={isGameEnded.value}
-		playerResources={playerCharactersGameState.value[playerCharacterIdState]}
-		inventoryState={inventoryState.value}
-		regenerateActions={controller?.regenerateActions}
-	/>
-	{#if Object.keys(currentGameActionState).length !== 0}
-		{#if !isGameEnded.value}
-			{#if !Array.isArray(characterActionsState.value) || characterActionsState.value.length === 0}
-				<div class="flex flex-col">
-					<span class="m-auto">Generating next actions...</span>
-					<div class="m-auto"><LoadingIcon /></div>
-				</div>
-			{/if}
-			<StaticActionsPanel
-				levelUpEnabled={levelUpState.value.buttonEnabled}
-				handleContinue={() =>
-					controller!.sendAction({
-						characterName: characterState.value.name,
-						text: 'Continue The Tale'
-					})}
-				handleLevelUp={() => levelUpClicked(characterState.value.name)}
-				transformPending={!eventEvaluationState.value.character_changed?.aiProcessingComplete}
-				transformLabel={eventEvaluationState.value.character_changed?.changed_into}
-				handleTransform={() =>
-					(eventEvaluationState.value.character_changed!.showEventConfirmationDialog = true)}
-				abilitiesPending={!eventEvaluationState.value.abilities_learned?.aiProcessingComplete}
-				handleLearnAbilities={() =>
-					(eventEvaluationState.value.abilities_learned!.showEventConfirmationDialog = true)}
-				handleOpenSpells={() => modalManager.openUseSpellsAbilitiesModal()}
-				handleOpenInventory={() => modalManager.openUseItemsModal()}
-				handleOpenUtility={() => modalManager.openUtilityModal()}
-				busy={isAiGeneratingState}
-			/>
-		{/if}
-		<ActionInputForm
-			bind:this={actionInputFormComponent}
-			bind:receiver={customActionReceiver}
-			handleSubmit={(text: string, receiver: Receiver) =>
-				handleCustomActionSubmit(text, receiver === 'Character Action')}
-		/>
-	{/if}
-
-	<style>
-		canvas {
-			height: 100%;
-			width: 100%;
-		}
-	</style>
 </div>

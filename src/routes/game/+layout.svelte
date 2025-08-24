@@ -92,14 +92,11 @@
 	</a>
 </nav>
 
-<!--TODO max-h-[85vh] is just a workaround because the mobile browser address bar makes 93vh higher than it should...
--->
+<!--Main content adjusted to work with game page layout-->
 <main
-	class:max-h-[78svh]={hasSubMenu}
-	class:lg:max-h-[86svh]={hasSubMenu}
-	class:max-h-[85svh]={!hasSubMenu}
-	class:lg:max-h-[93svh]={!hasSubMenu}
-	class="w-screen overflow-x-hidden overflow-y-auto"
+	class="h-[93vh] w-screen"
+	class:overflow-hidden={activeUrl === '/game'}
+	class:overflow-y-auto={activeUrl !== '/game'}
 >
 	{@render children()}
 </main>
