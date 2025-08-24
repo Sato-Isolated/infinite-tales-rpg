@@ -7,7 +7,7 @@
 		type ItemWithId
 	} from '$lib/ai/agents/gameAgent';
 	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
-	import { formatItemId } from '../../../routes/game/gameLogic';
+	import { formatItemId } from '$lib/game/logic/gameLogic';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
 	import CraftingModal from '$lib/components/interaction_modals/CraftingModal.svelte';

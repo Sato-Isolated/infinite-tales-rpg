@@ -32,12 +32,12 @@
 		type NPCState,
 		type SkillsProgression
 	} from '$lib/ai/agents/characterStatsAgent';
-	import * as gameLogic from './gameLogic';
-	import { ActionDifficulty, getEmptyCriticalResourceKeys } from './gameLogic';
-	import * as combatLogic from './combatLogic';
+	import * as gameLogic from '$lib/game/logic/gameLogic';
+	import { ActionDifficulty, getEmptyCriticalResourceKeys } from '$lib/game/logic/gameLogic';
+	import * as combatLogic from '$lib/game/logic/combatLogic';
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { getCurrentCharacterGameState, getRenderedGameUpdates } from './gameStateUtils';
+	import { getCurrentCharacterGameState, getRenderedGameUpdates } from '$lib/game/state/gameStateUtils';
 	import GameModals from '$lib/components/game/GameModals.svelte';
 	import {
 		initialSystemInstructionsState,
@@ -54,19 +54,19 @@
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
 	import TTSComponent from '$lib/components/TTSComponent.svelte';
-	import { getXPNeededForLevel } from './levelLogic';
+	import { getXPNeededForLevel } from '$lib/game/logic/levelLogic';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
 	import type { AIConfig } from '$lib';
 	import ResourcesComponent from '$lib/components/ResourcesComponent.svelte';
 
-	import { initializeMissingResources, refillResourcesFully } from './resourceLogic';
+	import { initializeMissingResources, refillResourcesFully } from '$lib/game/logic/resourceLogic';
 	import {
 		advanceChapterIfApplicable,
 		getGameMasterNotesForCampaignChapter,
 		getNextChapterPrompt
-	} from './campaignLogic';
-	import { getRelatedHistory } from './memoryLogic';
-	import { getLatestStoryMessagesFromHistory } from './memoryLogic/messages';
+	} from '$lib/game/logic/campaignLogic';
+	import { getRelatedHistory } from '$lib/game/memory/memoryLogic';
+	import { getLatestStoryMessagesFromHistory } from '$lib/game/memory/messages';
 	import {
 		type CharacterChangedInto,
 		EventAgent,
@@ -79,16 +79,16 @@
 		getFreeCharacterTechnicalId,
 		getCharacterTechnicalId,
 		addCharacterToPlayerCharactersIdToNamesMap
-	} from './characterLogic';
+	} from '$lib/game/logic/characterLogic';
 	import {
 		addSkillProgression as addSkillProgressionHelper,
 		advanceSkillIfApplicable as advanceSkillIfApplicableHelper,
 		addSkillsIfApplicable as addSkillsIfApplicableHelper,
 		determineProgressionForAction
-	} from './skillProgressionHelpers';
+	} from '$lib/game/progression/skillProgressionHelpers';
 	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
-	import type { RenderedGameUpdate } from './gameLogic';
+	import type { RenderedGameUpdate } from '$lib/game/logic/gameLogic';
 
 	// Local type definition matching StoryProgressionWithImage component
 	type StoryProgressionWithImageProps = {
@@ -102,11 +102,11 @@
 	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
 	import ActionInputForm, { type Receiver } from '$lib/components/game/ActionInputForm.svelte';
-	import { createGameController } from './gameController';
-	import { createModalManager } from './modalManager.svelte';
+	import { createGameController } from '$lib/game/controllers/gameController';
+	import { createModalManager } from '$lib/game/ui/modalManager.svelte';
 	import TimeWidget from '$lib/components/game/TimeWidget.svelte';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
-	import { generateStoryAppropriateTime, shouldRegenerateGameTime } from './timeLogic';
+	import { generateStoryAppropriateTime, shouldRegenerateGameTime } from '$lib/game/logic/timeLogic';
 
 	// Element/component refs (dialogs, child components)
 	let actionInputFormComponent = $state<{ clear?: () => void }>();

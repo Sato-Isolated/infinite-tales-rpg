@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { InventoryState, ItemWithId } from '$lib/ai/agents/gameAgent';
-	import { formatItemId } from '../../../routes/game/gameLogic';
+	import { formatItemId } from '$lib/game/logic/gameLogic';
 
 	let {
 		inventory,

@@ -19,7 +19,7 @@
 	import {
 		addCharacterToPlayerCharactersIdToNamesMap,
 		getCharacterTechnicalId
-	} from '../../characterLogic';
+	} from '$lib/game/logic/characterLogic';
 
 	let isGeneratingState = $state(false);
 	const apiKeyState = useLocalStorage<string>('apiKeyState');

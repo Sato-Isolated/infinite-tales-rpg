@@ -4,8 +4,8 @@ import type {
 	PlayerCharactersIdToNamesMap
 } from '$lib/ai/agents/gameAgent';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
-import { getCharacterTechnicalId } from './characterLogic';
-import * as gameLogic from './gameLogic';
+import { getCharacterTechnicalId } from '../logic/characterLogic';
+import * as gameLogic from '../logic/gameLogic';
 
 /**
  * Game State Utilities - Pure helper functions for game state management

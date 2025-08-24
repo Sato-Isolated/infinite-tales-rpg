@@ -4,7 +4,7 @@ import {
 	getRequiredSkillProgression,
 	getSkillProgressionForDifficulty,
 	isNewSkill
-} from './characterLogic';
+} from '../logic/characterLogic';
 
 export const addSkillProgression = (
 	skillsProgressionState: { value: SkillsProgression },

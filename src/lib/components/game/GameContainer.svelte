@@ -19,9 +19,9 @@
 	import ResourcesComponent from '$lib/components/ResourcesComponent.svelte';
 
 	// Game logic and controllers
-	import { createGameController } from '../../../routes/game/gameController';
-	import { createModalManager } from '../../../routes/game/modalManager.svelte';
-	import * as gameLogic from '../../../routes/game/gameLogic';
+	import { createGameController } from '$lib/game/controllers/gameController';
+	import { createModalManager } from '$lib/game/ui/modalManager.svelte';
+	import * as gameLogic from '$lib/game/logic/gameLogic';
 
 	// Types and initial states
 	import { defaultGameSettings, type GameSettings, type Action } from '$lib/ai/agents/gameAgent';

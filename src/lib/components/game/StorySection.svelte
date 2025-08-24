@@ -5,10 +5,10 @@
 	import StoryProgressionWithImage, {
 		type StoryProgressionWithImageProps
 	} from '$lib/components/StoryProgressionWithImage.svelte';
-	import * as gameLogic from '../../../routes/game/gameLogic';
+	import * as gameLogic from '$lib/game/logic/gameLogic';
 	import type { GameActionState } from '$lib/ai/agents/gameAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
-	import type { RenderedGameUpdate } from '../../../routes/game/gameLogic';
+	import type { RenderedGameUpdate } from '$lib/game/logic/gameLogic';
 
 	// Modern Svelte 5 props pattern with bindable support
 	interface Props {

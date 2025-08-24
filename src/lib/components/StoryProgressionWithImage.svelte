@@ -1,5 +1,5 @@
 <script module lang="ts">
-	import type { RenderedGameUpdate } from '../../routes/game/gameLogic';
+	import type { RenderedGameUpdate } from '$lib/game/logic/gameLogic';
 
 	// Export the type properly so it can be imported by other components
 	export interface StoryProgressionWithImageProps {

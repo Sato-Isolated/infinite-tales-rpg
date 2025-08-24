@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Action, GameActionState, InventoryState } from '$lib/ai/agents/gameAgent';
 	import { getTextForActionButton } from '$lib/util.svelte';
-	import { mustRollDice, isEnoughResource } from '../../../routes/game/gameLogic';
+	import { mustRollDice, isEnoughResource } from '$lib/game/logic/gameLogic';
 	import RegenerateActionsButton from './RegenerateActionsButton.svelte';
 
 	// Use modern Svelte 5 $props() pattern

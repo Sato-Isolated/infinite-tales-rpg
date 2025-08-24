@@ -6,7 +6,7 @@
 	import GameSettingsModal from '$lib/components/interaction_modals/settings/GameSettingsModal.svelte';
 	import AiGameSettingsModal from '$lib/components/interaction_modals/settings/AiGameSettings.svelte';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
-	import { generateStoryAppropriateTime, normalizeGameTime } from '../timeLogic';
+	import { generateStoryAppropriateTime, normalizeGameTime } from '$lib/game/logic/timeLogic';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { GameSettings } from '$lib/ai/agents/gameAgent';

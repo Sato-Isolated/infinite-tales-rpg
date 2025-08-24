@@ -1,5 +1,5 @@
 import { shuffleArray, stringifyPretty } from '$lib/util.svelte';
-import { ActionDifficulty } from '../../../routes/game/gameLogic';
+import { ActionDifficulty } from '$lib/game/logic/gameLogic';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';

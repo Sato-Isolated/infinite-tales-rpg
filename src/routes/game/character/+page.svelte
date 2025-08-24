@@ -5,7 +5,7 @@
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { AIConfig } from '$lib';
-	import { getRequiredSkillProgression } from '../characterLogic';
+	import { getRequiredSkillProgression } from '$lib/game/logic/characterLogic';
 
 	const characterState = useLocalStorage<CharacterDescription>('characterState');
 	const characterStatsState = useLocalStorage<CharacterStats>('characterStatsState');

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ResourcesWithCurrentValue } from '$lib/ai/agents/gameAgent';
-	import { getXPNeededForLevel } from '../../routes/game/levelLogic';
+	import { getXPNeededForLevel } from '$lib/game/logic/levelLogic';
 	import MediaQuery from 'svelte-media-queries';
 
 	let {

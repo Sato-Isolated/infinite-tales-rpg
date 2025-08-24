@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ModalManager } from '../../../routes/game/modalManager.svelte';
+	import type { ModalManager } from '$lib/game/ui/modalManager.svelte';
 	import type {
 		GameActionState,
 		PlayerCharactersGameState,
@@ -10,7 +10,7 @@
 	import type { Action } from '$lib/ai/agents/gameAgent';
 	import { errorState } from '$lib/state/errorState.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
-	import { getCurrentCharacterGameState } from '../../../routes/game/gameStateUtils';
+	import { getCurrentCharacterGameState } from '$lib/game/state/gameStateUtils';
 
 	// Import modal components
 	import LoadingModal from '$lib/components/LoadingModal.svelte';
@@ -88,7 +88,7 @@
 	}: Props = $props();
 
 	// Utility player actions import
-	import { utilityPlayerActions } from '../../../routes/game/gameLogic';
+	import { utilityPlayerActions } from '$lib/game/logic/gameLogic';
 </script>
 
 {#if isAiGeneratingState}

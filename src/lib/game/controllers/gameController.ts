@@ -15,9 +15,9 @@ import type { ActionAgent } from '$lib/ai/agents/actionAgent';
 import type { SummaryAgent } from '$lib/ai/agents/summaryAgent';
 import type { CampaignAgent, CampaignChapter } from '$lib/ai/agents/campaignAgent';
 import type { EventAgent, EventEvaluation, CharacterChangedInto } from '$lib/ai/agents/eventAgent';
-import * as gameLogic from './gameLogic';
-import * as npcLogic from './npcLogic';
-import { getLatestStoryMessagesFromHistory } from './memoryLogic/messages';
+import * as gameLogic from '../logic/gameLogic';
+import * as npcLogic from '../npc/npcLogic';
+import { getLatestStoryMessagesFromHistory } from '../memory/messages';
 import { CombatAgent as CombatAgentStatic } from '$lib/ai/agents/combatAgent';
 import { stringifyPretty } from '$lib/util.svelte';
 import type { ThoughtsState } from '$lib/util.svelte';
@@ -26,13 +26,13 @@ import {
 	getSkillIfApplicable,
 	applyCharacterChange,
 	addCharacterToPlayerCharactersIdToNamesMap
-} from './characterLogic';
-import { getXPNeededForLevel, applyLevelUp } from './levelLogic';
-import { refillResourcesFully } from './resourceLogic';
+} from '../logic/characterLogic';
+import { getXPNeededForLevel, applyLevelUp } from '../logic/levelLogic';
+import { refillResourcesFully } from '../logic/resourceLogic';
 import type { AiLevelUp, Ability } from '$lib/ai/agents/characterStatsAgent';
-import type { ModalManager } from './modalManager.svelte';
+import type { ModalManager } from '../ui/modalManager.svelte';
 import type { GameTime } from '$lib/types/gameTime';
-import { addMinutesToGameTime, normalizeGameTime } from './timeLogic';
+import { addMinutesToGameTime, normalizeGameTime } from '../logic/timeLogic';
 
 /**
  * Utility function to create game time with proper defaults
@@ -420,7 +420,7 @@ export function createGameController(ctx: ControllerCtx) {
 
 	async function regenerateActions() {
 		ctx.state.characterActionsState.value = [];
-		const { getRelatedHistory } = await import('./memoryLogic');
+		const { getRelatedHistory } = await import('../memory/memoryLogic');
 		const relatedHistory = await getRelatedHistory(
 			ctx.agents.summaryAgent,
 			undefined,
@@ -528,7 +528,7 @@ export function createGameController(ctx: ControllerCtx) {
 		try {
 			if (rollDice) {
 				if (ctx.state.relatedActionHistoryState.value.length === 0) {
-					const { getRelatedHistory } = await import('./memoryLogic');
+					const { getRelatedHistory } = await import('../memory/memoryLogic');
 					ctx.state.relatedActionHistoryState.value = await getRelatedHistory(
 						ctx.agents.summaryAgent,
 						action,
@@ -547,7 +547,7 @@ export function createGameController(ctx: ControllerCtx) {
 					ctx.state.additionalStoryInputState.value
 				);
 				if (ctx.state.relatedActionHistoryState.value.length === 0) {
-					const { getRelatedHistory } = await import('./memoryLogic');
+					const { getRelatedHistory } = await import('../memory/memoryLogic');
 					ctx.state.relatedActionHistoryState.value = await getRelatedHistory(
 						ctx.agents.summaryAgent,
 						action,
@@ -575,7 +575,7 @@ export function createGameController(ctx: ControllerCtx) {
 
 	async function generateActionFromCustomInput(action: Action) {
 		ctx.state.isAiGeneratingState.set(true);
-		const { getRelatedHistory } = await import('./memoryLogic');
+		const { getRelatedHistory } = await import('../memory/memoryLogic');
 		ctx.state.relatedActionHistoryState.value = await getRelatedHistory(
 			ctx.agents.summaryAgent,
 			action,
@@ -681,7 +681,7 @@ export function createGameController(ctx: ControllerCtx) {
 			targetAddition = `\n\nTargets: ${targets.join(', ')}\n`;
 		}
 		action.text += targetAddition;
-		const { getRelatedHistory } = await import('./memoryLogic');
+		const { getRelatedHistory } = await import('../memory/memoryLogic');
 		ctx.state.relatedActionHistoryState.value = await getRelatedHistory(
 			ctx.agents.summaryAgent,
 			action,

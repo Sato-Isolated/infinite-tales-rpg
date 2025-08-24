@@ -6,7 +6,7 @@ import type {
 	PlayerCharactersGameState,
 	ResourcesWithCurrentValue
 } from '$lib/ai/agents/gameAgent';
-import { ActionDifficulty, getEmptyCriticalResourceKeys } from '../../../routes/game/gameLogic';
+import { ActionDifficulty, getEmptyCriticalResourceKeys } from '$lib/game/logic/gameLogic';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapStatsUpdates } from '$lib/ai/agents/mappers';
 import { statsUpdatePromptObject } from '$lib/ai/prompts/formats';

@@ -15,7 +15,7 @@
 		ResourcesWithCurrentValue
 	} from '$lib/ai/agents/gameAgent';
 	import { getTextForActionButton } from '$lib/util.svelte';
-	import { isEnoughResource } from '../../../routes/game/gameLogic';
+	import { isEnoughResource } from '$lib/game/logic/gameLogic';
 	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
 	import type { AIConfig } from '$lib';
 
