@@ -6,13 +6,13 @@
 		StoryAgent,
 		storyStateForPrompt
 	} from '$lib/ai/agents/storyAgent';
-	import LoadingModal from '$lib/components/LoadingModal.svelte';
+	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { getRowsForTextarea, navigate, loadPDF, handleError } from '$lib/util.svelte';
 	import isEqual from 'fast-deep-equal';
 	import { goto } from '$app/navigation';
-	import ImportExportSaveGame from '$lib/components/ImportExportSaveGame.svelte';
+	import ImportExportSaveGame from '$lib/components/ui/data/ImportExportSaveGame.svelte';
 	import { type CharacterDescription, initialCharacterState } from '$lib/ai/agents/characterAgent';
 	import type { AIConfig } from '$lib';
 	let isGeneratingState = $state(false);

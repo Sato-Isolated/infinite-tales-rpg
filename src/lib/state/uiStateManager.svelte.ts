@@ -4,7 +4,7 @@
  */
 
 import type { GameTime } from '$lib/types/gameTime';
-import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
+import type { DiceRollResult } from '$lib/game/logic/diceRollLogic';
 import { useLocalStorage } from './useLocalStorage.svelte';
 
 export interface UIStateManager {

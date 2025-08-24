@@ -17,7 +17,7 @@ import { mapXP } from './levelLogic';
 import { getNPCTechnicalID } from '$lib/util.svelte';
 import { getCharacterTechnicalId } from './characterLogic';
 import { InterruptProbability } from '$lib/ai/agents/actionAgent';
-import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
+import type { DiceRollResult } from './diceRollLogic';
 
 export enum ActionDifficulty {
 	simple = 'simple',

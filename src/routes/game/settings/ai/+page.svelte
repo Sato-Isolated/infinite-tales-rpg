@@ -4,7 +4,7 @@
 	import { CharacterAgent, initialCharacterState } from '$lib/ai/agents/characterAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { initialStoryState, type Story, StoryAgent } from '$lib/ai/agents/storyAgent';
-	import LoadingModal from '$lib/components/LoadingModal.svelte';
+	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		CharacterStatsAgent,
@@ -15,7 +15,7 @@
 	import { onMount } from 'svelte';
 	import type { AIConfig } from '$lib';
 	import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
-	import QuickstartStoryGenerationModal from '$lib/components/interaction_modals/QuickstartStoryGenerationModal.svelte';
+	import QuickstartStoryGenerationModal from '$lib/components/modals/system/QuickstartStoryGenerationModal.svelte';
 	import type { LLM } from '$lib/ai/llm';
 	import isPlainObject from 'lodash.isplainobject';
 	import {
@@ -25,9 +25,9 @@
 	import type { CharacterChangedInto, EventEvaluation } from '$lib/ai/agents/eventAgent';
 	import type { PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
-	import AiGenerationSettings from '$lib/components/interaction_modals/settings/AiGenerationSettings.svelte';
-	import OutputFeaturesModal from '$lib/components/interaction_modals/settings/OutputFeaturesModal.svelte';
-	import SystemPromptsModal from '$lib/components/interaction_modals/settings/SystemPromptsModal.svelte';
+	import AiGenerationSettings from '$lib/components/modals/settings/AiGenerationSettings.svelte';
+	import OutputFeaturesModal from '$lib/components/modals/settings/OutputFeaturesModal.svelte';
+	import SystemPromptsModal from '$lib/components/modals/settings/SystemPromptsModal.svelte';
 
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
 	const aiLanguage = useLocalStorage<string>('aiLanguage');

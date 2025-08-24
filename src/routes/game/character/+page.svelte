@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
+	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent.ts';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';

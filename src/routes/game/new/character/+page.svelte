@@ -5,8 +5,8 @@
 		type CharacterDescription,
 		initialCharacterState
 	} from '$lib/ai/agents/characterAgent';
-	import LoadingModal from '$lib/components/LoadingModal.svelte';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
+	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
+	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { getRowsForTextarea, navigate } from '$lib/util.svelte';
 	import isEqual from 'fast-deep-equal';

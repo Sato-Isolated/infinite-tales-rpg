@@ -16,10 +16,10 @@
 	import { onMount } from 'svelte';
 	import cloneDeep from 'lodash.clonedeep';
 	import isEqual from 'fast-deep-equal';
-	import LoadingModal from '$lib/components/LoadingModal.svelte';
+	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
 	import { defaultGameSettings, type GameSettings } from '$lib/ai/agents/gameAgent';
 	import type { AIConfig } from '$lib';
-	import AbilityEditor from '$lib/components/interaction_modals/character/AbilityEditor.svelte';
+	import AbilityEditor from '$lib/components/modals/character/AbilityEditor.svelte';
 
 	let isGeneratingState = $state(false);
 	const apiKeyState = useLocalStorage<string>('apiKeyState');

@@ -38,7 +38,7 @@
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { getCurrentCharacterGameState, getRenderedGameUpdates } from '$lib/game/state/gameStateUtils';
-	import GameModals from '$lib/components/game/GameModals.svelte';
+	import GameModals from '$lib/components/game/modals/GameModals.svelte';
 	import {
 		initialSystemInstructionsState,
 		type LLMMessage,
@@ -52,12 +52,12 @@
 	} from '$lib/ai/agents/characterAgent';
 	import { type Campaign, CampaignAgent, type CampaignChapter } from '$lib/ai/agents/campaignAgent';
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
-	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
-	import TTSComponent from '$lib/components/TTSComponent.svelte';
+	import LoadingIcon from '$lib/components/ui/loading/LoadingIcon.svelte';
+	import TTSComponent from '$lib/components/ui/media/TTSComponent.svelte';
 	import { getXPNeededForLevel } from '$lib/game/logic/levelLogic';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
 	import type { AIConfig } from '$lib';
-	import ResourcesComponent from '$lib/components/ResourcesComponent.svelte';
+	import ResourcesComponent from '$lib/components/ui/data/ResourcesComponent.svelte';
 
 	import { initializeMissingResources, refillResourcesFully } from '$lib/game/logic/resourceLogic';
 	import {
@@ -86,8 +86,8 @@
 		addSkillsIfApplicable as addSkillsIfApplicableHelper,
 		determineProgressionForAction
 	} from '$lib/game/progression/skillProgressionHelpers';
-	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
-	import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
+	import { getDiceRollPromptAddition } from '$lib/game/logic/diceRollLogic';
+	import type { DiceRollResult } from '$lib/game/logic/diceRollLogic';
 	import type { RenderedGameUpdate } from '$lib/game/logic/gameLogic';
 
 	// Local type definition matching StoryProgressionWithImage component
@@ -98,13 +98,13 @@
 		imagePrompt?: string;
 		stream_finished?: boolean;
 	};
-	import StorySection from '$lib/components/game/StorySection.svelte';
-	import ActionButtons from '$lib/components/game/ActionButtons.svelte';
-	import StaticActionsPanel from '$lib/components/game/StaticActionsPanel.svelte';
-	import ActionInputForm, { type Receiver } from '$lib/components/game/ActionInputForm.svelte';
+	import StorySection from '$lib/components/game/story/StorySection.svelte';
+	import ActionButtons from '$lib/components/game/actions/ActionButtons.svelte';
+	import StaticActionsPanel from '$lib/components/game/actions/StaticActionsPanel.svelte';
+	import ActionInputForm, { type Receiver } from '$lib/components/game/actions/ActionInputForm.svelte';
 	import { createGameController } from '$lib/game/controllers/gameController';
 	import { createModalManager } from '$lib/game/ui/modalManager.svelte';
-	import TimeWidget from '$lib/components/game/TimeWidget.svelte';
+	import TimeWidget from '$lib/components/game/time/TimeWidget.svelte';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
 	import { generateStoryAppropriateTime, shouldRegenerateGameTime } from '$lib/game/logic/timeLogic';
 

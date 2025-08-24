@@ -21,7 +21,7 @@ import { getLatestStoryMessagesFromHistory } from '../memory/messages';
 import { CombatAgent as CombatAgentStatic } from '$lib/ai/agents/combatAgent';
 import { stringifyPretty } from '$lib/util.svelte';
 import type { ThoughtsState } from '$lib/util.svelte';
-import type { DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
+import type { DiceRollResult } from '../logic/diceRollLogic';
 import {
 	getSkillIfApplicable,
 	applyCharacterChange,

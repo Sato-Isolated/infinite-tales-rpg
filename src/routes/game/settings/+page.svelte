@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { navigate } from '$lib/util.svelte';
-	import ImportExportSaveGame from '$lib/components/ImportExportSaveGame.svelte';
+	import ImportExportSaveGame from '$lib/components/ui/data/ImportExportSaveGame.svelte';
 	import type { Campaign } from '$lib/ai/agents/campaignAgent';
-	import GameSettingsModal from '$lib/components/interaction_modals/settings/GameSettingsModal.svelte';
-	import AiGameSettingsModal from '$lib/components/interaction_modals/settings/AiGameSettings.svelte';
+	import GameSettingsModal from '$lib/components/modals/settings/GameSettingsModal.svelte';
+	import AiGameSettingsModal from '$lib/components/modals/settings/AiGameSettings.svelte';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
 	import { generateStoryAppropriateTime, normalizeGameTime } from '$lib/game/logic/timeLogic';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';

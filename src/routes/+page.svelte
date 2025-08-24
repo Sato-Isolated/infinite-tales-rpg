@@ -3,7 +3,7 @@
 	import discord from '$lib/assets/socials/discord-logo-blue.png';
 	import github from '$lib/assets/socials/icone-github-jaune.png';
 	import logo from '$lib/assets/logo-removebg.png';
-	import Disclaimer from '$lib/components/Disclaimer.svelte';
+	import Disclaimer from '$lib/components/ui/layout/Disclaimer.svelte';
 	import { goto } from '$app/navigation';
 
 	let disclaimerOpen = $state(false);
