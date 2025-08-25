@@ -50,32 +50,11 @@ function safeJSONParse<T>(jsonString: string, fallback: T): T {
 }
 
 /**
- * Memoized JSON stringifier with caching for performance
- */
-const stringifyCache = new Map<unknown, string>();
-
-/**
- * Safely stringifies JSON with caching for improved performance
+ * Safely stringifies JSON - removed caching as it was causing comparison issues
  */
 function safeJSONStringify(value: unknown): string | null {
 	try {
-		// Check cache first for performance
-		if (stringifyCache.has(value)) {
-			return stringifyCache.get(value) as string;
-		}
-
-		const stringified = JSON.stringify(value);
-
-		// Manage cache size to prevent memory leaks
-		if (stringifyCache.size >= MAX_CACHE_SIZE) {
-			const firstKey = stringifyCache.keys().next().value;
-			if (firstKey !== undefined) {
-				stringifyCache.delete(firstKey);
-			}
-		}
-
-		stringifyCache.set(value, stringified);
-		return stringified;
+		return JSON.stringify(value);
 	} catch (error) {
 		console.warn('Failed to stringify value:', error);
 		return null;
@@ -111,17 +90,23 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
 
 	// Optimized effect that only runs when value changes, is mounted, and value actually differs
 	$effect(() => {
+		// Track value directly - this will cause effect to re-run when value changes
+		const currentValue = value;
+		
 		if (!isMounted || !hasHydrated) return;
 
-		// Performance optimization: avoid localStorage writes when value hasn't changed
-		if (value === lastSavedValue) return;
-
 		try {
-			if (value !== undefined) {
-				const serialized = safeJSONStringify(value);
+			if (currentValue !== undefined) {
+				const serialized = safeJSONStringify(currentValue);
 				if (serialized !== null) {
-					localStorage.setItem(key, serialized);
-					lastSavedValue = value;
+					// Only write if the serialized value has actually changed
+					const lastSerialized = lastSavedValue !== undefined ? safeJSONStringify(lastSavedValue) : null;
+					
+					if (serialized !== lastSerialized) {
+						localStorage.setItem(key, serialized);
+						// Clone the value to avoid reference issues when the object is mutated
+						lastSavedValue = cloneDeep(currentValue);
+					}
 				}
 			} else {
 				localStorage.removeItem(key);
@@ -137,6 +122,7 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
 
 		try {
 			const currentValue = localStorage.getItem(key);
+			
 			if (currentValue) {
 				const parsedValue = safeJSONParse(currentValue, getInitial());
 
