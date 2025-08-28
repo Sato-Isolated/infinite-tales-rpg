@@ -112,18 +112,18 @@ export class GeminiProvider extends LLM {
 		delay: number = 30
 	): Promise<void> {
 		console.log('🎬 Starting simulated streaming...', { textLength: text.length, chunkSize, delay });
-		
+
 		for (let i = 0; i < text.length; i += chunkSize) {
 			const chunk = text.slice(0, i + chunkSize);
 			console.log(`📺 Streaming chunk: ${i + chunkSize}/${text.length} chars`);
 			callback(chunk, false);
-			
+
 			// Add small delay to simulate streaming
 			if (i + chunkSize < text.length) {
 				await new Promise(resolve => setTimeout(resolve, delay));
 			}
 		}
-		
+
 		// Send final complete text
 		console.log('🏁 Streaming simulation complete');
 		callback(text, true);
@@ -139,25 +139,25 @@ export class GeminiProvider extends LLM {
 		thoughtUpdateCallback?: (thoughtChunk: string, isComplete: boolean) => void
 	): Promise<object | undefined> {
 		console.log('🚀 generateContentStream called (using simulated streaming)');
-		
+
 		try {
 			// Use generateContent to get complete response
 			console.log('📞 Calling generateContent for complete response...');
 			const result = await this.generateContent(request);
-			
+
 			if (!result) {
 				console.log('❌ No result from generateContent');
 				return undefined;
 			}
-			
+
 			console.log('✅ Complete response received:', Object.keys(result.content));
-			
+
 			// Handle thoughts if available
 			if (result.thoughts && thoughtUpdateCallback) {
 				console.log('🧠 Sending thoughts');
 				thoughtUpdateCallback(result.thoughts, true);
 			}
-			
+
 			// Extract story from the JSON response
 			const story = (result.content as any)?.story;
 			if (story && typeof story === 'string') {
@@ -169,13 +169,13 @@ export class GeminiProvider extends LLM {
 				const fallbackText = JSON.stringify(result.content, null, 2);
 				storyUpdateCallback(fallbackText, true);
 			}
-			
+
 			console.log('✅ Simulated streaming complete, returning JSON object');
 			return result.content;
-			
+
 		} catch (error) {
 			console.error('❌ generateContentStream error:', error);
-			
+
 			// Enhanced error handling with consolidated error handler
 			ErrorUtils.logError(error, 'generateContentStream');
 
@@ -232,7 +232,7 @@ export class GeminiProvider extends LLM {
 			} else {
 				systemInstructionString = request.systemInstruction || (typeof this.llmConfig.systemInstruction === 'string' ? this.llmConfig.systemInstruction : undefined);
 			}
-			
+
 			const systemInstruction = this.buildSystemInstruction(systemInstructionString);
 
 			// Use consolidated configuration builder
@@ -288,18 +288,37 @@ export class GeminiProvider extends LLM {
 					console.log('✅ JSON parsed successfully');
 				} catch (jsonError) {
 					console.error('❌ JSON parsing failed:', jsonError);
-					console.log('📝 Raw response text:', response.text.substring(0, 500));
-					
-					// Try to fix the malformed JSON using the interceptor agent
-					try {
-						console.log('🔧 Attempting JSON fixing...');
-						const fixed = await this.jsonFixingInterceptorAgent.fixJSON(response.text, '');
-						content = fixed || {};
-						console.log('✅ JSON successfully fixed');
-					} catch (fixError) {
-						console.error('❌ JSON fixing failed:', fixError);
-						// Return empty object as fallback
+					console.log('📝 Raw response text (first 500 chars):', response.text.substring(0, 500));
+					console.log('📝 Raw response text (around error position):', response.text.substring(6300, 6500));
+
+					// Check retry count to prevent infinite loops
+					const retryCount = (request._retryCount || 0) + 1;
+					const maxRetries = 3;
+
+					if (retryCount > maxRetries) {
+						console.error(`❌ Max retries (${maxRetries}) exceeded, falling back to empty object`);
 						content = {};
+					} else {
+						// Try to fix the malformed JSON using the interceptor agent
+						try {
+							console.log(`🔧 Attempting JSON fixing (attempt ${retryCount}/${maxRetries})...`);
+							const errorMessage = jsonError instanceof Error ? jsonError.message : String(jsonError);
+
+							// Create a new request with retry tracking
+							const fixRequest = { ...request, _retryCount: retryCount };
+							const fixed = await this.jsonFixingInterceptorAgent.fixJSON(response.text, errorMessage, fixRequest);
+							content = fixed || {};
+
+							if (fixed) {
+								console.log('✅ JSON successfully fixed');
+							} else {
+								console.warn('⚠️ JSON fixing returned undefined, using empty object');
+							}
+						} catch (fixError) {
+							console.error('❌ JSON fixing failed:', fixError);
+							// Return empty object as fallback
+							content = {};
+						}
 					}
 				}
 			}

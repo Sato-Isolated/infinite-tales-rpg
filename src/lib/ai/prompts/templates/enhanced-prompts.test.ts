@@ -17,7 +17,7 @@ import { systemBehaviour } from '$lib/ai/prompts/system';
 import { COMBAT_CHAIN_OF_THOUGHT } from '$lib/ai/prompts/formats';
 
 describe('Enhanced Prompts System', () => {
-  
+
   describe('Template Imports', () => {
     it('should import all template functions', () => {
       expect(createJsonInstruction).toBeDefined();
@@ -42,7 +42,7 @@ describe('Enhanced Prompts System', () => {
   describe('JSON Template Creation', () => {
     it('should create valid JSON instructions', () => {
       const instruction = createJsonInstruction('{"test": "value"}');
-      
+
       expect(instruction).toContain('CRITICAL: Respond ONLY with valid JSON');
       expect(instruction).toContain('JSON RULES');
       expect(instruction).toContain('{"test": "value"}');
@@ -50,7 +50,7 @@ describe('Enhanced Prompts System', () => {
 
     it('should include validation rules', () => {
       const instruction = createJsonInstruction(gameAgentJsonTemplate);
-      
+
       expect(instruction).toContain('All JSON keys must remain in English');
       expect(instruction).toContain('Enum values must be in UPPERCASE');
       expect(instruction).toContain('Validate structure before responding');
@@ -75,13 +75,13 @@ describe('Enhanced Prompts System', () => {
     it('should provide examples for different agent types', () => {
       const actionExamples = getFewShotExamples('action');
       const gameExamples = getFewShotExamples('game');
-      
+
       expect(actionExamples).toContain('EXAMPLES OF PROPER ACTION GENERATION');
       expect(gameExamples).toContain('EXAMPLES OF PROPER STORY PROGRESSION');
-      
+
       expect(actionExamples).toContain('User Input:');
       expect(actionExamples).toContain('Expected Response:');
-      
+
       expect(gameExamples).toContain('User Action:');
       expect(gameExamples).toContain('Expected Response:');
     });
@@ -99,10 +99,10 @@ describe('Enhanced Prompts System', () => {
         general: 'Custom general instruction',
         story: 'Custom story instruction'
       };
-      
+
       const result = buildHierarchicalInstructions(baseInstructions, customInstructions);
       const joinedResult = result.join('\n');
-      
+
       expect(joinedResult).toContain('INSTRUCTION PRIORITY SYSTEM');
       expect(joinedResult).toContain('Base instruction 1');
       expect(joinedResult).toContain('Base instruction 2');
@@ -114,7 +114,7 @@ describe('Enhanced Prompts System', () => {
       const baseInstructions = ['Base instruction'];
       const result = buildHierarchicalInstructions(baseInstructions);
       const joinedResult = result.join('\n');
-      
+
       expect(joinedResult).toContain('INSTRUCTION PRIORITY SYSTEM');
       expect(joinedResult).toContain('Base instruction');
       expect(joinedResult).toContain('BEFORE RESPONDING, VALIDATE');
@@ -134,9 +134,10 @@ describe('Enhanced Prompts System', () => {
       const gameSettings = {
         detailedNarrationLength: true,
         aiIntroducesSkills: false,
-        randomEventsHandling: 'probability' as const
+        randomEventsHandling: 'probability' as const,
+        generateAmbientDialogue: true
       };
-      
+
       const behavior = systemBehaviour(gameSettings);
       expect(behavior).toBeDefined();
       expect(behavior).toContain('Game Master');

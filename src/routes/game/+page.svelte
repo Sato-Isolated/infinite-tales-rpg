@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 	import { beforeNavigate } from '$app/navigation';
 	import {
 		type Action,
@@ -178,6 +179,9 @@
 	const customGMNotesState = useLocalStorage<string>('customGMNotesState', '');
 	const currentChapterState = useLocalStorage<number>('currentChapterState', 1);
 
+	// Initialize conversation state manager for dialogue tracking
+	const conversationStateManager = new ConversationStateManager();
+
 	// Initialize campaign state with proper default instead of unsafe cast
 	const defaultCampaign: Campaign = {
 		game: '',
@@ -340,6 +344,7 @@
 				characterAgent,
 				characterStatsAgent
 			},
+			conversationManager: conversationStateManager,
 			modals: modalManager,
 			state: {
 				getCurrentGameActionState: () => currentGameActionState,

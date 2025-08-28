@@ -35,6 +35,7 @@ export interface LLMRequest {
 	returnFallbackProperty?: boolean;
 	stream?: boolean;
 	thinkingConfig?: ThinkingConfig;
+	_retryCount?: number; // Internal counter to prevent infinite loops
 }
 
 export interface LLMconfig {

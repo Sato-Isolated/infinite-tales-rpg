@@ -51,6 +51,19 @@
 		</fieldset>
 
 		<fieldset class="fieldset mt-5 w-full sm:w-2/3">
+			<legend class="fieldset-legend">Generate Ambient Dialogue</legend>
+			<input
+				type="checkbox"
+				bind:checked={gameSettingsState.value.generateAmbientDialogue}
+				class="toggle m-auto mt-2 text-center"
+			/>
+			<small class="text-base-content/70 m-auto mt-2 text-xs">
+				AI will naturally include overheard conversations between NPCs, students, or bystanders to
+				create a living world atmosphere.
+			</small>
+		</fieldset>
+
+		<fieldset class="fieldset mt-5 w-full sm:w-2/3">
 			<legend class="fieldset-legend">Random events</legend>
 			<select
 				bind:value={gameSettingsState.value.randomEventsHandling}

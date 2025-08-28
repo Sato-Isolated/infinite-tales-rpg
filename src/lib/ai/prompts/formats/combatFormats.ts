@@ -53,24 +53,35 @@ export const diceRollPrompt = `"dice_roll": {
  */
 export const statsUpdatePromptObject = `
     "stats_update": [
-        # You must include one update for each action
-        # Also include one update per turn effect like poisoned or bleeding
         {
         		"explanation": "Short explanation for the reason of this change",
-        		# if targetName is a NPC then resourceKey must be one of hp,mp else one of related CHARACTER resources
-        		"type": "{resourceKey}_lost|{resourceKey}_gained",
+        		"type": "health_lost",
             "sourceName": "NPC name or player CHARACTER name, who is the initiator of this action",
-            "targetName": "NPC name or player CHARACTER name, whose stats must be updated.",
-            "value": "must be dice roll notation in format 1d6+3 or 3d4 etc."
+            "targetName": "NPC name or player CHARACTER name, whose stats must be updated",
+            "value": "1d6+3"
         },
         {
-        	 "targetName": "Player CHARACTER name who gains XP.",
+        	 "targetName": "Player CHARACTER name who gains XP",
         	 "explanation": "Short explanation for the reason of this change",
            "type": "xp_gained",
-           "value": "SMALL|MEDIUM|HIGH"
-        },
-        ...
+           "value": "MEDIUM"
+        }
         ]`;
+
+/**
+ * Instructions for stats update generation
+ */
+export const statsUpdateInstructions = `
+STATS UPDATE RULES:
+- You must include one update for each action
+- Also include one update per turn effect like poisoned or bleeding
+- If targetName is a NPC then resourceKey must be one of hp,mp else one of related CHARACTER resources
+- type: Must be in format "{resourceKey}_lost" or "{resourceKey}_gained"
+- sourceName: NPC name or player CHARACTER name, who is the initiator of this action
+- targetName: NPC name or player CHARACTER name, whose stats must be updated
+- value: Must be dice roll notation in format 1d6+3 or 3d4 etc.
+- For XP gains: targetName should be player CHARACTER name, type should be "xp_gained", value should be "SMALL|MEDIUM|HIGH"
+`;
 
 /**
  * Combat balance guidelines

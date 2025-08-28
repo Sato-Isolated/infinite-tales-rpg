@@ -28,13 +28,33 @@ export class SummaryAgent {
 		if (historyMessages.length < startSummaryAtSize) {
 			return { newHistory: historyMessages, summary: '' };
 		}
-		const agent =
-			'You are a Summary Agent for a RPG adventure, who is responsible for summarizing the most important bits of a continuous story.' +
-			' Summarize the story so the most important events, which have a long term impact on the story, and characters are included.\n' +
-			' Emphasize on the most important events, and include their details.\n' +
-			' IMPORTANT: Preserve temporal context and chronological order in your summary. Include time references (day/night, duration, sequence) when mentioned in the story.' +
-			' If you see [Time: ...] markers in the content, extract and incorporate the temporal flow into your narrative summary.' +
-			' CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. {"keyDetails": string array, "story": "", "timelineEvents": [{"event": "", "timeContext": ""}]}';
+		const summaryInstructions = [
+			'You are a Summary Agent for a RPG adventure, who is responsible for summarizing the most important bits of a continuous story.',
+			'Summarize the story so the most important events, which have a long term impact on the story, and characters are included.',
+			'Emphasize on the most important events, and include their details.',
+			'IMPORTANT: Preserve temporal context and chronological order in your summary. Include time references (day/night, duration, sequence) when mentioned in the story.',
+			'If you see [Time: ...] markers in the content, extract and incorporate the temporal flow into your narrative summary.',
+			'',
+			'🗣️ DIALOGUE MEMORY PRESERVATION (CRITICAL):',
+			'- ALWAYS preserve important dialogue context and conversation topics',
+			'- Include which characters have spoken and what they discussed',
+			'- Note relationship changes revealed through conversations',
+			'- Track promises, commitments, or revelations made in dialogue',
+			'- Remember character introductions and first meetings',
+			'- Preserve dialogue-based plot developments and character growth',
+			'- Include conversation outcomes that affect future interactions',
+			'',
+			'SUMMARY FORMAT RULES:',
+			'- keyDetails: Array of key story elements that have long-term impact (INCLUDE DIALOGUE CONTEXT)',
+			'- story: Comprehensive narrative summary maintaining chronological order (PRESERVE CONVERSATION HISTORY)',
+			'- timelineEvents: Array of significant events with their temporal context (INCLUDE IMPORTANT DIALOGUES)',
+			'',
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.'
+		].join('\n');
+
+		const summaryJsonFormat = '{"keyDetails": ["string", "string"], "story": "narrative summary text", "timelineEvents": [{"event": "event description", "timeContext": "time reference"}]}';
+
+		const agent = summaryInstructions + '\n\n' + summaryJsonFormat;
 
 		const toSummarize = historyMessages.slice(2, (numOfLastActions + 1) * -1);
 		console.log('toSummarize', toSummarize);
@@ -64,26 +84,53 @@ export class SummaryAgent {
 		maxRelatedDetails = 3,
 		additionalHistory?: string[]
 	): Promise<RelatedStoryHistory> {
-		if ((!additionalHistory || additionalHistory?.length === 0) && gameStates.length <= 20) {
+		// Only skip if we have very few states (less than 5) and no additional history
+		// This allows dialogue tracking even in shorter sessions
+		if ((!additionalHistory || additionalHistory?.length === 0) && gameStates.length < 5) {
 			return { relatedDetails: [] };
 		}
-		const jsonPrompt =
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. {"relatedDetails": [{"storyReference": string, "relevanceScore": decimal number; 0-1}] array length ' +
-			maxRelatedDetails +
-			'}';
-		const agent =
-			'Scan the FULL STORY HISTORY and identify any SPECIFIC STORY REFERENCES from past events that are HIGHLY RELEVANT to the current STORY PROGRESSION. Focus on details that will help maintain consistency and plausibility.\n' +
-			'The RELEVANT REFERENCES must be only relevant to the current STORY PROGRESSION and not the whole story.\n' +
-			'Never reference the STORY PROGRESSION itself in your response!\n' +
-			'List the RELEVANT STORY REFERENCES including narration details from the story history.\n' +
-			jsonPrompt;
+		const relatedHistoryInstructions = [
+			'Scan the FULL STORY HISTORY and identify any SPECIFIC STORY REFERENCES from past events that are HIGHLY RELEVANT to the current STORY PROGRESSION.',
+			'Focus on details that will help maintain consistency and plausibility.',
+			'The RELEVANT REFERENCES must be only relevant to the current STORY PROGRESSION and not the whole story.',
+			'Never reference the STORY PROGRESSION itself in your response!',
+			'List the RELEVANT STORY REFERENCES including narration details from the story history.',
+			'',
+			'🗣️ DIALOGUE RELEVANCE PRIORITY:',
+			'- Give HIGH PRIORITY to previous conversations that relate to current character interactions',
+			'- Include dialogue context if the current progression involves the same characters',
+			'- Reference past conversation topics if they relate to current events',
+			'- Include character relationship history revealed through previous dialogues',
+			'- Note if characters have met or spoken before in similar contexts',
+			'',
+			'RELATED HISTORY FORMAT RULES:',
+			'- relatedDetails: Array of story references with relevance scores (0.0 to 1.0)',
+			'- storyReference: Specific narrative detail from past events (INCLUDE DIALOGUE CONTEXT)',
+			'- relevanceScore: Decimal number between 0.0 and 1.0 indicating relevance (BOOST SCORES FOR DIALOGUE RELEVANCE)',
+			'',
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.'
+		].join('\n');
+
+		const relatedHistoryJsonFormat = '{"relatedDetails": [{"storyReference": "specific story detail", "relevanceScore": 0.85}]}';
+
+		const jsonPrompt = relatedHistoryInstructions + '\n\n' + relatedHistoryJsonFormat;
+		const agent = jsonPrompt;
 
 		const currentGameStateId = gameStates[gameStates.length - 1]?.id;
-		const isRelevant = (state: GameActionState) =>
-			state.id <= currentGameStateId - 10 &&
-			(!state.story_memory_explanation ||
-				state.story_memory_explanation?.includes('HIGH') ||
-				state.story_memory_explanation?.includes('MEDIUM'));
+
+		// Enhanced relevance filtering that includes recent dialogue context
+		const isRelevant = (state: GameActionState) => {
+			// Include recent states (within last 5) for dialogue continuity
+			const isRecent = state.id > currentGameStateId - 5;
+
+			// Include older states with important memory explanations
+			const hasImportantMemory = state.id <= currentGameStateId - 5 &&
+				(!state.story_memory_explanation ||
+					state.story_memory_explanation?.includes('HIGH') ||
+					state.story_memory_explanation?.includes('MEDIUM'));
+
+			return isRecent || hasImportantMemory;
+		};
 
 		const consideredHistory: LLMMessage[] = gameStates.filter(isRelevant).map((state) => ({
 			role: 'model',
@@ -95,7 +142,7 @@ export class SummaryAgent {
 			});
 		}
 		const request: LLMRequest = {
-			userMessage: 'STORY PROGRESSION:\n' + storyProgression + '\n\n' + jsonPrompt,
+			userMessage: 'STORY PROGRESSION:\n' + storyProgression + '\n\n' + relatedHistoryJsonFormat,
 			systemInstruction: agent,
 			historyMessages: consideredHistory,
 			model: GEMINI_MODELS.FLASH_2_0,

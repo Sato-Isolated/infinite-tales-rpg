@@ -124,26 +124,40 @@ export class CampaignAgent {
 			.map((message) => ({ role: 'model', content: JSON.parse(message.content).story }));
 
 		actionHistoryStoryOnly.push({ role: 'user', content: nextAction.text });
-		const agent =
-			'You are Pen & Paper campaign agent, crafting an epic, overarching campaign with chapters. Each chapter is an own adventure with an own climax and then fades gradually into the next chapter.\n' +
-			'You will be given a plan for a campaign as plannedCampaign and how the actual campaign unfolded during the play session as actualCampaign.\n' +
-			'Then you must decide if the actualCampaign has deviated too much from plannedCampaign and create a nudge that gently guides the character back to follow the chapter plot.\n' +
-			'Do not micro manage every single plot point but only take care that the overall chapter and campaign stay on track.\n' +
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-			`{
-				"currentChapter": Identify the most relevant chapterId in plannedCampaign that the story aligns with; Explain your reasoning briefly; Format "{Reasoning} - CHAPTER_ID: {chapterId}",
-				"currentPlotPoint": Identify the most relevant plotId in plannedCampaign that the story aligns with; Explain your reasoning briefly; Format "{Reasoning} - PLOT_ID: {plotId}",
-  			"nextPlotPoint": Identify the next plotId in plannedCampaign, must be greater than currentPlotPoint or null if there is no next plot point; Format: "Reasoning why story is currently at this plotId - PLOT_ID: {plotId}",
-  			"deviationExplanation": is the currentChapter still on track; if not include reasons why the actualCampaign deviated from currentChapter,
-				"deviation": integer 0 - 100 how much the actualCampaign deviated from currentChapter,
-				"pacingExplanation": reasoning on how quickly the characters are proceeding through the currentChapter,
-				"pacing": integer 0 - 100 value increases/decreases depending on how quickly the characters are proceeding through the currentChapter,
-				#only include plotNudge object if deviation > 50, else null
+		const campaignTrackingInstructions = [
+			'You are Pen & Paper campaign agent, crafting an epic, overarching campaign with chapters. Each chapter is an own adventure with an own climax and then fades gradually into the next chapter.',
+			'You will be given a plan for a campaign as plannedCampaign and how the actual campaign unfolded during the play session as actualCampaign.',
+			'Then you must decide if the actualCampaign has deviated too much from plannedCampaign and create a nudge that gently guides the character back to follow the chapter plot.',
+			'Do not micro manage every single plot point but only take care that the overall chapter and campaign stay on track.',
+			'',
+			'CAMPAIGN TRACKING RULES:',
+			'- currentChapter: Identify the most relevant chapterId, explain reasoning, format: "{Reasoning} - CHAPTER_ID: {chapterId}"',
+			'- currentPlotPoint: Identify the most relevant plotId, explain reasoning, format: "{Reasoning} - PLOT_ID: {plotId}"',
+			'- nextPlotPoint: Identify next plotId (greater than current) or null, format: "Reasoning - PLOT_ID: {plotId}"',
+			'- deviationExplanation: Explain if currentChapter is on track and reasons for any deviation',
+			'- deviation: Integer 0-100 indicating deviation level from currentChapter',
+			'- pacingExplanation: Reasoning on how quickly characters are proceeding through currentChapter',
+			'- pacing: Integer 0-100 indicating progression speed through currentChapter',
+			'- plotNudge: Only include if deviation > 50, otherwise null',
+			'',
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.'
+		].join('\n');
+
+		const campaignTrackingJsonFormat = `{
+				"currentChapter": "Reasoning explanation - CHAPTER_ID: 1",
+				"currentPlotPoint": "Reasoning explanation - PLOT_ID: 2",
+  			"nextPlotPoint": "Reasoning explanation - PLOT_ID: 3",
+  			"deviationExplanation": "explanation of campaign tracking status",
+				"deviation": 25,
+				"pacingExplanation": "explanation of progression speed",
+				"pacing": 75,
 				"plotNudge": {
-					"nudgeExplanation": Explain why the characters are guided back to follow the currentChapter plot,
-					"nudgeStory": Create an NPC or event that gently guides the character back to follow the currentChapter plot. It must fit to the last character action.
+					"nudgeExplanation": "explanation why guidance is needed",
+					"nudgeStory": "NPC or event that guides character back to plot"
 				}
 			}`;
+
+		const agent = campaignTrackingInstructions + '\n\n' + campaignTrackingJsonFormat;
 
 		const request: LLMRequest = {
 			userMessage: 'Check if the actualCampaign is on course with the plannedCampaign.',
@@ -172,16 +186,16 @@ export class CampaignAgent {
 		if (chapter) {
 			agentInstruction.push(
 				'Important instruction! The new chapter must be based on the following: ' +
-					stringifyPretty(chapter)
+				stringifyPretty(chapter)
 			);
 		}
 		agentInstruction.push(
 			'The new chapter must fit within the other chapters, generate a chapter with chapterId: ' +
-				chapterNumberToGenerate
+			chapterNumberToGenerate
 		);
 		agentInstruction.push(
 			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-				chaptersPrompt
+			chaptersPrompt
 		);
 
 		let userMessage = 'Generate the new chapter.';

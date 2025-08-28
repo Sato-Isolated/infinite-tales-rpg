@@ -6,10 +6,27 @@ export const ATTRIBUTE_MAX_VALUE = 10;
 export const ATTRIBUTE_MIN_VALUE = -10;
 
 /**
- * Format for ability objects in prompts
+ * Ability JSON format template
  */
-export const abilityFormatForPrompt =
-	'{"name": string, "effect": "Clearly state the effect caused. If causing damage include the dice notation like 1d6+2 or 2d4", "resource_cost": if no cost null else { "resource_key": "the resource to pay for this action; one of character_stats.resources", "cost": number}, "image_prompt": short prompt for an image ai that generates an RPG game icon}';
+export const abilityJsonFormat = '{"name": "ability name", "effect": "clearly state the effect caused, include dice notation like 1d6+2 or 2d4 if causing damage", "resource_cost": null, "image_prompt": "short prompt for RPG game icon"}';
+
+/**
+ * Ability format instructions
+ */
+export const abilityInstructions = [
+	'ABILITY FORMAT RULES:',
+	'- name: Clear, descriptive ability name',
+	'- effect: Detailed effect description with dice notation for damage (1d6+2, 2d4, etc.)',
+	'- resource_cost: null if no cost, otherwise object with resource_key and cost',
+	'  - resource_key: must match one of character_stats.resources',
+	'  - cost: numeric value for resource consumption',
+	'- image_prompt: Short description for RPG icon generation'
+].join('\n');
+
+/**
+ * Legacy export for backward compatibility
+ */
+export const abilityFormatForPrompt = abilityJsonFormat;
 
 /**
  * Format for NPC ID objects in prompts
@@ -25,48 +42,114 @@ export const currentlyPresentNPCSForPrompt = `{"hostile": array of ${npcIDForPro
  * Format for character stats state in prompts
  */
 export const characterStatsStateForPrompt = `{
-	"level": Number; Level of the character according to Description of the story and character,
-    "resources": "Starting resources, based on GAME System, MAIN_SCENARIO, description and level of the character. 2 - 4 different resources, e.g. for a survival game HUNGER, WARMTH, ...; as a vampire BLOOD, etc...) Format: {"{resourceKey}": {"max_value": number, "start_value": number, "game_ends_when_zero": true if this is a critical resource; else false}, ...}",
-    "attributes": "Attributes that affect dice roll modifiers. Analyze character description to determine appropriate Attributes like Strength, Dexterity, etc. Stats can be positive (1 to ${ATTRIBUTE_MAX_VALUE}), neutral (0), or negative (${ATTRIBUTE_MIN_VALUE} to -1) based on character's strengths and weaknesses. Format: {"stat1": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, "stat2": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, ...}",
-    "skills": "Skills that affect dice roll modifiers. Analyze character description to determine appropriate skills like Swordfighting, Swimming, Thunder Magic, etc. Stats can be positive (1 to ${ATTRIBUTE_MAX_VALUE}), neutral (0), or negative (${ATTRIBUTE_MIN_VALUE} to -1) based on character's strengths and weaknesses. Format: {"stat1": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, "stat2": valueFrom${ATTRIBUTE_MIN_VALUE}To${ATTRIBUTE_MAX_VALUE}, ...}",
-	"spells_and_abilities": "Array of spells and abilities according to game system and level. List 2-4 actively usable spells and abilities. They should have a cost of one resource type, although some can be without cost. At last include a 'Standard Attack' without cost. Format: [${abilityFormatForPrompt}]"
+	"level": 1,
+    "resources": {
+        "resource_name": {
+            "max_value": 100,
+            "start_value": 100,
+            "game_ends_when_zero": false
+        }
+    },
+    "attributes": {
+        "attribute_name": 0
+    },
+    "skills": {
+        "skill_name": 0
+    },
+	"spells_and_abilities": [
+        {
+            "name": "Ability Name",
+            "effect": "Effect description with dice notation if applicable",
+            "resource_cost": null,
+            "image_prompt": "Icon description"
+        }
+    ]
 }`;
+
+/**
+ * Instructions for character stats generation
+ */
+export const characterStatsInstructions = `
+CHARACTER STATS GENERATION RULES:
+- Level: Level of the character according to description of the story and character
+- Resources: Starting resources, based on GAME System, MAIN_SCENARIO, description and level of the character. 2-4 different resources (e.g. for survival game HUNGER, WARMTH; as vampire BLOOD, etc.)
+- Attributes: Attributes that affect dice roll modifiers. Analyze character description to determine appropriate Attributes like Strength, Dexterity, etc. Stats can be positive (1 to ${ATTRIBUTE_MAX_VALUE}), neutral (0), or negative (${ATTRIBUTE_MIN_VALUE} to -1) based on character's strengths and weaknesses
+- Skills: Skills that affect dice roll modifiers. Analyze character description to determine appropriate skills like Swordfighting, Swimming, Thunder Magic, etc. Stats can be positive (1 to ${ATTRIBUTE_MAX_VALUE}), neutral (0), or negative (${ATTRIBUTE_MIN_VALUE} to -1) based on character's strengths and weaknesses
+- Spells and Abilities: Array of spells and abilities according to game system and level. List 2-4 actively usable spells and abilities. They should have a cost of one resource type, although some can be without cost. At least include a 'Standard Attack' without cost
+`;
 
 /**
  * Format for level up prompts
  */
 export const levelUpPrompt = `{
-		"level_up_explanation": "Explanation why exactly this stat and ability have been increased. If already existing ability changed explain the ability changes.",
-		"attribute": "attribute name",
-		"resources": {"resourceKey": newMaximumValue, ...},
-		"ability": Existing ability leveled up or new ability according to game system and level; Format: ${abilityFormatForPrompt}
-		"formerAbilityName": "refers an already existing ability name that is changed, null if new ability is gained",
+		"level_up_explanation": "Explanation for stat and ability changes",
+		"attribute": "attribute_name",
+		"resources": {
+            "resource_name": 100
+        },
+		"ability": {
+            "name": "Ability Name",
+            "effect": "Effect description",
+            "resource_cost": null,
+            "image_prompt": "Icon description"
+        },
+		"formerAbilityName": null
 }`;
+
+/**
+ * Instructions for level up generation
+ */
+export const levelUpInstructions = `
+LEVEL UP RULES:
+- level_up_explanation: Explanation why exactly this stat and ability have been increased. If already existing ability changed explain the ability changes
+- attribute: attribute name
+- resources: Object with resource name as key and new maximum value as value  
+- ability: Existing ability leveled up or new ability according to game system and level
+- formerAbilityName: refers an already existing ability name that is changed, null if new ability is gained
+`;
 
 /**
  * Format for NPC stats state in prompts
  */
 export const npcStatsStateForPromptAsString = `{
-	"uniqueTechnicalNameId": "A fixed, unchanging identifier that remains the same for the same NPC, regardless of state or context.",
-	"displayName": "The name displayed to the player, which CAN change based on state or context",
-	"level": Number, 
-	"rank": "Very Weak|Weak|Average|Strong|Boss|Legendary",
-	"is_friendly": true if friendly,
-	"hp": "The NPCs Hit Points. Always use the key 'hp', not 'health' or any other variation",
-	"mp": "The NPCs Mana Points. Always use the key 'mp', not 'mana' or any other variation",
+	"uniqueTechnicalNameId": "npc_unique_id",
+	"displayName": "NPC Display Name",
+	"level": 1, 
+	"rank": "Average",
+	"is_friendly": true,
+	"hp": 100,
+	"mp": 50,
 	"relationships": [
 		{
-			"target_npc_id": "ID of target NPC (optional, undefined if relation with player)",
-			"target_name": "Name of target (player or other NPC)",
-			"relationship_type": "family|friend|romantic|enemy|acquaintance|professional|other",
-			"specific_role": "Specific role like 'sister', 'brother', 'father', 'mother', 'colleague', 'boss', etc.",
-			"emotional_bond": "very_negative|negative|neutral|positive|very_positive",
-			"description": "Detailed description of the relationship and how it influences interactions"
+			"target_npc_id": "optional_target_npc_id",
+			"target_name": "Target Name",
+			"relationship_type": "friend",
+			"specific_role": "colleague",
+			"emotional_bond": "positive",
+			"description": "Relationship description"
 		}
 	],
-	"personality_traits": ["Array of personality traits that influence behavior"],
-	"speech_patterns": "How the NPC speaks (accent, expressions, tone, specific words they use)",
-	"background_notes": "Personal history, motivations, and context that explains their behavior"
+	"personality_traits": ["trait1", "trait2"],
+	"speech_patterns": "Speech pattern description",
+	"background_notes": "Background and motivation notes"
 }`;
+
+/**
+ * Instructions for NPC stats generation
+ */
+export const npcStatsInstructions = `
+NPC STATS GENERATION RULES:
+- uniqueTechnicalNameId: A fixed, unchanging identifier that remains the same for the same NPC, regardless of state or context
+- displayName: The name displayed to the player, which CAN change based on state or context
+- level: Numeric level
+- rank: Must be one of: "Very Weak", "Weak", "Average", "Strong", "Boss", "Legendary"
+- is_friendly: Boolean indicating if NPC is friendly
+- hp: The NPCs Hit Points. Always use the key 'hp', not 'health' or any other variation
+- mp: The NPCs Mana Points. Always use the key 'mp', not 'mana' or any other variation
+- relationships: Array of relationship objects with target NPCs or player
+- personality_traits: Array of personality traits that influence behavior
+- speech_patterns: How the NPC speaks (accent, expressions, tone, specific words they use)
+- background_notes: Personal history, motivations, and context that explains their behavior
+`;
 
 export const npcRank = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];

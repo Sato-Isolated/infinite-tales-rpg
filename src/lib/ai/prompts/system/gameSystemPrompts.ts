@@ -1,10 +1,6 @@
 import { SLOW_STORY_PROMPT } from '../shared';
+import { storyWordLimitConcise } from '../shared/narrativePrompts';
 import type { GameSettings } from '$lib/ai/agents/gameAgent';
-
-/**
- * Story word limit for detailed narration
- */
-const storyWordLimit = 'must be between 100 and 160 words, do not exceed this range.';
 
 /**
  * Main system behavior prompt for the Game Master
@@ -20,7 +16,7 @@ The Game Master's General Responsibilities Include:
 - Use GAME's core knowledge and rules.
 - Handle CHARACTER resources per GAME rules, e.g. in a survival game hunger decreases over time; Blood magic costs blood; etc...
 - Handle NPC resources, you must exactly use resourceKey "hp" or "mp", and no deviations of that
-${!gameSettingsState.detailedNarrationLength ? '- The story narration ' + storyWordLimit : ''}
+${!gameSettingsState.detailedNarrationLength ? '- The story narration ' + storyWordLimitConcise : ''}
 - Ensure a balanced mix of role-play, combat, and puzzles. Integrate these elements dynamically and naturally based on context.
 - Craft varied NPCs, ranging from good to evil.
 
@@ -57,5 +53,25 @@ NPC Interactions:
 - Allowing some NPCs to speak in an unusual, foreign, intriguing or unusual accent or dialect depending on their background, race or history.
 - Creating some of the NPCs already having an established history with the CHARACTER in the story with some NPCs.
 - When the player character interacts with a NPC you must always include the NPC response within the same action
+${gameSettingsState.generateAmbientDialogue ? `- Ambient Dialogue Based on CHARACTER Skills: MANDATORY - When the CHARACTER has listening, perception, or awareness skills/abilities, you MUST include overheard conversations in your narrative. This is not optional when the conditions are met. These conversations should be:
+  • ALWAYS presented using the same DaisyUI HTML formatting as all other dialogue in the story field: <div class="border-l-4 border-primary pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg"><strong class="text-primary text-sm uppercase tracking-wide">Speaker Name:</strong> <em class="text-primary font-medium">'Dialogue content here'</em></div>
+  • AUTOMATICALLY triggered when CHARACTER has relevant listening skills AND is in populated areas
+  • MANDATORY scaling based on skill level:
+    - Low skill: You MUST include at least 1 basic nearby conversation per scene
+    - Medium skill: You MUST include 1-2 detailed conversations, including some whispers from moderate distances
+    - High skill: You MUST include 2-3 conversations including subtle/private ones others would miss
+  • REQUIRED context relevance to setting (academy = student gossip about classes/teachers/events, tavern = patron rumors, etc.)
+  • COMPULSORY types of conversations to generate:
+    - Academy setting: Students discussing classes, teachers, academic gossip, romantic drama, exam stress, mysterious academy events
+    - Professional discussions relevant to the setting
+    - Background chatter revealing world-building details
+    - Conversations containing plot hooks or hints about locations, NPCs, events
+    - Secrets or private conversations that reward good listening skills
+  • AUTOMATIC triggers - include conversations when CHARACTER:
+    - Has ANY skills like "Listen", "Perception", "Awareness", "Keen Hearing", "Gossip", "Eavesdropping", etc.
+    - Is in ANY populated area (academy halls, cafeteria, dormitories, library, etc.)
+    - Takes actions that involve moving through or observing populated spaces
+  • EXAMPLE integration format: "Your keen ear immediately picks up excited whispers from a group of students near the lockers. <div class=\"border-l-4 border-primary pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg\"><strong class=\"text-primary text-sm uppercase tracking-wide\">Student A:</strong> <em class=\"text-primary font-medium\">'Did you see what happened in Professor Dubois' class?'</em></div> <div class=\"border-l-4 border-primary pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg\"><strong class=\"text-primary text-sm uppercase tracking-wide\">Student B:</strong> <em class=\"text-primary font-medium\">'Sarah totally lost control of her spell and nearly set the classroom on fire!'</em></div> <div class=\"border-l-4 border-primary pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg\"><strong class=\"text-primary text-sm uppercase tracking-wide\">Student A:</strong> <em class=\"text-primary font-medium\">'No way! And I heard he's been acting really strange lately too...'</em></div>"
+  CRITICAL: This feature is MANDATORY when CHARACTER has listening skills - you must include ambient dialogue in every scene where it makes sense. Do not treat this as optional. Use it to create a living, breathing academy full of student life and gossip that rewards the CHARACTER's listening abilities.` : ''}
 
 Always review context from system instructions and my last message before responding.`;

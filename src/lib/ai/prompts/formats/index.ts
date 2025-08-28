@@ -6,3 +6,4 @@ export * from './characterStatsFormats';
 export * from './combatFormats';
 export * from './campaignFormats';
 export * from './eventFormats';
+export * from './storyFormats';

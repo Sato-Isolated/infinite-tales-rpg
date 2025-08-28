@@ -15,6 +15,7 @@ import type { ActionAgent } from '$lib/ai/agents/actionAgent';
 import type { SummaryAgent } from '$lib/ai/agents/summaryAgent';
 import type { CampaignAgent, CampaignChapter } from '$lib/ai/agents/campaignAgent';
 import type { EventAgent, EventEvaluation, CharacterChangedInto } from '$lib/ai/agents/eventAgent';
+import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 import * as gameLogic from '../logic/gameLogic';
 import * as npcLogic from '../npc/npcLogic';
 import { getLatestStoryMessagesFromHistory } from '../memory/messages';
@@ -90,6 +91,7 @@ export type ControllerCtx = {
 		characterAgent: import('$lib/ai/agents/characterAgent').CharacterAgent;
 		characterStatsAgent: import('$lib/ai/agents/characterStatsAgent').CharacterStatsAgent;
 	};
+	conversationManager?: ConversationStateManager;
 	state: {
 		// primitives or getters to always read latest
 		getCurrentGameActionState: () => GameActionState;
@@ -363,6 +365,25 @@ export function createGameController(ctx: ControllerCtx) {
 			{ ...newState, id: ctx.state.gameActionsState.value.length }
 		];
 		ctx.state.storyChunkReset();
+
+		// 🗣️ DIALOGUE TRACKING: Track new conversations to prevent future repetitions
+		if (ctx.conversationManager && newState.story) {
+			try {
+				const conversationSummary = await ctx.agents.gameAgent.dialogueTracker.extractConversationSummary(
+					newState.story,
+					ctx.state.gameActionsState.value.length - 1
+				);
+
+				if (conversationSummary) {
+					ctx.conversationManager.addConversation(conversationSummary);
+					console.log('📝 Conversation tracked:', conversationSummary.conversation_id);
+				}
+			} catch (error) {
+				console.warn('Failed to track conversation:', error);
+				// Non-fatal error, continue normal flow
+			}
+		}
+
 		await ctx.helpers.checkGameEnded();
 
 		if (!ctx.state.isGameEnded.value) {

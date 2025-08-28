@@ -123,5 +123,5 @@ export const commonJsonPatterns = {
   reasoning: `{"reasoning": "Brief explanation", "enum_english": "ENUM_VALUE"}`,
   statsUpdate: `{"type": "{resource}_lost|{resource}_gained", "sourceName": "Name", "targetName": "Name", "value": "1d6+3", "explanation": "Reason"}`,
   inventory: `{"type": "add_item|remove_item", "item_id": "unique_id", "item_added": {"description": "...", "effect": "..."}}`,
-  timeObject: `{"day": 1-30, "dayName": "Monday", "month": 1-12, "monthName": "January", "year": number, "hour": 0-23, "minute": 0-59, "timeOfDay": "dawn|morning|midday|afternoon|evening|night|deep_night"}`
+  timeObject: `{"day": 15, "dayName": "Monday", "month": 6, "monthName": "June", "year": 2024, "hour": 12, "minute": 30, "timeOfDay": "midday"}`
 };

@@ -41,6 +41,30 @@ export class ActionAgent {
 	}
 
 	/**
+	 * Get action generation instructions (separate from JSON template)
+	 */
+	private getActionInstructions = (
+		attributes: string[],
+		skills: string[],
+		newSkillsAllowed: boolean
+	): string => {
+		const newSkillRule = newSkillsAllowed
+			? `Choose or create a single skill that is more specific than the related_attribute but broad enough for multiple actions (e.g. 'Melee Combat' instead of 'Strength'). Use an exact same spelled EXISTING SKILL if applicable; otherwise, add a fitting new one.`
+			: `Choose an exact same spelled single skill from EXISTING SKILLS or null if none fits; Never create a new skill;`;
+
+		return `
+ACTION GENERATION RULES:
+- related_attribute: Must be an exact same spelled attribute from: ${attributes.join(', ')} - never create new Attributes!
+- related_skill: ${newSkillRule} EXISTING SKILLS: ${skills.join(', ')}
+- resource_cost: Set to null if no cost, otherwise use object with resource_key and cost
+- narration_details: Use object format with reasoning and enum_english (LOW|MEDIUM|HIGH). LOW if it involves few steps or can be done quickly; MEDIUM|HIGH if it involves thorough planning or decisions
+- enemyEncounterExplanation: Use object format with reasoning and enum_english (LOW|MEDIUM|HIGH). Brief reasoning for the probability of an enemy encounter; if probable describe enemy details; LOW probability if an encounter recently happened
+- is_interruptible: Use object format with reasoning and enum_english (${this.INTERRUPT_PROBABILITY_OPTIONS}). Brief reasoning for the probability that this action is interrupted; e.g. travel in dangerous environment is HIGH
+- dice_roll: Use dice roll prompt format with modifier details
+`;
+	};
+
+	/**
 	 * Optimized JSON format generation with cached constants
 	 * Improves performance by avoiding repeated Object.keys() calls
 	 */
@@ -56,7 +80,7 @@ export class ActionAgent {
 		const attributesString = attributes.join(', ');
 		const skillsString = skills.join(', ');
 
-		return `
+		return `{
 					"characterName": "Player character name who performs this action",
 					"plausibility": "Brief explanation why this action is plausible in the current situation",
 					"text": "Keep the text short, max 20 words. Description of the action to display to the player, do not include modifier or difficulty here.",
@@ -66,16 +90,25 @@ export class ActionAgent {
 					"related_skill": "a single skill the dice is rolled for; ${newSkillRule} EXISTING SKILLS: ${skillsString}",
 					"difficulty_explanation": "Keep the text short, max 20 words. Explain the reasoning for action_difficulty. Format: Chose {action_difficulty} because {reason}",
 					"action_difficulty": "${this.ACTION_DIFFICULTY_OPTIONS}",
-					"is_possible": true|false,
-					"resource_cost": if no cost null else { 
-						"resource_key": "the resource to pay for this action; one of character_stats.resources",
-						"cost": number,
+					"is_possible": true,
+					"resource_cost": null,
+					"narration_details": {
+						"reasoning": "Brief reasoning how many details the narration should include",
+						"enum_english": "LOW"
 					},
-					"narration_details": Format {"reasoning": string, "enum_english": LOW|MEDIUM|HIGH}; Brief {reasoning} how many details the narration for this action should include; LOW if it involves few steps or can be done quickly; MEDIUM|HIGH if it involves thorough planning or decisions,
 					"actionSideEffects": "Reasoning whether this action causes any side effects on the environment or reactions from NPCs",
-  					"enemyEncounterExplanation": Format {"reasoning": string, "enum_english": LOW|MEDIUM|HIGH}; Brief {reasoning} for the probability of an enemy encounter; if probable describe enemy details; LOW probability if an encounter recently happened,
-					"is_interruptible": Format {"reasoning": string, "enum_english": ${this.INTERRUPT_PROBABILITY_OPTIONS}}; Brief {reasoning} for the probability that this action is interrupted; e.g. travel in dangerous environment is HIGH,
-					${diceRollPrompt}
+  					"enemyEncounterExplanation": {
+						"reasoning": "Brief reasoning for the probability of an enemy encounter",
+						"enum_english": "LOW"
+					},
+					"is_interruptible": {
+						"reasoning": "Brief reasoning for the probability that this action is interrupted",
+						"enum_english": "NEVER"
+					},
+					"dice_roll": {
+						"required": false,
+						"modifier": 0
+					}
 				}`;
 	};
 
@@ -138,17 +171,18 @@ export class ActionAgent {
 				- For puzzles, the player —not the character— must solve them. Offer a set of possible actions, including both correct and incorrect choices.
 				- Any action is allowed to target anything per game rules.`,
 			'The suggested action must fit to the setting of the story:' +
-				'\n' +
-				stringifyPretty(storySettingsMapped),
+			'\n' +
+			stringifyPretty(storySettingsMapped),
 			'dice_roll can be modified by following description of the character, e.g. acting smart or with force, ...' +
-				'\n' +
-				stringifyPretty(characterDescription),
+			'\n' +
+			stringifyPretty(characterDescription),
 			'dice_roll can be modified by items from the inventory:' +
-				'\n' +
-				stringifyPretty(inventoryState),
+			'\n' +
+			stringifyPretty(inventoryState),
 			'dice_roll modifier can be applied based on high or low resources:' +
-				'\n' +
-				stringifyPretty(characterStats.resources),
+			'\n' +
+			stringifyPretty(characterStats.resources),
+			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed),
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)}`
 		];
@@ -179,6 +213,7 @@ export class ActionAgent {
 			userMessage +=
 				'\n\nFollowing is related past story plot, check if the action is possible in this context, it must be plausible in this moment and not just hypothetically;\n' +
 				'If no history detail directly contradicts the action, it is possible.\n' +
+				'Avoid actions that would lead to repeating dialogues or conversations that have already occurred.\n' +
 				relatedHistory.join('\n');
 		}
 		console.log('actions prompt: ', userMessage);
@@ -219,17 +254,18 @@ export class ActionAgent {
 			'You are RPG action agent, you are given a RPG story and then suggest actions the player character can take, considering the story, currently_present_npcs and character stats.',
 			actionRules,
 			'The suggested actions must fit to the setting of the story:' +
-				'\n' +
-				stringifyPretty(storySettingsMapped),
+			'\n' +
+			stringifyPretty(storySettingsMapped),
 			'Suggest actions according to the following description of the character temper, e.g. acting smart or with force, ...' +
-				'\n' +
-				stringifyPretty(characterDescription),
+			'\n' +
+			stringifyPretty(characterDescription),
 			'As an action, the character can make use of items from the inventory:' +
-				'\n' +
-				stringifyPretty(inventoryState),
+			'\n' +
+			stringifyPretty(inventoryState),
 			'dice_roll modifier can be applied based on high or low resources:' +
-				'\n' +
-				stringifyPretty(characterStats.resources),
+			'\n' +
+			stringifyPretty(characterStats.resources),
+			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed),
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
       [
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},
@@ -241,10 +277,11 @@ export class ActionAgent {
 		if (relatedHistory && relatedHistory.length > 0) {
 			agent.push(
 				'The actions must be plausible with PAST STORY PLOT;\n' +
-					'Never suggest actions to investigate PAST STORY PLOT as they are already known;\n' +
-					//make sure custom player history takes precedence
-					'If PAST STORY PLOT contradict each other, the earliest takes precedence, and the later conflicting detail must be ignored;\nPAST STORY PLOT:\n' +
-					relatedHistory.join('\n')
+				'Never suggest actions to investigate PAST STORY PLOT as they are already known;\n' +
+				'Avoid suggesting actions that would lead to repeating dialogues or conversations that have already occurred;\n' +
+				//make sure custom player history takes precedence
+				'If PAST STORY PLOT contradict each other, the earliest takes precedence, and the later conflicting detail must be ignored;\nPAST STORY PLOT:\n' +
+				relatedHistory.join('\n')
 			);
 		}
 		if (customSystemInstruction) {
@@ -364,17 +401,18 @@ export class ActionAgent {
 			'You are RPG action agent, you are given an item description and then suggest the actions the player character can take with that item, considering the story, currently_present_npcs and character stats.',
 			actionRules,
 			'The suggested actions must fit to the setting of the story:' +
-				'\n' +
-				stringifyPretty(storySettingsMapped),
+			'\n' +
+			stringifyPretty(storySettingsMapped),
 			'Suggest actions according to the following description of the character temper, e.g. acting smart or with force, ...' +
-				'\n' +
-				stringifyPretty(characterDescription),
+			'\n' +
+			stringifyPretty(characterDescription),
 			'As an action, the character could also combine the item with other items from the inventory:' +
-				'\n' +
-				stringifyPretty(inventoryState),
+			'\n' +
+			stringifyPretty(inventoryState),
 			'dice_roll modifier can be applied based on high or low resources:' +
-				'\n' +
-				stringifyPretty(characterStats.resources),
+			'\n' +
+			stringifyPretty(characterStats.resources),
+			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed),
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
       [
 				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},

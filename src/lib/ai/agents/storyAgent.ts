@@ -3,6 +3,7 @@ import type { LLM, LLMRequest } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import isEqual from 'fast-deep-equal';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
+import { storyJsonFormat, storyInstructions } from '$lib/ai/prompts/formats';
 
 export type Story = typeof storyStateForPrompt;
 
@@ -89,11 +90,16 @@ export class StoryAgent {
 		overwrites = {},
 		characterDescription: CharacterDescription | undefined = undefined
 	): Promise<Story> {
-		const storyAgent =
-			'You are RPG story agent, crafting captivating, limitless GAME experiences using BOOKS, THEME, TONALITY for CHARACTER.\n' +
-			TROPES_CLICHE_PROMPT +
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-			stringifyPretty(storyStateForPrompt);
+		const storyAgentInstructions = [
+			'You are RPG story agent, crafting captivating, limitless GAME experiences using BOOKS, THEME, TONALITY for CHARACTER.',
+			TROPES_CLICHE_PROMPT,
+			'',
+			storyInstructions,
+			'',
+			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.'
+		].join('\n');
+
+		const storyAgent = storyAgentInstructions + '\n\n' + storyJsonFormat;
 
 		const preset = {
 			...storyStateForPrompt,

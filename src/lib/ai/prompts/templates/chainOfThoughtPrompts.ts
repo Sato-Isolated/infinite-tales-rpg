@@ -63,7 +63,13 @@ STORY PROGRESSION REASONING:
    - What dialogue and character interactions?
    - How to maintain appropriate tonality?
 
-5. 🔄 CONTINUITY CHECK
+5. �️ DIALOGUE CONSISTENCY CHECK
+   - What dialogues have characters already had?
+   - Are any NPCs about to repeat previous conversations?
+   - How can dialogue build upon past interactions without repetition?
+   - Do characters remember what they've discussed before?
+
+6. �🔄 CONTINUITY CHECK
    - Does this fit with recent history?
    - Are NPCs behaving consistently?
    - Is the world responding logically?
@@ -245,5 +251,5 @@ Then create your character description JSON.
  * Helper to inject chain-of-thought into any prompt
  */
 export const addChainOfThought = (basePrompt: string, specificChainOfThought: string): string => {
-  return `${basePrompt}\n\n${specificChainOfThought}`;
+   return `${basePrompt}\n\n${specificChainOfThought}`;
 };

@@ -17,7 +17,7 @@ export const timeGenerationPrompt = [
 	'- Setting realism (desert=heat/dust, mountains=wind/snow, coastal=mist/storms)',
 	'',
 	'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.',
-	'{"day": number 1-30, "dayName": "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday", "month": number 1-12, "monthName": "January|February|March|April|May|June|July|August|September|October|November|December", "year": number, "hour": number 0-23, "minute": number 0-59, "timeOfDay": "dawn|morning|midday|afternoon|evening|night|deep_night", "season": "spring|summer|autumn|winter", "weather": {"type": "clear|cloudy|light_rain|heavy_rain|drizzle|snow|blizzard|storm|thunderstorm|fog|mist|wind|hail|heat_wave|cold_snap", "intensity": "light|moderate|heavy|extreme", "description": "brief atmospheric description"}, "explanation": "Brief explanation of why this time and weather fits the story"}'
+	'{"day": 15, "dayName": "Monday", "month": 6, "monthName": "June", "year": 2024, "hour": 12, "minute": 30, "timeOfDay": "midday", "season": "summer", "weather": {"type": "clear", "intensity": "light", "description": "brief atmospheric description"}, "explanation": "Brief explanation of why this time and weather fits the story"}'
 ];
 
 /**
