@@ -1,4 +1,5 @@
 import { stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
+import type { GameTime } from '$lib/types/gameTime';
 import { ActionDifficulty } from '$lib/game/logic/gameLogic';
 import { type StatsUpdate } from '$lib/ai/agents/combatAgent';
 import type { LLM, LLMMessage, LLMRequest, SystemInstructionsState } from '$lib/ai/llm';
@@ -12,13 +13,19 @@ import {
 } from '$lib/ai/agents/characterStatsAgent';
 import type { CampaignChapter } from '$lib/ai/agents/campaignAgent';
 import { DialogueTrackingAgent } from '$lib/ai/agents/dialogueTrackingAgent';
+import { DialogueFidelityAgent, DEFAULT_FIDELITY_SETTINGS, type DialogueFidelitySettings } from '$lib/ai/agents/dialogueFidelityAgent';
+import type { DiceSimulationMode } from '$lib/utils/webglDetection';
 import {
 	PAST_STORY_PLOT_RULE,
 	SLOW_STORY_PROMPT,
 	storyWordLimit,
 	TIME_DURATION_GUIDELINES,
 	DIALOGUE_CONSISTENCY_PROMPT,
-	DIALOGUE_MEMORY_CHECK
+	DIALOGUE_MEMORY_CHECK,
+	ACTION_DIALOGUE_DISTINCTION_PROMPT,
+	generateDynamicFidelityPrompt,
+	ANTI_TRANSFORMATION_PROMPT,
+	FIDELITY_SYSTEM_INSTRUCTION
 } from '$lib/ai/prompts/shared';
 import { systemBehaviour, jsonSystemInstructionForGameAgent, jsonSystemInstructionForPlayerQuestion } from '$lib/ai/prompts/system';
 import { statsUpdatePromptObject, currentlyPresentNPCSForPrompt } from '$lib/ai/prompts/formats';
@@ -29,6 +36,96 @@ import {
 	INTEGRATE_NPC_TEMPORAL_CONTEXT,
 	NPC_TIME_GAP_EXAMPLES
 } from '$lib/ai/prompts/templates/npcTemporalContinuity';
+
+// --- Local time helpers for header formatting (avoid circular import with timeLogic) ---
+const __DAY_NAMES = [
+	'Sunday',
+	'Monday',
+	'Tuesday',
+	'Wednesday',
+	'Thursday',
+	'Friday',
+	'Saturday'
+] as const;
+const __MONTH_NAMES = [
+	'January',
+	'February',
+	'March',
+	'April',
+	'May',
+	'June',
+	'July',
+	'August',
+	'September',
+	'October',
+	'November',
+	'December'
+] as const;
+
+function __getTimeOfDay(hour: number): GameTime['timeOfDay'] {
+	if (hour >= 5 && hour < 7) return 'dawn';
+	if (hour >= 7 && hour < 12) return 'morning';
+	if (hour >= 12 && hour < 14) return 'midday';
+	if (hour >= 14 && hour < 18) return 'afternoon';
+	if (hour >= 18 && hour < 21) return 'evening';
+	if (hour >= 21 && hour < 24) return 'night';
+	return 'deep_night';
+}
+
+function __getSeasonForMonth(month: number): GameTime['season'] {
+	switch (month) {
+		case 12:
+		case 1:
+		case 2:
+			return 'winter';
+		case 3:
+		case 4:
+		case 5:
+			return 'spring';
+		case 6:
+		case 7:
+		case 8:
+			return 'summer';
+		case 9:
+		case 10:
+		case 11:
+			return 'autumn';
+		default:
+			return 'spring';
+	}
+}
+
+// Compute effective time (current + minutes) mirroring timeLogic.addMinutesToGameTime
+function __addMinutesToGameTimeForHeader(time: GameTime, minutes: number): GameTime {
+	const y = Math.max(0, time.year);
+	const mIndex = Math.min(11, Math.max(0, time.month - 1));
+	const d = Math.max(1, time.day);
+	const date = new Date(Date.UTC(y, mIndex, d, time.hour, time.minute, 0, 0));
+	const nd = new Date(date.getTime() + minutes * 60_000);
+
+	const newYear = nd.getUTCFullYear();
+	const newMonthIndex = nd.getUTCMonth();
+	const newMonth = newMonthIndex + 1;
+	const newDay = nd.getUTCDate();
+	const newHour = nd.getUTCHours();
+	const newMinute = nd.getUTCMinutes();
+	const newDayName = __DAY_NAMES[nd.getUTCDay()];
+	const newMonthName = __MONTH_NAMES[newMonthIndex];
+
+	return {
+		...time,
+		year: newYear,
+		month: newMonth,
+		day: newDay,
+		hour: newHour,
+		minute: newMinute,
+		dayName: newDayName,
+		monthName: newMonthName,
+		timeOfDay: __getTimeOfDay(newHour),
+		season: __getSeasonForMonth(newMonth),
+		weather: time.weather
+	};
+}
 
 export type InventoryUpdate = {
 	type: 'add_item' | 'remove_item';
@@ -91,12 +188,16 @@ export type GameSettings = {
 	aiIntroducesSkills: boolean;
 	randomEventsHandling: RandomEventsHandling;
 	generateAmbientDialogue: boolean;
+	dialogueFidelitySettings?: DialogueFidelitySettings;
+	diceSimulationMode: DiceSimulationMode;
 };
 export const defaultGameSettings = () => ({
 	detailedNarrationLength: true,
 	aiIntroducesSkills: false,
 	randomEventsHandling: 'probability' as const,
-	generateAmbientDialogue: true
+	generateAmbientDialogue: true,
+	dialogueFidelitySettings: DEFAULT_FIDELITY_SETTINGS,
+	diceSimulationMode: 'auto' as const
 });
 
 export type Targets = { hostile: Array<NpcID>; friendly: Array<NpcID>; neutral: Array<NpcID> };
@@ -135,10 +236,12 @@ export type GameMasterAnswer = {
 export class GameAgent {
 	llm: LLM;
 	dialogueTracker: DialogueTrackingAgent;
+	dialogueFidelityAgent: DialogueFidelityAgent;
 
-	constructor(llm: LLM) {
+	constructor(llm: LLM, fidelitySettings?: DialogueFidelitySettings) {
 		this.llm = llm;
 		this.dialogueTracker = new DialogueTrackingAgent(llm);
+		this.dialogueFidelityAgent = new DialogueFidelityAgent(fidelitySettings || DEFAULT_FIDELITY_SETTINGS);
 	}
 
 	/**
@@ -332,6 +435,44 @@ export class GameAgent {
 			}
 		}
 
+		// 🎯 DIALOGUE FIDELITY ANALYSIS
+		// Analyze user input to determine dialogue fidelity requirements
+		console.log('🎯 Analyzing dialogue fidelity for user input:', action.text);
+
+		// Update fidelity settings if provided in game settings
+		if (gameSettings.dialogueFidelitySettings) {
+			this.dialogueFidelityAgent.updateSettings(gameSettings.dialogueFidelitySettings);
+		}
+
+		const fidelityAnalysis = this.dialogueFidelityAgent.analyzeDialogueFidelity(action.text);
+		console.log('📊 Fidelity analysis result:', stringifyPretty(fidelityAnalysis));
+
+		// Convert auto_detect to a concrete level for prompt generation
+		const concreteFidelityLevel = fidelityAnalysis.fidelity_level === 'auto_detect'
+			? 'preserve_essence' // Default to essence preservation when auto-detected
+			: fidelityAnalysis.fidelity_level;
+
+		// 🎭 ADD ACTION/DIALOGUE DISTINCTION INSTRUCTIONS
+		// This critical instruction helps LLM distinguish between physical actions and spoken dialogue
+		combinedText += '\n\n' + ACTION_DIALOGUE_DISTINCTION_PROMPT;
+		console.log('🎭 Added action/dialogue distinction instructions');
+
+		// Add fidelity instructions to the combined text
+		const fidelityPrompt = generateDynamicFidelityPrompt(
+			concreteFidelityLevel as 'preserve_exact' | 'preserve_essence' | 'allow_creative',
+			fidelityAnalysis.detected_patterns,
+			action.text,
+			fidelityAnalysis.reasoning
+		);
+
+		combinedText += '\n\n' + fidelityPrompt;
+
+		// Add anti-transformation safeguards if exact preservation is required
+		if (concreteFidelityLevel === 'preserve_exact') {
+			combinedText += '\n\n' + ANTI_TRANSFORMATION_PROMPT;
+			console.log('🛡️ Added anti-transformation safeguards for exact preservation');
+		}
+
 		const gameAgent = this.getGameAgentSystemInstructionsFromStates(
 			storyState,
 			characterState,
@@ -341,7 +482,8 @@ export class GameAgent {
 			customSystemInstruction,
 			customStoryAgentInstruction,
 			customCombatAgentInstruction,
-			gameSettings
+			gameSettings,
+			fidelityPrompt
 		);
 		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
 
@@ -441,7 +583,8 @@ export class GameAgent {
 				customSystemInstruction.generalSystemInstruction,
 				customSystemInstruction.storyAgentInstruction,
 				customSystemInstruction.combatAgentInstruction,
-				gameSettings
+				gameSettings,
+				undefined // No dialogue fidelity prompt needed for rule explanations
 			).join('\n');
 		const request: LLMRequest = {
 			userMessage: userMessage,
@@ -464,7 +607,8 @@ export class GameAgent {
 		customSystemInstruction: string,
 		customStoryAgentInstruction: string,
 		customCombatAgentInstruction: string,
-		gameSettings: GameSettings
+		gameSettings: GameSettings,
+		dialogueFidelityPrompt?: string
 	) {
 		const gameAgent = [
 			systemBehaviour(gameSettings),
@@ -478,6 +622,12 @@ export class GameAgent {
 			stringifyPretty(inventoryState),
 			this.generateEnrichedNPCContext(npcState, characterState?.name || "CHARACTER")
 		];
+
+		// Add dialogue fidelity instructions if provided
+		if (dialogueFidelityPrompt) {
+			gameAgent.push(dialogueFidelityPrompt);
+		}
+
 		if (customSystemInstruction) {
 			gameAgent.push('Following instructions overrule all others: ' + customSystemInstruction);
 		}
@@ -527,12 +677,16 @@ export class GameAgent {
 		}
 
 		// Add temporal context hidden in history to improve narrative consistency
-		const timePassedText = modelStateObject?.time_passed_minutes
-			? ` | Action duration: ${modelStateObject.time_passed_minutes}min`
-			: '';
+		const timePassedMinutes = Number(modelStateObject?.time_passed_minutes || 0) || 0;
+		const timePassedText = timePassedMinutes ? ` | Action duration: ${timePassedMinutes}min` : '';
 
-		const storyWithTimeContext = gameTime
-			? `[Time: ${gameTime.dayName} ${gameTime.day} ${gameTime.monthName} ${gameTime.year}, ${gameTime.hour}:${gameTime.minute.toString().padStart(2, '0')} - ${gameTime.timeOfDay} | Season: ${gameTime.season || 'Unknown'} | Weather: ${gameTime.weather?.description || `${gameTime.weather?.type || 'clear'} (${gameTime.weather?.intensity || 'light'})`}${timePassedText}]\n${modelStateObject?.story || '[No story content]'}`
+		// Compute effective time (current + time_passed_minutes) for the header so it matches UI state
+		const effectiveTime = gameTime && timePassedMinutes
+			? __addMinutesToGameTimeForHeader(gameTime as GameTime, timePassedMinutes)
+			: gameTime || null;
+
+		const storyWithTimeContext = effectiveTime
+			? `[Time: ${effectiveTime.dayName} ${effectiveTime.day} ${effectiveTime.monthName} ${effectiveTime.year}, ${effectiveTime.hour}:${effectiveTime.minute.toString().padStart(2, '0')} - ${effectiveTime.timeOfDay} | Season: ${effectiveTime.season || 'Unknown'} | Weather: ${effectiveTime.weather?.description || `${effectiveTime.weather?.type || 'clear'} (${effectiveTime.weather?.intensity || 'light'})`}${timePassedText}]\n${modelStateObject?.story || '[No story content]'}`
 			: (modelStateObject?.story || '[No story content]');
 
 		const modelMessage: LLMMessage = {

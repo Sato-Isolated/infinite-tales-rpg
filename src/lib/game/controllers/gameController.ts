@@ -8,6 +8,7 @@ import {
 } from '$lib/ai/agents/gameAgent';
 import type { LLMMessage, SystemInstructionsState } from '$lib/ai/llm';
 import type { Story } from '$lib/ai/agents/storyAgent';
+import { saveSnapshotBeforeAction } from '$lib/state/gameActionHelper';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 import { CombatAgent } from '$lib/ai/agents/combatAgent';
@@ -34,6 +35,7 @@ import type { AiLevelUp, Ability } from '$lib/ai/agents/characterStatsAgent';
 import type { ModalManager } from '../ui/modalManager.svelte';
 import type { GameTime } from '$lib/types/gameTime';
 import { addMinutesToGameTime, normalizeGameTime } from '../logic/timeLogic';
+import { buildPresenceContinuityPrompt, computePresenceContinuity } from '$lib/game/memory/npcPresenceManager';
 
 /**
  * Utility function to create game time with proper defaults
@@ -236,6 +238,15 @@ export function createGameController(ctx: ControllerCtx) {
 		let additionalStoryInput = initialAdditionalStoryInput || '';
 		const combatAndNPCState = await getCombatAndNPCState(action);
 		additionalStoryInput += combatAndNPCState.additionalStoryInput;
+
+		// Presence continuity: add strict rules to prevent NPCs speaking when absent and ensure party continuity
+		try {
+			const previousState = ctx.state.gameActionsState.value[ctx.state.gameActionsState.value.length - 1];
+			const continuity = computePresenceContinuity(previousState, ctx.state.npcState.value);
+			additionalStoryInput += '\n' + buildPresenceContinuityPrompt(continuity);
+		} catch (e) {
+			console.warn('Presence continuity prompt generation failed:', e);
+		}
 
 		additionalStoryInput = await ctx.helpers.addCampaignAdditionalStoryInput(
 			action,
@@ -547,6 +558,9 @@ export function createGameController(ctx: ControllerCtx) {
 
 	async function sendAction(action: Action, rollDice = false) {
 		try {
+			// Save snapshot before processing action for undo functionality
+			saveSnapshotBeforeAction();
+
 			if (rollDice) {
 				if (ctx.state.relatedActionHistoryState.value.length === 0) {
 					const { getRelatedHistory } = await import('../memory/memoryLogic');

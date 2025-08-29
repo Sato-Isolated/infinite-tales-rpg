@@ -1,7 +1,14 @@
 <script lang="ts">
 	import DiceBox from '@3d-dice/dice-box';
 	import * as diceRollLogic from '$lib/game/logic/diceRollLogic';
-	import type { Action } from '$lib/ai/agents/gameAgent';
+	import type { Action, GameSettings } from '$lib/ai/agents/gameAgent';
+	import {
+		detectWebGLCapabilities,
+		determineDiceSimulationMode,
+		logWebGLInfo,
+		getDiceSimulationModeDescription,
+		type WebGLCapabilities
+	} from '$lib/utils/webglDetection';
 	type Props = { diceRollDialog: HTMLDialogElement; action: Action; resetState: boolean };
 
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
@@ -11,6 +18,7 @@
 		type CharacterStats,
 		initialCharacterStatsState
 	} from '$lib/ai/agents/characterStatsAgent';
+	import { defaultGameSettings } from '$lib/ai/agents/gameAgent';
 
 	let { diceRollDialog = $bindable(), action, resetState }: Props = $props();
 
@@ -20,6 +28,15 @@
 	const difficultyState = useLocalStorage<'Easy' | 'Default'>('difficultyState', 'Default');
 	const useKarmicDice = useLocalStorage<boolean>('useKarmicDice', true);
 	const diceRollRequiredValueState = useLocalStorage<number>('diceRollRequiredValueState');
+	const gameSettingsState = useLocalStorage<GameSettings>(
+		'gameSettingsState',
+		defaultGameSettings()
+	);
+
+	// WebGL detection and simulation mode
+	let webglCapabilities = $state<WebGLCapabilities | null>(null);
+	let simulationMode = $state<'3d' | '2d'>('2d');
+	let simulationModeReason = $state<string>('Detecting capabilities...');
 
 	// UI state
 	let isRolling = $state<boolean>(false);
@@ -96,14 +113,54 @@
 	});
 
 	onMount(async () => {
+		// Detect WebGL capabilities first
+		webglCapabilities = detectWebGLCapabilities();
+		logWebGLInfo(webglCapabilities);
+
+		// Determine simulation mode based on user preference and capabilities
+		const modeResult = determineDiceSimulationMode(
+			gameSettingsState.value.diceSimulationMode,
+			webglCapabilities
+		);
+		simulationMode = modeResult.mode;
+		simulationModeReason = modeResult.reason;
+
 		try {
-			diceBox = new DiceBox('#dice-box', {
-				assetPath: '/assets/dice-box/'
-			});
+			// Initialize DiceBox with appropriate configuration
+			const diceBoxConfig: any = {
+				assetPath: '/assets/dice-box/',
+				suspendSimulation: simulationMode === '2d'
+			};
+
+			console.log(
+				`🎲 Initializing dice with ${simulationMode.toUpperCase()} mode:`,
+				simulationModeReason
+			);
+
+			diceBox = new DiceBox('#dice-box', diceBoxConfig);
 			await diceBox.init();
 			isMounted = true;
 		} catch (error) {
 			console.error('Error initializing dice box:', error);
+
+			// Fallback to 2D mode if 3D initialization fails
+			if (simulationMode === '3d') {
+				console.warn('3D dice initialization failed, falling back to 2D mode');
+				simulationMode = '2d';
+				simulationModeReason = 'Fallback: 3D initialization failed';
+
+				try {
+					diceBox = new DiceBox('#dice-box', {
+						assetPath: '/assets/dice-box/',
+						suspendSimulation: true
+					} as any);
+					await diceBox.init();
+					isMounted = true;
+				} catch (fallbackError) {
+					console.error('Even 2D dice initialization failed:', fallbackError);
+					simulationModeReason = 'Error: Dice initialization failed completely';
+				}
+			}
 		}
 	});
 
@@ -130,13 +187,20 @@
 		evt.currentTarget.disabled = true;
 
 		try {
-			// For easy testing - uncomment next line
-			// rolledValueState.value = getRandomInteger(1, 20);
-
-			const results = await diceBox.roll('1d20');
-			rolledValueState.value = results[0].value;
+			if (simulationMode === '2d') {
+				// Use random number generation for 2D mode
+				rolledValueState.value = getRandomInteger(1, 20);
+				// Add a small delay to simulate rolling time
+				await new Promise((resolve) => setTimeout(resolve, 500));
+			} else {
+				// Use 3D physics simulation
+				const results = await diceBox.roll('1d20');
+				rolledValueState.value = results[0].value;
+			}
 		} catch (error) {
 			console.error('Error rolling dice:', error);
+			// Fallback to random number if dice roll fails
+			rolledValueState.value = getRandomInteger(1, 20);
 		} finally {
 			isRolling = false;
 		}
@@ -168,6 +232,42 @@
 				<span class="text-base-content/70 text-lg">Difficulty Class:</span>
 				<div class="badge badge-primary badge-lg px-4 py-3 text-xl font-bold">
 					{diceRollRequiredValueState.value}
+				</div>
+			</div>
+		</div>
+
+		<!-- Simulation Mode Indicator -->
+		<div class="mb-4 text-center">
+			<div class="tooltip tooltip-bottom w-full" data-tip={simulationModeReason}>
+				<div
+					class="badge {simulationMode === '3d'
+						? 'badge-success'
+						: 'badge-info'} gap-2 px-3 py-2 text-sm"
+				>
+					{#if simulationMode === '3d'}
+						<svg
+							class="h-4 w-4"
+							fill="currentColor"
+							viewBox="0 0 20 20"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					{:else}
+						<svg
+							class="h-4 w-4"
+							fill="currentColor"
+							viewBox="0 0 20 20"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+					{/if}
+					{getDiceSimulationModeDescription(simulationMode)}
 				</div>
 			</div>
 		</div>

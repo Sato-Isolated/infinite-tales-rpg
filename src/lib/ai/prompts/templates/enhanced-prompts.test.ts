@@ -135,7 +135,8 @@ describe('Enhanced Prompts System', () => {
         detailedNarrationLength: true,
         aiIntroducesSkills: false,
         randomEventsHandling: 'probability' as const,
-        generateAmbientDialogue: true
+        generateAmbientDialogue: true,
+        diceSimulationMode: 'auto' as const
       };
 
       const behavior = systemBehaviour(gameSettings);
