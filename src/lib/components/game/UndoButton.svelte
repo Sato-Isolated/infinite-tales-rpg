@@ -11,26 +11,15 @@
 	});
 
 	/**
-	 * Check if undo is available and get last action info
+	 * Check if undo is available using the new UndoManager system
 	 */
 	function checkUndoAvailability() {
-		const gameActionsRaw = localStorage.getItem('gameActionsState');
-		if (gameActionsRaw) {
-			try {
-				const gameActions = JSON.parse(gameActionsRaw);
-				canUndo = Array.isArray(gameActions) && gameActions.length > 1;
-
-				if (canUndo && gameActions.length > 0) {
-					lastActionId = gameActions[gameActions.length - 1]?.id || null;
-				} else {
-					lastActionId = null;
-				}
-			} catch (error) {
-				console.error('Error checking undo availability:', error);
-				canUndo = false;
-				lastActionId = null;
-			}
-		} else {
+		try {
+			const undoInfo = UndoManager.getUndoInfo();
+			canUndo = undoInfo.canUndo;
+			lastActionId = undoInfo.latestActionId || null;
+		} catch (error) {
+			console.error('Error checking undo availability:', error);
 			canUndo = false;
 			lastActionId = null;
 		}

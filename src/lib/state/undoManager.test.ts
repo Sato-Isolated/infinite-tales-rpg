@@ -65,9 +65,9 @@ describe('UndoManager Core', () => {
     localStorage.setItem('gameActionsState', JSON.stringify(initialGameState));
     localStorage.setItem('characterState', JSON.stringify(initialCharacterState));
 
-    // Save snapshot
-    const success = UndoManager.saveSnapshot('Test snapshot');
-    expect(success).toBe(true);
+    // Save first snapshot (current state)
+    const success1 = UndoManager.saveSnapshot('First snapshot');
+    expect(success1).toBe(true);
 
     // Modify state
     const modifiedGameState = [
@@ -79,20 +79,24 @@ describe('UndoManager Core', () => {
     localStorage.setItem('gameActionsState', JSON.stringify(modifiedGameState));
     localStorage.setItem('characterState', JSON.stringify(modifiedCharacterState));
 
+    // Save second snapshot (modified state) - now we have 2 snapshots
+    const success2 = UndoManager.saveSnapshot('Second snapshot');
+    expect(success2).toBe(true);
+
     // Verify state was modified
     expect(JSON.parse(localStorage.getItem('gameActionsState')!)).toHaveLength(2);
     expect(JSON.parse(localStorage.getItem('characterState')!).level).toBe(2);
 
-    // Perform undo
+    // Perform undo (go back to first snapshot)
     const undoSuccess = UndoManager.smartUndo();
     expect(undoSuccess).toBe(true);
 
-    // Verify state was restored
+    // Verify state was restored to first snapshot
     expect(JSON.parse(localStorage.getItem('gameActionsState')!)).toHaveLength(1);
     expect(JSON.parse(localStorage.getItem('characterState')!).level).toBe(1);
   });
 
-  it('should handle missing snapshots with reconstruction', () => {
+  it('should handle missing snapshots gracefully', () => {
     // Setup game actions without snapshots
     const gameActions = [
       { id: 1, story: 'First action', currentPlotPoint: 'Start' },
@@ -102,14 +106,14 @@ describe('UndoManager Core', () => {
 
     localStorage.setItem('gameActionsState', JSON.stringify(gameActions));
 
-    // Try undo without snapshots (should use reconstruction)
+    // Try undo without snapshots (should fail gracefully)
     const success = UndoManager.smartUndo();
-    expect(success).toBe(true);
+    expect(success).toBe(false); // New behavior: no snapshots = no undo
 
-    // Should have removed the last action
+    // Game actions should remain unchanged since no undo occurred
     const remainingActions = JSON.parse(localStorage.getItem('gameActionsState')!);
-    expect(remainingActions).toHaveLength(2);
-    expect(remainingActions[1].id).toBe(2);
+    expect(remainingActions).toHaveLength(3);
+    expect(remainingActions[2].id).toBe(3);
   });
 
   it('should limit snapshot stack size', () => {
@@ -144,32 +148,43 @@ describe('Game Action Helper', () => {
   });
 
   it('should correctly detect undo availability', () => {
-    // No actions - should not be able to undo
+    // No snapshots - should not be able to undo
     expect(canPerformUndo()).toBe(false);
 
-    // Single action - should not be able to undo
+    // Single snapshot - should not be able to undo (need at least 2)
     localStorage.setItem('gameActionsState', JSON.stringify([{ id: 1, story: 'Test' }]));
+    UndoManager.saveSnapshot('First action');
     expect(canPerformUndo()).toBe(false);
 
-    // Multiple actions - should be able to undo
+    // Two snapshots - should be able to undo
     localStorage.setItem('gameActionsState', JSON.stringify([
       { id: 1, story: 'First' },
       { id: 2, story: 'Second' }
     ]));
+    UndoManager.saveSnapshot('Second action');
     expect(canPerformUndo()).toBe(true);
   });
 
   it('should provide correct last action info', () => {
-    // No actions
+    // No snapshots
     let info = getLastActionInfo();
     expect(info.canUndo).toBe(false);
     expect(info.actionId).toBeNull();
 
-    // With actions
+    // Create snapshots with game actions
+    localStorage.setItem('gameActionsState', JSON.stringify([{ id: 1, story: 'First' }]));
+    UndoManager.saveSnapshot('First action');
+    
+    // Still no undo available with just one snapshot
+    info = getLastActionInfo();
+    expect(info.canUndo).toBe(false);
+
+    // Add second snapshot - now undo should be available
     localStorage.setItem('gameActionsState', JSON.stringify([
       { id: 1, story: 'First' },
       { id: 2, story: 'Second' }
     ]));
+    UndoManager.saveSnapshot('Second action');
 
     info = getLastActionInfo();
     expect(info.canUndo).toBe(true);
@@ -213,9 +228,9 @@ describe('Edge Cases', () => {
       { id: 2, story: 'Second' }
     ]));
 
-    // Should fall back to reconstruction
+    // Should fail gracefully without any snapshots available
     const success = UndoManager.smartUndo();
-    expect(success).toBe(true);
+    expect(success).toBe(false); // New behavior: corrupted stack = no undo
   });
 });
 
@@ -240,7 +255,7 @@ describe('Integration with Game Flow', () => {
     localStorage.setItem('inventoryState', JSON.stringify(inventory));
     localStorage.setItem('gameActionsState', JSON.stringify(gameActions));
 
-    // Save snapshot
+    // Save first snapshot
     UndoManager.saveSnapshot('Before battle');
 
     // Simulate battle outcome
@@ -255,15 +270,18 @@ describe('Integration with Game Flow', () => {
     localStorage.setItem('inventoryState', JSON.stringify(updatedInventory));
     localStorage.setItem('gameActionsState', JSON.stringify(updatedActions));
 
+    // Save second snapshot (after battle) - now we have 2 snapshots for undo
+    UndoManager.saveSnapshot('After battle');
+
     // Verify updated state
     expect(JSON.parse(localStorage.getItem('characterState')!).level).toBe(6);
     expect(JSON.parse(localStorage.getItem('inventoryState')!).items).toHaveLength(2);
 
-    // Undo battle
+    // Undo battle (go back to first snapshot)
     const success = UndoManager.smartUndo();
     expect(success).toBe(true);
 
-    // Verify state was properly restored
+    // Verify state was properly restored to pre-battle state
     expect(JSON.parse(localStorage.getItem('characterState')!).level).toBe(5);
     expect(JSON.parse(localStorage.getItem('inventoryState')!).items).toHaveLength(1);
     expect(JSON.parse(localStorage.getItem('gameActionsState')!)).toHaveLength(1);

@@ -1,12 +1,18 @@
 /**
- * Undo Manager - System for reverting game state without requiring pre-existing snapshots
+ * Undo Manager - Ring Buffer Based State Management System
  * 
- * This system can reconstruct game state from GameActionState history even if no snapshots exist.
- * It works by:
- * 1. Saving lightweight snapshots before each action (when possible)
- * 2. Reconstructing state from GameActionState history when snapshots aren't available
- * 3. Providing multi-level undo functionality
- * 4. Working directly with localStorage to avoid reactive state issues
+ * This system uses a pure ring buffer approach with the following principles:
+ * 1. Fixed capacity ring buffer (10 snapshots maximum)
+ * 2. FIFO replacement policy - oldest snapshots are automatically removed
+ * 3. No complex reconstruction - only direct snapshot restoration
+ * 4. Atomic writes with temporary keys for data integrity
+ * 5. Temporal coherence - restoring to a point removes future snapshots
+ * 
+ * Architecture:
+ * - Ring buffer maintains chronological order
+ * - Each snapshot captures complete game state
+ * - Undo operations cut timeline to maintain consistency
+ * - Bounded memory usage prevents storage bloat
  */
 
 import type { GameActionState, InventoryState, PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
@@ -36,10 +42,14 @@ export interface RecoveryPoint {
 }
 
 /**
- * UndoManager - Handles undo functionality with fallback reconstruction
+ * UndoManager - Ring Buffer Based Undo System
+ * 
+ * Pure snapshot-based undo system using a fixed-size ring buffer.
+ * No complex reconstruction, no dual strategies, just simple and reliable snapshots.
  */
 export class UndoManager {
   private static readonly UNDO_STACK_KEY = 'undoStackState';
+  private static readonly UNDO_STACK_TEMP_KEY = `${this.UNDO_STACK_KEY}_temp`;
   private static readonly MAX_UNDO_STACK_SIZE = 10;
 
   /**
@@ -75,11 +85,21 @@ export class UndoManager {
   ] as const;
 
   /**
-   * Save a snapshot of the current game state before an action
+   * Volatile UI states that should be cleaned after restoration
+   */
+  private static readonly VOLATILE_STATE_KEYS = [
+    'chosenActionState',
+    'additionalStoryInputState',
+    'additionalActionInputState',
+    'relatedActionHistoryState'
+  ] as const;
+
+  /**
+   * Save a snapshot using ring buffer - when buffer is full, oldest snapshot is removed
    */
   static saveSnapshot(description?: string): boolean {
     try {
-      const gameActionsState = this.getLocalStorageItem<GameActionState[]>('gameActionsState', []);
+      const gameActionsState = this._getLocalStorageItem<GameActionState[]>('gameActionsState', []);
       const currentActionId = gameActionsState.length > 0 ? gameActionsState[gameActionsState.length - 1].id : 0;
 
       const snapshot: UndoSnapshot = {
@@ -101,18 +121,25 @@ export class UndoManager {
         }
       });
 
-      // Add to undo stack
-      const undoStack = this.getUndoStack();
+      // Load current ring buffer
+      const undoStack = this._loadUndoStack();
+
+      // Add new snapshot to ring buffer
       undoStack.push(snapshot);
 
-      // Keep only the last MAX_UNDO_STACK_SIZE snapshots
-      if (undoStack.length > this.MAX_UNDO_STACK_SIZE) {
+      // Maintain ring buffer size (FIFO - remove oldest when full)
+      while (undoStack.length > this.MAX_UNDO_STACK_SIZE) {
         undoStack.shift();
       }
 
-      localStorage.setItem(this.UNDO_STACK_KEY, JSON.stringify(undoStack));
-      console.log(`Undo snapshot saved for action ${currentActionId}`);
-      return true;
+      // Save atomically
+      if (this._saveUndoStack(undoStack)) {
+        console.log(`Saved snapshot for action ${currentActionId} (count=${undoStack.length}/${this.MAX_UNDO_STACK_SIZE})`);
+        return true;
+      } else {
+        console.error('Failed to save undo stack atomically');
+        return false;
+      }
     } catch (error) {
       console.error('Failed to save undo snapshot:', error);
       return false;
@@ -120,240 +147,273 @@ export class UndoManager {
   }
 
   /**
-   * Reconstruct game state from a specific GameActionState
+   * Perform undo operation using only snapshots (no fallback strategies)
+   * Implements temporal coherence - restoring cuts future timeline
    */
-  static reconstructStateFromGameAction(targetActionId: number): boolean {
+  static smartUndo(stepsBack: number = 1): boolean {
+    if (stepsBack <= 0) {
+      console.warn('Invalid stepsBack value:', stepsBack);
+      return false;
+    }
+
     try {
-      const gameActionsState = this.getLocalStorageItem<GameActionState[]>('gameActionsState', []);
+      const undoStack = this._loadUndoStack();
 
-      if (!gameActionsState || gameActionsState.length === 0) {
-        console.error('No game actions found for reconstruction');
+      // Need at least stepsBack + 1 snapshots to undo stepsBack steps
+      if (undoStack.length <= stepsBack) {
+        console.log(`Cannot undo ${stepsBack} step(s) - only ${undoStack.length} snapshot(s) available`);
         return false;
       }
 
-      // Find target action index
-      const targetIndex = gameActionsState.findIndex(action => action.id === targetActionId);
-      if (targetIndex === -1) {
-        console.error(`Action with ID ${targetActionId} not found`);
+      // Calculate target index (chronologically earlier)
+      const targetIndex = undoStack.length - stepsBack - 1;
+      const targetSnapshot = undoStack[targetIndex];
+
+      console.log(`Undoing ${stepsBack} step(s) to action ${targetSnapshot.gameActionId} (${targetSnapshot.description})`);
+
+      // Restore target snapshot
+      this._restoreSnapshot(targetSnapshot);
+
+      // Cut timeline - remove all snapshots after target (temporal coherence)
+      const truncatedStack = undoStack.slice(0, targetIndex + 1);
+
+      // Save truncated stack
+      if (this._saveUndoStack(truncatedStack)) {
+        console.log(`Timeline cut at action ${targetSnapshot.gameActionId} - removed ${undoStack.length - truncatedStack.length} future snapshots`);
+        return true;
+      } else {
+        console.error('Failed to save truncated undo stack');
         return false;
       }
-
-      // Keep only actions up to and including the target
-      const actionsToKeep = gameActionsState.slice(0, targetIndex + 1);
-      const lastAction = actionsToKeep[actionsToKeep.length - 1];
-
-      console.log(`Reconstructing state from action ${targetActionId}...`);
-
-      // Reconstruct core states from the last action
-      if (lastAction.story) {
-        // Note: GameActionState.story is narrative text, not a Story object
-        // We need to preserve the existing Story structure and just update narrative content
-        const existingStoryRaw = localStorage.getItem('storyState');
-        let existingStory: Story;
-
-        if (existingStoryRaw) {
-          try {
-            existingStory = JSON.parse(existingStoryRaw);
-          } catch {
-            existingStory = initialStoryState;
-          }
-        } else {
-          existingStory = initialStoryState;
-        }
-
-        // Since Story object doesn't have a direct 'story' field, we could update main_scenario
-        // or add the narrative to a relevant field. For now, we'll preserve the structure.
-        const updatedStory: Story = {
-          ...existingStory,
-          // The story content from GameActionState is narrative text
-          // We might store it in main_scenario or create a custom handling
-          main_scenario: lastAction.story // Store narrative in main_scenario for now
-        };
-
-        localStorage.setItem('storyState', JSON.stringify(updatedStory));
-      }
-
-      // Reconstruct character state if it exists in the action
-      // Note: GameActionState doesn't directly contain character state, but we can preserve existing
-
-      // Update game actions to only keep up to target
-      localStorage.setItem('gameActionsState', JSON.stringify(actionsToKeep));
-
-      // Reconstruct history messages - keep only those corresponding to the actions we're keeping
-      const historyMessages = this.getLocalStorageItem<LLMMessage[]>('historyMessagesState', []);
-      // Assume each action corresponds to 2 history messages (user + model)
-      const messagesToKeep = historyMessages.slice(0, (targetIndex + 1) * 2);
-      localStorage.setItem('historyMessagesState', JSON.stringify(messagesToKeep));
-
-      // Clear action-related states that should reset
-      localStorage.setItem('relatedActionHistoryState', JSON.stringify([]));
-      localStorage.removeItem('chosenActionState');
-      localStorage.removeItem('additionalStoryInputState');
-      localStorage.removeItem('additionalActionInputState');
-
-      // Note: characterStats, inventory, npc states are typically managed through 
-      // applyGameActionState function, so we may need to rebuild them from scratch
-
-      console.log(`Successfully reconstructed state from action ${targetActionId}`);
-      return true;
-
     } catch (error) {
-      console.error('Error reconstructing state:', error);
+      console.error('Error during smart undo:', error);
       return false;
     }
   }
 
   /**
-   * Perform smart undo with multiple fallback strategies
-   */
-  static smartUndo(stepsBack: number = 1): boolean {
-    console.log(`Attempting to undo ${stepsBack} step(s)...`);
-
-    // Strategy 1: Use existing undo stack if available
-    const undoStack = this.getUndoStack();
-    if (undoStack.length >= stepsBack) {
-      console.log('Using undo stack for recovery');
-      for (let i = 0; i < stepsBack; i++) {
-        const snapshot = undoStack.pop();
-        if (snapshot) {
-          this.restoreSnapshot(snapshot);
-        }
-      }
-      localStorage.setItem(this.UNDO_STACK_KEY, JSON.stringify(undoStack));
-      return true;
-    }
-
-    // Strategy 2: Reconstruct from game actions
-    const gameActionsState = this.getLocalStorageItem<GameActionState[]>('gameActionsState', []);
-    if (gameActionsState.length > stepsBack) {
-      console.log('Using game action reconstruction for recovery');
-      const targetAction = gameActionsState[gameActionsState.length - stepsBack - 1];
-      return this.reconstructStateFromGameAction(targetAction.id);
-    }
-
-    // Strategy 3: Find the most recent valid state
-    if (gameActionsState.length > 0) {
-      console.log('Falling back to most recent complete state');
-      // Go back to the first action (essentially restart from beginning)
-      const firstAction = gameActionsState[0];
-      return this.reconstructStateFromGameAction(firstAction.id);
-    }
-
-    console.error('No recovery method available');
-    return false;
-  }
-
-  /**
-   * Get all available recovery points (snapshots + game actions)
-   */
-  static getRecoveryPoints(): RecoveryPoint[] {
-    const recoveryPoints: RecoveryPoint[] = [];
-
-    // Add undo stack snapshots
-    const undoStack = this.getUndoStack();
-    undoStack.forEach((snapshot, index) => {
-      recoveryPoints.push({
-        id: snapshot.gameActionId,
-        description: `📸 ${snapshot.description}`,
-        timestamp: snapshot.timestamp,
-        isSnapshot: true,
-        canRecover: true
-      });
-    });
-
-    // Add game action checkpoints
-    const gameActionsState = this.getLocalStorageItem<GameActionState[]>('gameActionsState', []);
-    gameActionsState.forEach((action) => {
-      // Don't duplicate if already in snapshots
-      if (!recoveryPoints.find(p => p.id === action.id && p.isSnapshot)) {
-        recoveryPoints.push({
-          id: action.id,
-          description: `🎮 Action ${action.id}: ${action.story?.substring(0, 50) || 'Game action'}...`,
-          isSnapshot: false,
-          canRecover: true
-        });
-      }
-    });
-
-    // Sort by ID descending (most recent first)
-    return recoveryPoints.sort((a, b) => b.id - a.id);
-  }
-
-  /**
-   * Recover to a specific point by ID
+   * Recover to a specific action ID using only snapshots
+   * Implements temporal coherence - removes newer snapshots
    */
   static recoverToPoint(actionId: number): boolean {
-    console.log(`Recovering to action ID ${actionId}...`);
+    try {
+      const undoStack = this._loadUndoStack();
 
-    // First try to find in snapshots
-    const undoStack = this.getUndoStack();
-    const snapshot = undoStack.find(s => s.gameActionId === actionId);
+      if (undoStack.length === 0) {
+        console.log('No snapshots available for recovery');
+        return false;
+      }
 
-    if (snapshot) {
-      console.log('Recovering from snapshot');
-      this.restoreSnapshot(snapshot);
-      // Remove this snapshot and any newer ones from the stack
-      const filteredStack = undoStack.filter(s => s.gameActionId < actionId);
-      localStorage.setItem(this.UNDO_STACK_KEY, JSON.stringify(filteredStack));
-      return true;
+      // Find the latest snapshot with actionId <= target (allows recovery to intermediate points)
+      let targetIndex = -1;
+      for (let i = undoStack.length - 1; i >= 0; i--) {
+        if (undoStack[i].gameActionId <= actionId) {
+          targetIndex = i;
+          break;
+        }
+      }
+
+      if (targetIndex === -1) {
+        console.log(`No snapshot found for actionId ${actionId} or earlier`);
+        return false;
+      }
+
+      const targetSnapshot = undoStack[targetIndex];
+      console.log(`Recovering to action ${targetSnapshot.gameActionId} (${targetSnapshot.description})`);
+
+      // Restore target snapshot
+      this._restoreSnapshot(targetSnapshot);
+
+      // Cut timeline - remove all snapshots after target
+      const truncatedStack = undoStack.slice(0, targetIndex + 1);
+
+      // Save truncated stack
+      if (this._saveUndoStack(truncatedStack)) {
+        console.log(`Recovery complete - removed ${undoStack.length - truncatedStack.length} future snapshots`);
+        return true;
+      } else {
+        console.error('Failed to save truncated stack after recovery');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error during recovery:', error);
+      return false;
     }
-
-    // Otherwise reconstruct from game actions
-    return this.reconstructStateFromGameAction(actionId);
   }
 
   /**
    * Check if undo is possible
    */
   static canUndo(): boolean {
-    const undoStack = this.getUndoStack();
-    const gameActionsState = this.getLocalStorageItem<GameActionState[]>('gameActionsState', []);
-    return undoStack.length > 0 || gameActionsState.length > 1;
+    const undoStack = this._loadUndoStack();
+    return undoStack.length > 1; // Need at least 2 snapshots to undo 1 step
   }
 
   /**
    * Get undo availability info
    */
-  static getUndoInfo(): { canUndo: boolean; snapshotsAvailable: number; actionsAvailable: number } {
-    const undoStack = this.getUndoStack();
-    const gameActionsState = this.getLocalStorageItem<GameActionState[]>('gameActionsState', []);
+  static getUndoInfo(): { canUndo: boolean; snapshotsAvailable: number; latestActionId?: number } {
+    const undoStack = this._loadUndoStack();
+    const latestSnapshot = undoStack[undoStack.length - 1];
 
     return {
-      canUndo: undoStack.length > 0 || gameActionsState.length > 1,
+      canUndo: undoStack.length > 1,
       snapshotsAvailable: undoStack.length,
-      actionsAvailable: gameActionsState.length
+      latestActionId: latestSnapshot?.gameActionId
     };
+  }
+
+  /**
+   * Get all available recovery points (snapshots only)
+   */
+  static getRecoveryPoints(): RecoveryPoint[] {
+    const undoStack = this._loadUndoStack();
+    
+    return undoStack
+      .map(snapshot => ({
+        id: snapshot.gameActionId,
+        description: `📸 ${snapshot.description}`,
+        timestamp: snapshot.timestamp,
+        isSnapshot: true,
+        canRecover: true
+      }))
+      .reverse(); // Most recent first
   }
 
   /**
    * Clear all undo history
    */
   static clearUndoStack(): void {
-    localStorage.removeItem(this.UNDO_STACK_KEY);
-    console.log('Undo stack cleared');
+    try {
+      localStorage.removeItem(this.UNDO_STACK_KEY);
+      localStorage.removeItem(this.UNDO_STACK_TEMP_KEY); // Clean up temp key too
+      console.log('Undo stack cleared');
+    } catch (error) {
+      console.error('Error clearing undo stack:', error);
+    }
   }
 
   /**
    * Private helper methods
    */
-  private static restoreSnapshot(snapshot: UndoSnapshot): void {
-    console.log(`Restoring snapshot from ${new Date(snapshot.timestamp).toLocaleString()}`);
-    Object.entries(snapshot.states).forEach(([key, value]) => {
-      localStorage.setItem(key, JSON.stringify(value));
-    });
-  }
 
-  private static getUndoStack(): UndoSnapshot[] {
+  /**
+   * Load undo stack with corruption handling
+   */
+  private static _loadUndoStack(): UndoSnapshot[] {
     try {
       const stack = localStorage.getItem(this.UNDO_STACK_KEY);
-      return stack ? JSON.parse(stack) : [];
+      if (!stack) {
+        return [];
+      }
+
+      const parsed = JSON.parse(stack);
+      if (!Array.isArray(parsed)) {
+        console.warn('Undo stack is not an array, starting fresh');
+        return [];
+      }
+
+      // Validate snapshot structure
+      const validated = parsed.filter(item => 
+        item && 
+        typeof item.timestamp === 'number' &&
+        typeof item.gameActionId === 'number' &&
+        typeof item.description === 'string' &&
+        typeof item.states === 'object'
+      );
+
+      if (validated.length !== parsed.length) {
+        console.warn(`Filtered ${parsed.length - validated.length} invalid snapshots`);
+      }
+
+      return validated;
     } catch (error) {
       console.warn('Failed to parse undo stack, starting fresh:', error);
       return [];
     }
   }
 
-  private static getLocalStorageItem<T>(key: string, defaultValue: T): T {
+  /**
+   * Save undo stack atomically using temporary key
+   */
+  private static _saveUndoStack(stack: UndoSnapshot[]): boolean {
+    try {
+      const data = JSON.stringify(stack);
+      
+      // Write to temp key first (atomic preparation)
+      localStorage.setItem(this.UNDO_STACK_TEMP_KEY, data);
+      
+      // Swap to real key (atomic commit)
+      localStorage.setItem(this.UNDO_STACK_KEY, data);
+      
+      // Clean up temp key
+      localStorage.removeItem(this.UNDO_STACK_TEMP_KEY);
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to save undo stack atomically:', error);
+      
+      // Try to clean up temp key even if save failed
+      try {
+        localStorage.removeItem(this.UNDO_STACK_TEMP_KEY);
+      } catch (cleanupError) {
+        console.error('Failed to clean up temp key:', cleanupError);
+      }
+      
+      return false;
+    }
+  }
+
+  /**
+   * Restore snapshot states to localStorage
+   */
+  private static _restoreSnapshot(snapshot: UndoSnapshot): void {
+    console.log(`Restoring snapshot from ${new Date(snapshot.timestamp).toLocaleString()}`);
+    
+    // Restore all captured states
+    Object.entries(snapshot.states).forEach(([key, value]) => {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (error) {
+        console.error(`Failed to restore state ${key}:`, error);
+      }
+    });
+
+    // Clean up volatile UI states that shouldn't persist after restoration
+    this._cleanupVolatileStates();
+  }
+
+  /**
+   * Clean up volatile UI states after restoration
+   */
+  private static _cleanupVolatileStates(): void {
+    this.VOLATILE_STATE_KEYS.forEach(key => {
+      try {
+        // Reset to empty/default values rather than removing completely
+        switch (key) {
+          case 'chosenActionState':
+            localStorage.setItem(key, JSON.stringify({ characterName: "", text: "", is_possible: true }));
+            break;
+          case 'additionalStoryInputState':
+          case 'additionalActionInputState':
+            localStorage.setItem(key, JSON.stringify(""));
+            break;
+          case 'relatedActionHistoryState':
+            localStorage.setItem(key, JSON.stringify([]));
+            break;
+          default:
+            localStorage.removeItem(key);
+        }
+      } catch (error) {
+        console.warn(`Failed to clean volatile state ${key}:`, error);
+      }
+    });
+  }
+
+  /**
+   * Safe localStorage item getter with fallback
+   */
+  private static _getLocalStorageItem<T>(key: string, defaultValue: T): T {
     try {
       const item = localStorage.getItem(key);
       return item ? JSON.parse(item) : defaultValue;
@@ -384,6 +444,11 @@ export class UndoManager {
       timestamp: new Date().toISOString(),
       undoInfo: this.getUndoInfo(),
       recoveryPoints: this.getRecoveryPoints().slice(0, 5), // Last 5 points
+      ringBufferState: this._loadUndoStack().map(s => ({
+        actionId: s.gameActionId,
+        description: s.description,
+        timestamp: s.timestamp
+      })),
       currentState
     };
   }

@@ -44,11 +44,8 @@ export function performUndo(): boolean {
  */
 export function canPerformUndo(): boolean {
   try {
-    const gameActionsRaw = localStorage.getItem('gameActionsState');
-    if (!gameActionsRaw) return false;
-
-    const gameActions = JSON.parse(gameActionsRaw);
-    return Array.isArray(gameActions) && gameActions.length > 1;
+    const undoInfo = UndoManager.getUndoInfo();
+    return undoInfo.canUndo;
   } catch {
     return false;
   }
@@ -59,20 +56,11 @@ export function canPerformUndo(): boolean {
  */
 export function getLastActionInfo(): { actionId: number | null; canUndo: boolean } {
   try {
-    const gameActionsRaw = localStorage.getItem('gameActionsState');
-    if (!gameActionsRaw) {
-      return { actionId: null, canUndo: false };
-    }
-
-    const gameActions = JSON.parse(gameActionsRaw);
-    if (!Array.isArray(gameActions) || gameActions.length <= 1) {
-      return { actionId: null, canUndo: false };
-    }
-
-    const lastAction = gameActions[gameActions.length - 1];
+    const undoInfo = UndoManager.getUndoInfo();
+    
     return {
-      actionId: lastAction?.id || null,
-      canUndo: true
+      actionId: undoInfo.latestActionId || null,
+      canUndo: undoInfo.canUndo
     };
   } catch {
     return { actionId: null, canUndo: false };
