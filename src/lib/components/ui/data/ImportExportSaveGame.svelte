@@ -4,6 +4,7 @@
 	import type { Snippet } from 'svelte';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
 	import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
+	import { UndoManager } from '$lib/state/undoManager';
 
 	let {
 		isSaveGame,
@@ -36,6 +37,17 @@
 			);
 			relatedStoryHistoryState.reset();
 			relatedActionHistoryState.reset();
+			
+			// Clear undo stack and conversation state when importing settings/save game
+			UndoManager.clearUndoStack();
+			
+			// Clear conversation state
+			try {
+				localStorage.removeItem('conversationState');
+			} catch (error) {
+				console.warn('Failed to clear conversation state during import:', error);
+			}
+			
 			if (isSaveGame) {
 				Object.keys(parsed).forEach((key) => {
 					const state = migrateIfApplicable(key, parsed[key]);

@@ -19,7 +19,7 @@ export interface ConversationState {
  */
 const defaultConversationState: ConversationState = {
   conversation_history: [],
-  max_conversations: 100, // Keep last 50 conversations for memory management
+  max_conversations: 50, // Keep last 50 conversations for memory management
   deduplication_enabled: true,
   similarity_threshold: 0.7 // Consider conversations with 70%+ similarity as duplicates
 };

@@ -18,6 +18,7 @@
 	import QuickstartStoryGenerationModal from '$lib/components/modals/system/QuickstartStoryGenerationModal.svelte';
 	import type { LLM } from '$lib/ai/llm';
 	import isPlainObject from 'lodash.isplainobject';
+	import { UndoManager } from '$lib/state/undoManager';
 	import {
 		initialCharacterTransformState,
 		initialEventEvaluationState
@@ -132,6 +133,16 @@
 		eventEvaluationState.reset();
 		playerCharactersIdToNamesMapState.reset();
 		gameTimeState.reset();
+		
+		// Clear undo stack and conversation state when starting new tale/importing settings
+		UndoManager.clearUndoStack();
+		
+		// Clear conversation state
+		try {
+			localStorage.removeItem('conversationState');
+		} catch (error) {
+			console.warn('Failed to clear conversation state:', error);
+		}
 	}
 
 	async function onQuickstartNew(story: string | Story | undefined) {

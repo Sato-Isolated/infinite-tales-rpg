@@ -15,6 +15,7 @@
 	import ImportExportSaveGame from '$lib/components/ui/data/ImportExportSaveGame.svelte';
 	import { type CharacterDescription, initialCharacterState } from '$lib/ai/agents/characterAgent';
 	import type { AIConfig } from '$lib';
+	import { UndoManager } from '$lib/state/undoManager';
 	let isGeneratingState = $state(false);
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
 	const aiLanguage = useLocalStorage<string>('aiLanguage');
@@ -160,6 +161,16 @@
 		onclick={() => {
 			storyState.reset();
 			storyStateOverwrites = {};
+			
+			// Clear undo stack and conversation state when clearing tale settings
+			UndoManager.clearUndoStack();
+			
+			// Clear conversation state
+			try {
+				localStorage.removeItem('conversationState');
+			} catch (error) {
+				console.warn('Failed to clear conversation state:', error);
+			}
 		}}
 	>
 		Clear All
