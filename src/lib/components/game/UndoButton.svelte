@@ -32,17 +32,30 @@
 		if (!canUndo) return;
 
 		try {
+			// Enhanced logging before undo
+			console.log('🔄 Starting undo operation...');
+			const beforeState = UndoManager.exportCurrentState();
+			console.log('📊 State before undo:', beforeState);
+
 			const success = UndoManager.smartUndo();
 			if (success) {
-				console.log('Undo successful - page will refresh to reflect changes');
+				console.log('✅ Undo successful - page will refresh to reflect changes');
 				// Refresh the page to ensure all components reflect the undone state
 				window.location.reload();
 			} else {
-				console.warn('Undo operation failed');
-				alert("Impossible d'annuler la dernière action");
+				console.warn('❌ Undo operation failed');
+				
+				// Provide user feedback about what went wrong
+				const diagnostics = UndoManager.diagnoseUndoConsistency();
+				if (diagnostics.issues.length > 0) {
+					const issueMsg = diagnostics.issues.join('; ');
+					alert(`Impossible d'annuler: ${issueMsg}`);
+				} else {
+					alert("Impossible d'annuler la dernière action");
+				}
 			}
 		} catch (error) {
-			console.error('Error during undo:', error);
+			console.error('❌ Error during undo:', error);
 			alert("Erreur lors de l'annulation");
 		}
 	}

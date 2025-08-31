@@ -161,10 +161,10 @@
 		onclick={() => {
 			storyState.reset();
 			storyStateOverwrites = {};
-			
+
 			// Clear undo stack and conversation state when clearing tale settings
 			UndoManager.clearUndoStack();
-			
+
 			// Clear conversation state
 			try {
 				localStorage.removeItem('conversationState');

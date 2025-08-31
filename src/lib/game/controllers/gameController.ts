@@ -8,7 +8,7 @@ import {
 } from '$lib/ai/agents/gameAgent';
 import type { LLMMessage, SystemInstructionsState } from '$lib/ai/llm';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import { saveSnapshotBeforeAction } from '$lib/state/gameActionHelper';
+import { saveSnapshotBeforeAction, validateUndoConsistency } from '$lib/state/gameActionHelper';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 import { CombatAgent } from '$lib/ai/agents/combatAgent';
@@ -560,6 +560,12 @@ export function createGameController(ctx: ControllerCtx) {
 		try {
 			// Save snapshot before processing action for undo functionality
 			saveSnapshotBeforeAction();
+			
+			// Validate undo consistency periodically (every 10th action)
+			const gameActions = ctx.state.gameActionsState.value;
+			if (gameActions.length % 10 === 0) {
+				validateUndoConsistency();
+			}
 
 			if (rollDice) {
 				if (ctx.state.relatedActionHistoryState.value.length === 0) {

@@ -123,9 +123,9 @@ describe('UndoManager Core', () => {
       UndoManager.saveSnapshot(`Snapshot ${i}`);
     }
 
-    // Check that only 10 snapshots are kept
+    // Check that only 5 snapshots are kept (reduced limit to prevent storage issues)
     const undoStack = JSON.parse(localStorage.getItem('undoStackState') || '[]');
-    expect(undoStack.length).toBeLessThanOrEqual(10);
+    expect(undoStack.length).toBeLessThanOrEqual(5);
   });
 });
 

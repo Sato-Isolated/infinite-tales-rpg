@@ -133,10 +133,10 @@
 		eventEvaluationState.reset();
 		playerCharactersIdToNamesMapState.reset();
 		gameTimeState.reset();
-		
+
 		// Clear undo stack and conversation state when starting new tale/importing settings
 		UndoManager.clearUndoStack();
-		
+
 		// Clear conversation state
 		try {
 			localStorage.removeItem('conversationState');

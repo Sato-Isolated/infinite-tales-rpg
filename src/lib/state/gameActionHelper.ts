@@ -12,8 +12,28 @@ import { UndoManager } from './undoManager';
  * This should be called before any action that changes game state
  */
 export function saveSnapshotBeforeAction(): void {
-  UndoManager.saveSnapshot('Before game action');
-  console.log('Snapshot saved before game action');
+  try {
+    // Check if we're in a browser environment
+    if (typeof localStorage === 'undefined') {
+      console.log('⚠️ localStorage not available (test environment)');
+      return;
+    }
+    
+    // Get current action count to create meaningful description
+    const gameActions = JSON.parse(localStorage.getItem('gameActionsState') || '[]');
+    const actionCount = gameActions.length;
+    const nextActionId = actionCount > 0 ? gameActions[gameActions.length - 1].id + 1 : 1;
+    
+    const success = UndoManager.saveSnapshot(`Before Action ${nextActionId}`);
+    
+    if (success) {
+      console.log(`✅ Snapshot saved before action ${nextActionId}`);
+    } else {
+      console.warn(`❌ Failed to save snapshot before action ${nextActionId}`);
+    }
+  } catch (error) {
+    console.error('Error in saveSnapshotBeforeAction:', error);
+  }
 }
 
 /**
@@ -68,6 +88,39 @@ export function getLastActionInfo(): { actionId: number | null; canUndo: boolean
 }
 
 /**
+ * Validate undo system consistency and log any issues
+ */
+export function validateUndoConsistency(): boolean {
+  try {
+    // Check if we're in a browser environment
+    if (typeof localStorage === 'undefined') {
+      console.log('⚠️ localStorage not available (test environment) - skipping undo validation');
+      return true; // Consider valid in test environment
+    }
+    
+    const diagnostics = UndoManager.diagnoseUndoConsistency();
+    
+    if (diagnostics.issues.length > 0) {
+      console.warn('🔍 Undo consistency issues detected:');
+      diagnostics.issues.forEach(issue => console.warn(`  ⚠️ ${issue}`));
+      
+      if (diagnostics.recommendations.length > 0) {
+        console.info('💡 Recommendations:');
+        diagnostics.recommendations.forEach(rec => console.info(`  📝 ${rec}`));
+      }
+      
+      return false;
+    }
+    
+    console.log('✅ Undo system consistency check passed');
+    return true;
+  } catch (error) {
+    console.error('❌ Error during undo consistency validation:', error);
+    return false;
+  }
+}
+
+/**
  * Wrapper function for game actions that automatically saves snapshots
  * Use this to wrap any function that performs game actions
  */
@@ -83,19 +136,4 @@ export function withUndo<T extends unknown[], R>(
 
     return result;
   };
-}
-
-/**
- * Decorator for action handlers that automatically saves snapshots
- * Example usage:
- * 
- * const handleGameAction = undoableAction(async (action: string) => {
- *   // Your game action logic here
- *   await performGameAction(action);
- * });
- */
-export function undoableAction<T extends unknown[], R>(
-  actionFunction: (...args: T) => Promise<R>
-): (...args: T) => Promise<R> {
-  return withUndo(actionFunction);
 }

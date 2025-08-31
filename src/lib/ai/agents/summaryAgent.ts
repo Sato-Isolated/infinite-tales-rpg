@@ -145,7 +145,7 @@ export class SummaryAgent {
 			userMessage: 'STORY PROGRESSION:\n' + storyProgression + '\n\n' + relatedHistoryJsonFormat,
 			systemInstruction: agent,
 			historyMessages: consideredHistory,
-			model: GEMINI_MODELS.FLASH_2_0,
+			model: GEMINI_MODELS.FLASH_THINKING_2_0,
 			temperature: 0.1
 		};
 		const response = (await this.llm.generateContent(request))?.content as RelatedStoryHistory;

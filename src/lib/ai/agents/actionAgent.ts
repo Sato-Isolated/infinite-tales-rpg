@@ -446,7 +446,7 @@ ACTION GENERATION RULES:
 			userMessage,
 			historyMessages,
 			systemInstruction: agent,
-			model: GEMINI_MODELS.FLASH_THINKING_2_0
+			model: GEMINI_MODELS.FLASH_2_0
 		};
 		const response = (await this.llm.generateContent(request)) as any;
 
