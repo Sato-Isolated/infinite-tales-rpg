@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { difficultyDiceRollModifier } from '$lib/game/logic/diceRollLogic';
 
 	let { onclose }: { onclose?: () => void } = $props();
 
-	const difficultyState = useLocalStorage<string>('difficultyState', 'Default');
-	const useKarmicDice = useLocalStorage<boolean>('useKarmicDice', true);
+	const difficultyState = useHybridLocalStorage<string>('difficultyState', 'Default');
+	const useKarmicDice = useHybridLocalStorage<boolean>('useKarmicDice', true);
 </script>
 
 <dialog open class="modal z-50" style="background: rgba(0, 0, 0, 0.3);">

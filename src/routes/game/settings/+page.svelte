@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { navigate } from '$lib/util.svelte';
 	import ImportExportSaveGame from '$lib/components/ui/data/ImportExportSaveGame.svelte';
 	import type { Campaign } from '$lib/ai/agents/campaignAgent';
@@ -16,16 +16,16 @@
 	let showAiGameSettingsModal = $state<boolean>(false);
 	let isRegeneratingTime = $state<boolean>(false);
 
-	const campaignState = useLocalStorage<Campaign>('campaignState');
-	const customMemoriesState = useLocalStorage<string>('customMemoriesState');
-	const customGMNotesState = useLocalStorage<string>('customGMNotesState');
-	const gameTimeState = useLocalStorage<GameTime>('gameTimeState', createDefaultTime());
-	const storyState = useLocalStorage<Story>('storyState');
-	const characterState = useLocalStorage<CharacterDescription>('characterState');
-	const gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState');
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
+	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState');
+	const customGMNotesState = useHybridLocalStorage<string>('customGMNotesState');
+	const gameTimeState = useHybridLocalStorage<GameTime>('gameTimeState', createDefaultTime());
+	const storyState = useHybridLocalStorage<Story>('storyState');
+	const characterState = useHybridLocalStorage<CharacterDescription>('characterState');
+	const gameSettingsState = useHybridLocalStorage<GameSettings>('gameSettingsState');
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	//TODO migrate all settings that can be changed during game here
 
 	const taleSettingsClicked = () => {

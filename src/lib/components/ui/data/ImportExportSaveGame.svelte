@@ -1,33 +1,43 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { downloadLocalStorageAsJson, importJsonFromFile } from '$lib/util.svelte';
 	import type { Snippet } from 'svelte';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
 	import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
 	import { UndoManager } from '$lib/state/undoManager';
+	import { initialSystemInstructionsState, type SystemInstructionsState } from '$lib/ai/llm';
 
 	let {
 		isSaveGame,
 		exportButton,
-		importButton
+		importButton,
+		onImportComplete
 	}: {
 		isSaveGame: boolean;
 		exportButton: Snippet<[() => void]>;
 		importButton: Snippet<[() => void]>;
+		onImportComplete?: () => void;
 	} = $props();
-	const storyState = useLocalStorage('storyState');
-	const campaignState = useLocalStorage('campaignState');
-	const currentChapterState = useLocalStorage('currentChapterState');
-	const characterState = useLocalStorage('characterState');
-	const characterStatsState = useLocalStorage('characterStatsState');
-	const difficultyState = useLocalStorage('difficultyState');
-	const useKarmicDice = useLocalStorage('useKarmicDice');
-	const useDynamicCombat = useLocalStorage('useDynamicCombat');
-	const relatedStoryHistoryState = useLocalStorage<RelatedStoryHistory>(
+	const storyState = useHybridLocalStorage('storyState');
+	const campaignState = useHybridLocalStorage('campaignState');
+	const currentChapterState = useHybridLocalStorage('currentChapterState');
+	const characterState = useHybridLocalStorage('characterState');
+	const characterStatsState = useHybridLocalStorage('characterStatsState');
+	const systemInstructionsState = useHybridLocalStorage<SystemInstructionsState>(
+		'systemInstructionsState',
+		initialSystemInstructionsState
+	);
+	const difficultyState = useHybridLocalStorage('difficultyState');
+	const useKarmicDice = useHybridLocalStorage('useKarmicDice');
+	const useDynamicCombat = useHybridLocalStorage('useDynamicCombat');
+	const relatedStoryHistoryState = useHybridLocalStorage<RelatedStoryHistory>(
 		'relatedStoryHistoryState',
 		{ relatedDetails: [] }
 	);
-	const relatedActionHistoryState = useLocalStorage<string[]>('relatedActionHistoryState', []);
+	const relatedActionHistoryState = useHybridLocalStorage<string[]>(
+		'relatedActionHistoryState',
+		[]
+	);
 
 	const importSettings = () => {
 		importJsonFromFile((parsed: any) => {
@@ -54,18 +64,26 @@
 					localStorage.setItem(key, JSON.stringify(state));
 				});
 				alert('Import successfull.');
+				// For save games, still reload as it's a full game state restoration
+				window.location.reload();
 			} else {
 				campaignState.value = parsed.campaignState;
 				currentChapterState.value = 1;
 				storyState.value = parsed.storyState;
 				characterState.value = parsed.characterState;
 				characterStatsState.value = parsed.characterStatsState;
+				systemInstructionsState.value =
+					parsed.systemInstructionsState || initialSystemInstructionsState;
 				//settings
 				difficultyState.value = parsed.difficultyState;
 				useKarmicDice.value = parsed.useKarmicDice;
 				useDynamicCombat.value = parsed.useDynamicCombat;
+
+				// Call callback instead of reloading for settings import
+				if (onImportComplete) {
+					onImportComplete();
+				}
 			}
-			window.location.reload();
 		});
 	};
 </script>

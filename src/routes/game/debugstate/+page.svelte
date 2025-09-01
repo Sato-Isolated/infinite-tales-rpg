@@ -1,20 +1,20 @@
 <script lang="ts">
 	import { initialThoughtsState, stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 
-	const gameActionsState = useLocalStorage<any[]>('gameActionsState', []);
-	const npcState = useLocalStorage('npcState', {});
-	const characterActionsState = useLocalStorage('characterActionsState', {});
-	let thoughtsState = useLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
+	const gameActionsState = useHybridLocalStorage<any[]>('gameActionsState', []);
+	const npcState = useHybridLocalStorage('npcState', {});
+	const characterActionsState = useHybridLocalStorage('characterActionsState', {});
+	let thoughtsState = useHybridLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
 
 	// Additional state for enhanced debugging
-	const characterState = useLocalStorage('characterState', {});
-	const characterStatsState = useLocalStorage('characterStatsState', {});
-	const storyState = useLocalStorage('storyState', {});
-	const campaignState = useLocalStorage('campaignState', {});
-	const inventoryState = useLocalStorage('inventoryState', {});
-	const gameSettingsState = useLocalStorage('gameSettingsState', {});
-	const aiConfigState = useLocalStorage('aiConfigState', {});
+	const characterState = useHybridLocalStorage('characterState', {});
+	const characterStatsState = useHybridLocalStorage('characterStatsState', {});
+	const storyState = useHybridLocalStorage('storyState', {});
+	const campaignState = useHybridLocalStorage('campaignState', {});
+	const inventoryState = useHybridLocalStorage('inventoryState', {});
+	const gameSettingsState = useHybridLocalStorage('gameSettingsState', {});
+	const aiConfigState = useHybridLocalStorage('aiConfigState', {});
 
 	let searchFilter = $state('');
 	let selectedCategory = $state('all');

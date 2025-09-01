@@ -1,3 +1,13 @@
+// TODO: Implement campaign branching based on player choices and outcomes
+// TODO: Add dynamic world events that affect campaign progression
+// TODO: Create campaign difficulty scaling system based on player performance
+// TODO: Implement NPC relationship tracking across chapters
+// TODO: Add campaign analytics to identify engaging vs boring plot points
+// TODO: Create automatic campaign backup and recovery system
+// TODO: Implement campaign sharing and import/export functionality
+// TODO: Add campaign template system for different genres and styles
+// TODO: Create campaign visualization tools for tracking progress and branching paths
+
 import { getRandomInteger, stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { Action } from '$lib/ai/agents/gameAgent';

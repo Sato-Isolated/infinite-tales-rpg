@@ -1,6 +1,6 @@
 <!-- src/lib/components/OutputFeaturesModal.svelte -->
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib'; // Assuming AIConfig defines disableImagesState, disableAudioState
 	import type { Voice } from 'msedge-tts';
 	import { onMount } from 'svelte';
@@ -10,12 +10,12 @@
 
 	// --- State Management ---
 	// Assuming a default structure for AIConfig
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState', {
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
 		useFallbackLlmState: false,
 		disableImagesState: false,
 		disableAudioState: false
 	});
-	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
+	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
 	let ttsVoices: Voice[] = $state([]);
 
 	onMount(async () => {

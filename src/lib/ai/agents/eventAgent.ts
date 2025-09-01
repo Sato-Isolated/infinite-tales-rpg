@@ -1,3 +1,13 @@
+// TODO: Implement event chaining system for multi-step transformations
+// TODO: Add event probability calculation based on story context and player actions
+// TODO: Create event templates for different genres (horror, fantasy, sci-fi)
+// TODO: Implement event impact analysis and consequence prediction
+// TODO: Add event history tracking to prevent repetitive transformations
+// TODO: Create event balancing system to maintain game engagement
+// TODO: Implement player preference learning for event customization
+// TODO: Add event visualization system for better player understanding
+// TODO: Create event undo functionality for unwanted transformations
+
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
 import type { Ability } from './characterStatsAgent';
@@ -87,19 +97,19 @@ export class EventAgent {
 				return response;
 			} catch (error) {
 				console.warn(`EventAgent: Attempt ${attempt}/${this.maxRetries} failed:`, error);
-				
+
 				if (attempt === this.maxRetries) {
 					console.error('EventAgent: All retry attempts failed, using fallback');
 					return this.getFallbackResponse();
 				}
-				
+
 				// Wait before retry (exponential backoff)
 				const waitTime = Math.pow(2, attempt) * 1000;
 				console.log(`EventAgent: Waiting ${waitTime}ms before retry...`);
 				await new Promise(resolve => setTimeout(resolve, waitTime));
 			}
 		}
-		
+
 		// This should never be reached due to the logic above, but TypeScript safety
 		return this.getFallbackResponse();
 	}
@@ -114,7 +124,7 @@ export class EventAgent {
 	): Promise<{ thoughts: string; event_evaluation: EventEvaluation }> {
 		try {
 			console.log(`EventAgent: Building prompt for attempt ${attempt}...`);
-			const systemInstruction = this.useModernPrompts 
+			const systemInstruction = this.useModernPrompts
 				? this.buildModernEventPrompt(currentAbilitiesNames)
 				: this.buildLegacyEventPrompt(currentAbilitiesNames);
 
@@ -164,7 +174,7 @@ export class EventAgent {
 	private buildModernEventPrompt(currentAbilitiesNames: string[]): string[] {
 		// Fallback to enhanced legacy system until imports are fixed
 		console.log('EventAgent: Using enhanced legacy prompts (modern imports not available)');
-		
+
 		const baseInstructions = [
 			'🎯 EVENT EVALUATION SPECIALIST',
 			'Analyze the story for TWO specific event types:',
@@ -201,7 +211,7 @@ export class EventAgent {
     *   If yes, describe the new ability/spell/skill.
     *   If no, empty array.`,
 			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-				eventJsonFormat
+			eventJsonFormat
 		];
 	}
 
@@ -220,11 +230,11 @@ export class EventAgent {
 	 */
 	private buildUserMessage(storyHistory: string[], attempt: number): string {
 		const baseMessage = 'Evaluate the events for STORY PROGRESSION:\n' + storyHistory.join('\n');
-		
+
 		if (attempt > 1) {
 			return `${baseMessage}\n\n[RETRY ATTEMPT ${attempt}: Previous attempts failed, please ensure valid JSON response]`;
 		}
-		
+
 		return baseMessage;
 	}
 

@@ -7,7 +7,7 @@
 	} from '$lib/ai/agents/characterStatsAgent';
 	import { initialStoryState, type Story } from '$lib/ai/agents/storyAgent';
 	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 
 	type Props = {
 		ability: Ability;
@@ -29,8 +29,8 @@
 		onRandomize
 	}: Props = $props();
 
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	const storyState = useLocalStorage<Story>('storyState', initialStoryState);
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
+	const storyState = useHybridLocalStorage<Story>('storyState', initialStoryState);
 
 	let isOverwritten = $state(false);
 

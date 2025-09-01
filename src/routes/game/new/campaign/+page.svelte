@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import {
 		getRowsForTextarea,
@@ -27,15 +27,16 @@
 
 	// States
 	let isGeneratingState = $state(false);
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
+	let hasImportedData = $state(false);
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	let campaignAgent: CampaignAgent;
 
-	const campaignState = useLocalStorage<Campaign>('campaignState', initialCampaignState);
-	const storyState = useLocalStorage<Story>('storyState', {} as Story);
-	const currentChapterState = useLocalStorage<number>('currentChapterState');
-	const characterState = useLocalStorage<CharacterDescription>('characterState');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const campaignState = useHybridLocalStorage<Campaign>('campaignState', initialCampaignState);
+	const storyState = useHybridLocalStorage<Story>('storyState', {} as Story);
+	const currentChapterState = useHybridLocalStorage<number>('currentChapterState');
+	const characterState = useHybridLocalStorage<CharacterDescription>('characterState');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 
 	// Derived states
 	const textAreaRowsDerived = $derived(getRowsForTextarea(campaignState.value));
@@ -362,6 +363,10 @@
 			})
 		);
 	};
+
+	const handleImportComplete = () => {
+		hasImportedData = true;
+	};
 </script>
 
 {#if isGeneratingState}
@@ -370,6 +375,17 @@
 
 <ul class="steps mt-3 w-full">
 	<li class="step step-primary">Campaign</li>
+	<li class="step">
+		<button
+			type="button"
+			class="focus:ring-primary cursor-pointer border-none bg-transparent p-0 text-inherit hover:opacity-75 focus:ring-2 focus:outline-none"
+			onclick={() => _goto('systemPrompts')}
+			onkeydown={(e) => e.key === 'Enter' && _goto('systemPrompts')}
+			aria-label="Go to System Prompts step"
+		>
+			System Prompts
+		</button>
+	</li>
 	<li class="step">
 		<button
 			type="button"
@@ -429,7 +445,7 @@
 		Clear All
 	</button>
 
-	<ImportExportSaveGame isSaveGame={false}>
+	<ImportExportSaveGame isSaveGame={false} onImportComplete={handleImportComplete}>
 		{#snippet exportButton(onclick)}
 			<button {onclick} class="btn btn-neutral btn-md m-auto w-1/2">Export Settings</button>
 		{/snippet}

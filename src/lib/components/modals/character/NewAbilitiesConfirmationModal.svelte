@@ -2,7 +2,7 @@
 	import { CharacterStatsAgent, type Ability } from '$lib/ai/agents/characterStatsAgent';
 	import { onMount } from 'svelte';
 	import AbilityComponent from './AbilityComponent.svelte';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
@@ -18,12 +18,12 @@
 		spells_abilities: Partial<Ability>[];
 	} = $props();
 
-	const storyState = useLocalStorage<Story>('storyState');
-	const characterState = useLocalStorage<CharacterDescription>('characterState');
-	const characterStatsState = useLocalStorage<CharacterStats>('characterStatsState');
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const storyState = useHybridLocalStorage<Story>('storyState');
+	const characterState = useHybridLocalStorage<CharacterDescription>('characterState');
+	const characterStatsState = useHybridLocalStorage<CharacterStats>('characterStatsState');
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 
 	let isConfirmed = $state(false);
 	let isGeneratingState = $state(false);

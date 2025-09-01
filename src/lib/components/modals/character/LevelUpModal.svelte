@@ -7,7 +7,7 @@
 	} from '$lib/ai/agents/characterStatsAgent';
 	import { onMount } from 'svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { type CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { LLMMessage } from '$lib/ai/llm';
 	import type { Story } from '$lib/ai/agents/storyAgent';
@@ -21,13 +21,13 @@
 		onclose?: (levelUp?: any) => void;
 	} = $props();
 
-	const storyState = useLocalStorage<Story>('storyState');
-	const characterState = useLocalStorage<CharacterDescription>('characterState');
-	const characterStatsState = useLocalStorage<CharacterStats>('characterStatsState');
-	const historyMessagesState = useLocalStorage<LLMMessage[]>('historyMessagesState');
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const storyState = useHybridLocalStorage<Story>('storyState');
+	const characterState = useHybridLocalStorage<CharacterDescription>('characterState');
+	const characterStatsState = useHybridLocalStorage<CharacterStats>('characterStatsState');
+	const historyMessagesState = useHybridLocalStorage<LLMMessage[]>('historyMessagesState');
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	let aiLevelUp: AiLevelUp | undefined = $state();
 
 	let isGeneratingState = $state(false);

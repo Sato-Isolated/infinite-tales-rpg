@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { handleError, navigate, parseState } from '$lib/util.svelte';
 	import { CharacterAgent, initialCharacterState } from '$lib/ai/agents/characterAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
@@ -30,10 +30,10 @@
 	import OutputFeaturesModal from '$lib/components/modals/settings/OutputFeaturesModal.svelte';
 	import SystemPromptsModal from '$lib/components/modals/settings/SystemPromptsModal.svelte';
 
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	//TODO migrate all AI settings into this object to avoid too many vars in local storage
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState', {
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
 		disableAudioState: false,
 		disableImagesState: false,
 		useFallbackLlmState: false
@@ -42,42 +42,42 @@
 	let showOutputFeaturesModal = $state<boolean>(false);
 	let showSystemPromptsModal = $state<boolean>(false);
 
-	const gameActionsState = useLocalStorage('gameActionsState', []);
-	const historyMessagesState = useLocalStorage('historyMessagesState', []);
-	const characterState = useLocalStorage('characterState', initialCharacterState);
-	const inventoryState = useLocalStorage('inventoryState', {});
-	const characterImageState = useLocalStorage('characterImageState');
-	const characterStatsState = useLocalStorage('characterStatsState', initialCharacterStatsState);
-	const npcState = useLocalStorage<NPCState>('npcState', {});
-	const storyState = useLocalStorage('storyState', initialStoryState);
-	const isGameEnded = useLocalStorage('isGameEnded', false);
-	const rollDifferenceHistoryState = useLocalStorage('rollDifferenceHistoryState', []);
-	const campaignState = useLocalStorage('campaignState', initialCampaignState);
-	const currentChapterState = useLocalStorage('currentChapterState');
-	const characterActionsState = useLocalStorage('characterActionsState');
-	const levelUpState = useLocalStorage('levelUpState');
-	const customMemoriesState = useLocalStorage<string>('customMemoriesState');
-	const customGMNotesState = useLocalStorage<string>('customGMNotesState');
-	const skillsProgressionState = useLocalStorage('skillsProgressionState', {});
-	const characterTransformState = useLocalStorage<CharacterChangedInto>(
+	const gameActionsState = useHybridLocalStorage('gameActionsState', []);
+	const historyMessagesState = useHybridLocalStorage('historyMessagesState', []);
+	const characterState = useHybridLocalStorage('characterState', initialCharacterState);
+	const inventoryState = useHybridLocalStorage('inventoryState', {});
+	const characterImageState = useHybridLocalStorage('characterImageState');
+	const characterStatsState = useHybridLocalStorage('characterStatsState', initialCharacterStatsState);
+	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
+	const storyState = useHybridLocalStorage('storyState', initialStoryState);
+	const isGameEnded = useHybridLocalStorage('isGameEnded', false);
+	const rollDifferenceHistoryState = useHybridLocalStorage('rollDifferenceHistoryState', []);
+	const campaignState = useHybridLocalStorage('campaignState', initialCampaignState);
+	const currentChapterState = useHybridLocalStorage('currentChapterState');
+	const characterActionsState = useHybridLocalStorage('characterActionsState');
+	const levelUpState = useHybridLocalStorage('levelUpState');
+	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState');
+	const customGMNotesState = useHybridLocalStorage<string>('customGMNotesState');
+	const skillsProgressionState = useHybridLocalStorage('skillsProgressionState', {});
+	const characterTransformState = useHybridLocalStorage<CharacterChangedInto>(
 		'characterTransformState',
 		initialCharacterTransformState
 	);
 
-	const relatedStoryHistoryState = useLocalStorage<RelatedStoryHistory>(
+	const relatedStoryHistoryState = useHybridLocalStorage<RelatedStoryHistory>(
 		'relatedStoryHistoryState',
 		{ relatedDetails: [] }
 	);
-	const relatedActionHistoryState = useLocalStorage<string[]>('relatedActionHistoryState', []);
-	const eventEvaluationState = useLocalStorage<EventEvaluation>(
+	const relatedActionHistoryState = useHybridLocalStorage<string[]>('relatedActionHistoryState', []);
+	const eventEvaluationState = useHybridLocalStorage<EventEvaluation>(
 		'eventEvaluationState',
 		initialEventEvaluationState
 	);
-	const playerCharactersIdToNamesMapState = useLocalStorage<PlayerCharactersIdToNamesMap>(
+	const playerCharactersIdToNamesMapState = useHybridLocalStorage<PlayerCharactersIdToNamesMap>(
 		'playerCharactersIdToNamesMapState',
 		{}
 	);
-	const gameTimeState = useLocalStorage<GameTime | null>('gameTimeState', null);
+	const gameTimeState = useHybridLocalStorage<GameTime | null>('gameTimeState', null);
 
 	let isGeneratingState = $state(false);
 	let quickstartModalOpen = $state(false);

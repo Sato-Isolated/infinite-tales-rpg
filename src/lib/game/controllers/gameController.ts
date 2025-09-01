@@ -1,3 +1,13 @@
+// TODO: Implement intelligent action prioritization based on story context
+// TODO: Add game session analytics for performance monitoring and balancing
+// TODO: Create automated testing framework for game controller logic
+// TODO: Implement smart action batching for improved performance
+// TODO: Add predictive caching for common game scenarios
+// TODO: Create game state validation and automatic error recovery
+// TODO: Implement dynamic difficulty adjustment based on player engagement
+// TODO: Add game flow optimization suggestions based on player behavior
+// TODO: Create comprehensive logging system for debugging and analysis
+
 import {
 	GameAgent,
 	type Action,
@@ -201,7 +211,7 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.inventoryState.value,
 			JSON.parse(JSON.stringify(determinedActionsAndStatsUpdate))
 		);
-		// No manual reactivity trigger needed with useLocalStorage
+		// No manual reactivity trigger needed with useHybridLocalStorage
 
 		const aliveNPCs = allNpcsDetailsAsList
 			.filter((npc: any) => npc?.resources && npc.resources.current_hp > 0)
@@ -344,7 +354,7 @@ export function createGameController(ctx: ControllerCtx) {
 				newState.stats_update;
 			gameLogic.applyInventoryUpdate(ctx.state.inventoryState.value, newState);
 		} else {
-			// Apply resources directly to useLocalStorage state - no complex reactivity needed
+			// Apply resources directly to useHybridLocalStorage state - no complex reactivity needed
 			gameLogic.applyGameActionState(
 				ctx.state.playerCharactersGameState.value,
 				ctx.state.playerCharactersIdToNamesMapState.value,
@@ -560,7 +570,7 @@ export function createGameController(ctx: ControllerCtx) {
 		try {
 			// Save snapshot before processing action for undo functionality
 			saveSnapshotBeforeAction();
-			
+
 			// Validate undo consistency periodically (every 10th action)
 			const gameActions = ctx.state.gameActionsState.value;
 			if (gameActions.length % 10 === 0) {

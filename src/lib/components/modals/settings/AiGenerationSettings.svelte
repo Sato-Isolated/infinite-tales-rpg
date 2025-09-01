@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
 
 	let { onclose }: { onclose?: () => void } = $props();
 
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState', {
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
 		useFallbackLlmState: false,
 		disableImagesState: false,
 		disableAudioState: false
 	});
-	const temperatureState = useLocalStorage<number>('temperatureState', 1);
-	const aiLanguage = useLocalStorage<string>('aiLanguage', '');
+	const temperatureState = useHybridLocalStorage<number>('temperatureState', 1);
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage', '');
 </script>
 
 <dialog open class="modal z-50" style="background: rgba(0, 0, 0, 0.3);">

@@ -11,7 +11,7 @@
 	} from '$lib/ai/agents/characterStatsAgent';
 	import { type Story, initialStoryState } from '$lib/ai/agents/storyAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { navigate, parseState, removeEmptyValues } from '$lib/util.svelte';
 	import { onMount } from 'svelte';
 	import cloneDeep from 'lodash.clonedeep';
@@ -22,22 +22,22 @@
 	import AbilityEditor from '$lib/components/modals/character/AbilityEditor.svelte';
 
 	let isGeneratingState = $state(false);
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 
 	let characterStatsAgent: CharacterStatsAgent;
-	const storyState = useLocalStorage<Story>('storyState', initialStoryState);
-	const characterState = useLocalStorage<CharacterDescription>(
+	const storyState = useHybridLocalStorage<Story>('storyState', initialStoryState);
+	const characterState = useHybridLocalStorage<CharacterDescription>(
 		'characterState',
 		initialCharacterState
 	);
-	const characterStatsState = useLocalStorage<CharacterStats>(
+	const characterStatsState = useHybridLocalStorage<CharacterStats>(
 		'characterStatsState',
 		initialCharacterStatsState
 	);
-	const campaignState = useLocalStorage<Campaign>('campaignState');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	const gameSettingsState = useLocalStorage<GameSettings>(
+	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
+	const gameSettingsState = useHybridLocalStorage<GameSettings>(
 		'gameSettingsState',
 		defaultGameSettings()
 	);
@@ -277,6 +277,11 @@
 	{:else}
 		<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>
 	{/if}
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<!-- svelte-ignore a11y_click_events_have_key_events  -->
+	<li class="step step-primary cursor-pointer" onclick={() => goto('systemPrompts')}>
+		System Prompts
+	</li>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
 	<li class="step step-primary cursor-pointer" onclick={() => goto('character')}>Character</li>

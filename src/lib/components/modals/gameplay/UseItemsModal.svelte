@@ -8,7 +8,7 @@
 	} from '$lib/ai/agents/gameAgent';
 	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import { formatItemId } from '$lib/game/logic/gameLogic';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
 	import CraftingModal from './CraftingModal.svelte';
 
@@ -30,7 +30,7 @@
 		dialogRef: HTMLDialogElement;
 	} = $props();
 
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	let craftingDialogState = $state<boolean>(false);
 
 	function mapToAction(item_id: string, item: Item): ItemWithId & Action {

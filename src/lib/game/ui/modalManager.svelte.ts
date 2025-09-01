@@ -1,7 +1,7 @@
 import type { Action, Item } from '$lib/ai/agents/gameAgent';
 import type { CharacterChangedInto } from '$lib/ai/agents/eventAgent';
 import type { Ability, AiLevelUp } from '$lib/ai/agents/characterStatsAgent';
-import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 
 /**
  * Modal Manager - Centralized modal state management
@@ -36,7 +36,7 @@ export function createModalManager() {
 	let customDiceRollNotation = $state<string>('');
 	let itemForSuggestActionsState = $state<(Item & { item_id: string }) | undefined>();
 
-	const levelUpState = useLocalStorage<{
+	const levelUpState = useHybridLocalStorage<{
 		buttonEnabled: boolean;
 		dialogOpened: boolean;
 		playerName: string;

@@ -1,3 +1,12 @@
+// TODO: Add AI response quality validation utilities
+// TODO: Implement advanced debugging tools for game state inspection
+// TODO: Create development mode helpers for testing AI responses
+// TODO: Add performance profiling utilities for AI call optimization
+// TODO: Implement smart caching for AI responses in development
+// TODO: Create automated AI prompt testing framework
+// TODO: Add game balance analysis tools
+// TODO: Implement story arc tracking and visualization
+
 import { errorState } from './state/errorState.svelte';
 import isPlainObject from 'lodash.isplainobject';
 // Type-only import to avoid loading pdfjs in Node test environment
@@ -60,6 +69,11 @@ export function stringifyPretty(object: unknown): string {
 /**
  * Improved error handling with better state management
  * Compatible with Svelte 5 reactive patterns
+ * 
+ * TODO: Add error categorization (AI errors vs system errors vs user errors)
+ * TODO: Implement error recovery suggestions based on error type
+ * TODO: Create error reporting system for AI response quality issues
+ * TODO: Add error context tracking for better debugging
  */
 export function handleError(e: string, retryable = true): void {
 	console.error('Application Error:', e);
@@ -67,6 +81,8 @@ export function handleError(e: string, retryable = true): void {
 		errorState.exception = e;
 		errorState.userMessage = e;
 		errorState.retryable = retryable;
+		// TODO: Add error analytics tracking for improvement insights
+		// TODO: Implement smart error recovery based on error patterns
 	}
 }
 

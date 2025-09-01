@@ -11,7 +11,7 @@
 	} from '$lib/utils/webglDetection';
 	type Props = { diceRollDialog: HTMLDialogElement; action: Action; resetState: boolean };
 
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { onMount } from 'svelte';
 	import { getRandomInteger } from '$lib/util.svelte';
 	import {
@@ -23,12 +23,12 @@
 	let { diceRollDialog = $bindable(), action, resetState }: Props = $props();
 
 	// State management
-	const rolledValueState = useLocalStorage<number>('rolledValueState');
-	const rollDifferenceHistoryState = useLocalStorage<number[]>('rollDifferenceHistoryState', []);
-	const difficultyState = useLocalStorage<'Easy' | 'Default'>('difficultyState', 'Default');
-	const useKarmicDice = useLocalStorage<boolean>('useKarmicDice', true);
-	const diceRollRequiredValueState = useLocalStorage<number>('diceRollRequiredValueState');
-	const gameSettingsState = useLocalStorage<GameSettings>(
+	const rolledValueState = useHybridLocalStorage<number>('rolledValueState');
+	const rollDifferenceHistoryState = useHybridLocalStorage<number[]>('rollDifferenceHistoryState', []);
+	const difficultyState = useHybridLocalStorage<'Easy' | 'Default'>('difficultyState', 'Default');
+	const useKarmicDice = useHybridLocalStorage<boolean>('useKarmicDice', true);
+	const diceRollRequiredValueState = useHybridLocalStorage<number>('diceRollRequiredValueState');
+	const gameSettingsState = useHybridLocalStorage<GameSettings>(
 		'gameSettingsState',
 		defaultGameSettings()
 	);
@@ -57,7 +57,7 @@
 				)
 	);
 
-	const characterStatsState = useLocalStorage<CharacterStats>(
+	const characterStatsState = useHybridLocalStorage<CharacterStats>(
 		'characterStatsState',
 		initialCharacterStatsState
 	);

@@ -3,7 +3,7 @@
 	import { type Ability, CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 	import type { Action, ResourcesWithCurrentValue, Targets } from '$lib/ai/agents/gameAgent';
 	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
 
 	let {
@@ -24,7 +24,7 @@
 		dialogRef: HTMLDialogElement;
 	} = $props();
 
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	// dialog ref is mutated at runtime; make it reactive
 	let targetModalRef = $state<any>();
 	let abilityActionState = $state({} as Action);

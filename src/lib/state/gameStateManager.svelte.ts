@@ -2,6 +2,14 @@
  * Optimized Game State Manager using modern Svelte 5 patterns
  * Decomposes the large state management from the main component
  * Uses SvelteMap/SvelteSet for better reactivity where appropriate
+ * 
+ * TODO: Implement state persistence optimization with selective serialization
+ * TODO: Add state diff tracking for undo/redo functionality  
+ * TODO: Create state snapshots for save game versioning
+ * TODO: Implement state validation and repair mechanisms
+ * TODO: Add performance monitoring for state updates
+ * TODO: Create state migration system for backward compatibility
+ * TODO: Implement state compression for large game histories
  */
 
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
@@ -17,23 +25,23 @@ import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import type { LLMMessage } from '$lib/ai/llm';
 import type { ThoughtsState } from '$lib/util.svelte';
-import { useLocalStorage } from './useLocalStorage.svelte';
+import { useHybridLocalStorage } from './hybrid/useHybridLocalStorage.svelte';
 
 export interface GameStateManager {
 	// Core game state
-	gameActions: ReturnType<typeof useLocalStorage<GameActionState[]>>;
-	characterActions: ReturnType<typeof useLocalStorage<Action[]>>;
-	historyMessages: ReturnType<typeof useLocalStorage<LLMMessage[]>>;
-	character: ReturnType<typeof useLocalStorage<CharacterDescription>>;
-	characterStats: ReturnType<typeof useLocalStorage<CharacterStats>>;
-	story: ReturnType<typeof useLocalStorage<Story>>;
-	thoughts: ReturnType<typeof useLocalStorage<ThoughtsState>>;
+	gameActions: ReturnType<typeof useHybridLocalStorage<GameActionState[]>>;
+	characterActions: ReturnType<typeof useHybridLocalStorage<Action[]>>;
+	historyMessages: ReturnType<typeof useHybridLocalStorage<LLMMessage[]>>;
+	character: ReturnType<typeof useHybridLocalStorage<CharacterDescription>>;
+	characterStats: ReturnType<typeof useHybridLocalStorage<CharacterStats>>;
+	story: ReturnType<typeof useHybridLocalStorage<Story>>;
+	thoughts: ReturnType<typeof useHybridLocalStorage<ThoughtsState>>;
 
 	// Player and NPC state
-	playerCharactersGame: ReturnType<typeof useLocalStorage<PlayerCharactersGameState>>;
-	playerCharactersIdToNames: ReturnType<typeof useLocalStorage<PlayerCharactersIdToNamesMap>>;
-	npcs: ReturnType<typeof useLocalStorage<NPCState>>;
-	inventory: ReturnType<typeof useLocalStorage<InventoryState>>;
+	playerCharactersGame: ReturnType<typeof useHybridLocalStorage<PlayerCharactersGameState>>;
+	playerCharactersIdToNames: ReturnType<typeof useHybridLocalStorage<PlayerCharactersIdToNamesMap>>;
+	npcs: ReturnType<typeof useHybridLocalStorage<NPCState>>;
+	inventory: ReturnType<typeof useHybridLocalStorage<InventoryState>>;
 
 	// Derived state
 	currentGameAction: GameActionState;
@@ -52,36 +60,36 @@ export function createGameStateManager(initialStates: {
 	storyState: any;
 	thoughtsState: any;
 }): GameStateManager {
-	// Initialize all state using the optimized useLocalStorage
-	const gameActions = useLocalStorage<GameActionState[]>('gameActionsState', []);
-	const characterActions = useLocalStorage<Action[]>('characterActionsState', []);
-	const historyMessages = useLocalStorage<LLMMessage[]>('historyMessagesState', []);
-	const character = useLocalStorage<CharacterDescription>(
+	// Initialize all state using the optimized useHybridLocalStorage
+	const gameActions = useHybridLocalStorage<GameActionState[]>('gameActionsState', []);
+	const characterActions = useHybridLocalStorage<Action[]>('characterActionsState', []);
+	const historyMessages = useHybridLocalStorage<LLMMessage[]>('historyMessagesState', []);
+	const character = useHybridLocalStorage<CharacterDescription>(
 		'characterState',
 		initialStates.characterState
 	);
-	const characterStats = useLocalStorage<CharacterStats>(
+	const characterStats = useHybridLocalStorage<CharacterStats>(
 		'characterStatsState',
 		initialStates.characterStatsState
 	);
-	const story = useLocalStorage<Story>('storyState', initialStates.storyState);
-	const thoughts = useLocalStorage<ThoughtsState>('thoughtsState', initialStates.thoughtsState);
+	const story = useHybridLocalStorage<Story>('storyState', initialStates.storyState);
+	const thoughts = useHybridLocalStorage<ThoughtsState>('thoughtsState', initialStates.thoughtsState);
 
-	const playerCharactersGame = useLocalStorage<PlayerCharactersGameState>(
+	const playerCharactersGame = useHybridLocalStorage<PlayerCharactersGameState>(
 		'playerCharactersGameState',
 		{}
 	);
-	const playerCharactersIdToNames = useLocalStorage<PlayerCharactersIdToNamesMap>(
+	const playerCharactersIdToNames = useHybridLocalStorage<PlayerCharactersIdToNamesMap>(
 		'playerCharactersIdToNamesMapState',
 		{}
 	);
-	const npcs = useLocalStorage<NPCState>('npcState', {});
-	const inventory = useLocalStorage<InventoryState>('inventoryState', {});
+	const npcs = useHybridLocalStorage<NPCState>('npcState', {});
+	const inventory = useHybridLocalStorage<InventoryState>('inventoryState', {});
 
 	// Derived state using $derived for optimal performance
 	const currentGameAction = $derived(
 		(gameActions.value && gameActions.value[gameActions.value.length - 1]) ||
-			({} as GameActionState)
+		({} as GameActionState)
 	);
 
 	const playerCharacterId = $derived.by(() => {

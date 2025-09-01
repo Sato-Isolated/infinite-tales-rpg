@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { defaultGameSettings, type GameSettings } from '$lib/ai/agents/gameAgent';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 
 	let { onclose }: { onclose?: () => void } = $props();
-	let gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState', defaultGameSettings());
+	let gameSettingsState = useHybridLocalStorage<GameSettings>('gameSettingsState', defaultGameSettings());
 
-	const useDynamicCombat = useLocalStorage<boolean>('useDynamicCombat', false);
+	const useDynamicCombat = useHybridLocalStorage<boolean>('useDynamicCombat', false);
 </script>
 
 <dialog open class="modal z-50" style="background: rgba(0, 0, 0, 0.3);">

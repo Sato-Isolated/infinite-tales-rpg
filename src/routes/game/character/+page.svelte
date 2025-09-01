@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent.ts';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
@@ -12,16 +12,16 @@
 	import { getRequiredSkillProgression } from '$lib/game/logic/characterLogic';
 	import { getCurrentCharacterGameState } from '$lib/game/state/gameStateUtils';
 
-	const characterState = useLocalStorage<CharacterDescription>('characterState');
-	const characterStatsState = useLocalStorage<CharacterStats>('characterStatsState');
-	const skillsProgressionState = useLocalStorage<SkillsProgression>('skillsProgressionState');
-	const storyState = useLocalStorage<Story>('storyState');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	const playerCharactersGameState = useLocalStorage<PlayerCharactersGameState>(
+	const characterState = useHybridLocalStorage<CharacterDescription>('characterState');
+	const characterStatsState = useHybridLocalStorage<CharacterStats>('characterStatsState');
+	const skillsProgressionState = useHybridLocalStorage<SkillsProgression>('skillsProgressionState');
+	const storyState = useHybridLocalStorage<Story>('storyState');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
+	const playerCharactersGameState = useHybridLocalStorage<PlayerCharactersGameState>(
 		'playerCharactersGameState',
 		{}
 	);
-	const playerCharactersIdToNamesMapState = useLocalStorage<PlayerCharactersIdToNamesMap>(
+	const playerCharactersIdToNamesMapState = useHybridLocalStorage<PlayerCharactersIdToNamesMap>(
 		'playerCharactersIdToNamesMapState',
 		{}
 	);

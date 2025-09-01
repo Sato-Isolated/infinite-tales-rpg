@@ -1,5 +1,16 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	// TODO: Extract component into smaller, more focused components for better performance
+	// TODO: Implement smart preloading of AI responses for common actions
+	// TODO: Add game session analytics for balancing improvements
+	// TODO: Create quick action shortcuts for frequently used actions
+	// TODO: Implement story mood tracking and visualization
+	// TODO: Add AI response time monitoring and optimization
+	// TODO: Create save/load system with automatic backup functionality
+	// TODO: Implement experimental features toggle for testing new AI capabilities
+	// TODO: Add story arc visualization and branching path tracker
+	// TODO: Create character development insights and progression recommendations
+
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 	import { beforeNavigate } from '$app/navigation';
 	import {
@@ -122,17 +133,17 @@
 	let actionInputFormComponent = $state<{ clear?: () => void }>();
 
 	//ai state - proper initialization to prevent hydration mismatches
-	const apiKeyState = useLocalStorage<string>('apiKeyState', '');
-	const temperatureState = useLocalStorage<number>('temperatureState', 0.7);
-	const systemInstructionsState = useLocalStorage<SystemInstructionsState>(
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const temperatureState = useHybridLocalStorage<number>('temperatureState', 0.7);
+	const systemInstructionsState = useHybridLocalStorage<SystemInstructionsState>(
 		'systemInstructionsState',
 		initialSystemInstructionsState
 	);
-	const aiLanguage = useLocalStorage<string>('aiLanguage', 'en');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage', 'en');
 
 	// AI state management with proper initialization
 	let isAiGeneratingState = $state(false);
-	const didAIProcessDiceRollActionState = useLocalStorage<boolean>(
+	const didAIProcessDiceRollActionState = useHybridLocalStorage<boolean>(
 		'didAIProcessDiceRollAction',
 		false
 	);
@@ -153,32 +164,38 @@
 		eventAgent: EventAgent;
 
 	//game state
-	const gameActionsState = useLocalStorage<GameActionState[]>('gameActionsState', []);
-	const characterActionsState = useLocalStorage<Action[]>('characterActionsState', []);
-	const historyMessagesState = useLocalStorage<LLMMessage[]>('historyMessagesState', []);
-	const characterState = useLocalStorage<CharacterDescription>(
+	const gameActionsState = useHybridLocalStorage<GameActionState[]>('gameActionsState', []);
+	const characterActionsState = useHybridLocalStorage<Action[]>('characterActionsState', []);
+	const historyMessagesState = useHybridLocalStorage<LLMMessage[]>('historyMessagesState', []);
+	const characterState = useHybridLocalStorage<CharacterDescription>(
 		'characterState',
 		initialCharacterState
 	);
-	const characterStatsState = useLocalStorage<CharacterStats>(
+	const characterStatsState = useHybridLocalStorage<CharacterStats>(
 		'characterStatsState',
 		initialCharacterStatsState
 	);
 	let storyChunkState = $state<string>('');
-	let thoughtsState = useLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
+	let thoughtsState = useHybridLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
 
-	const skillsProgressionState = useLocalStorage<SkillsProgression>('skillsProgressionState', {});
+	const skillsProgressionState = useHybridLocalStorage<SkillsProgression>(
+		'skillsProgressionState',
+		{}
+	);
 	let skillsProgressionForCurrentActionState = $state<number | undefined>(undefined);
-	const inventoryState = useLocalStorage<InventoryState>('inventoryState', {});
-	const storyState = useLocalStorage<Story>('storyState', initialStoryState);
-	const relatedStoryHistoryState = useLocalStorage<RelatedStoryHistory>(
+	const inventoryState = useHybridLocalStorage<InventoryState>('inventoryState', {});
+	const storyState = useHybridLocalStorage<Story>('storyState', initialStoryState);
+	const relatedStoryHistoryState = useHybridLocalStorage<RelatedStoryHistory>(
 		'relatedStoryHistoryState',
 		{ relatedDetails: [] }
 	);
-	const relatedActionHistoryState = useLocalStorage<string[]>('relatedActionHistoryState', []);
-	const customMemoriesState = useLocalStorage<string>('customMemoriesState', '');
-	const customGMNotesState = useLocalStorage<string>('customGMNotesState', '');
-	const currentChapterState = useLocalStorage<number>('currentChapterState', 1);
+	const relatedActionHistoryState = useHybridLocalStorage<string[]>(
+		'relatedActionHistoryState',
+		[]
+	);
+	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState', '');
+	const customGMNotesState = useHybridLocalStorage<string>('customGMNotesState', '');
+	const currentChapterState = useHybridLocalStorage<number>('currentChapterState', 1);
 
 	// Initialize conversation state manager for dialogue tracking
 	const conversationStateManager = new ConversationStateManager();
@@ -195,9 +212,9 @@
 		theme: '',
 		tonality: ''
 	};
-	const campaignState = useLocalStorage<Campaign>('campaignState', defaultCampaign);
+	const campaignState = useHybridLocalStorage<Campaign>('campaignState', defaultCampaign);
 
-	const npcState = useLocalStorage<NPCState>('npcState', {});
+	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
 
 	// Initialize action state with proper default instead of unsafe cast
 	const defaultAction: Action = {
@@ -205,22 +222,25 @@
 		text: '',
 		is_possible: true
 	};
-	const chosenActionState = useLocalStorage<Action>('chosenActionState', defaultAction);
+	const chosenActionState = useHybridLocalStorage<Action>('chosenActionState', defaultAction);
 
-	const additionalStoryInputState = useLocalStorage<string>('additionalStoryInputState', '');
-	const additionalActionInputState = useLocalStorage<string>('additionalActionInputState', '');
-	const isGameEnded = useLocalStorage<boolean>('isGameEnded', false);
-	let playerCharactersIdToNamesMapState = useLocalStorage<PlayerCharactersIdToNamesMap>(
+	const additionalStoryInputState = useHybridLocalStorage<string>('additionalStoryInputState', '');
+	const additionalActionInputState = useHybridLocalStorage<string>(
+		'additionalActionInputState',
+		''
+	);
+	const isGameEnded = useHybridLocalStorage<boolean>('isGameEnded', false);
+	let playerCharactersIdToNamesMapState = useHybridLocalStorage<PlayerCharactersIdToNamesMap>(
 		'playerCharactersIdToNamesMapState',
 		{}
 	);
 	// Use original naming and structure from GitHub
-	const playerCharactersGameState = useLocalStorage<PlayerCharactersGameState>(
+	const playerCharactersGameState = useHybridLocalStorage<PlayerCharactersGameState>(
 		'playerCharactersGameState',
 		{}
 	);
 
-	let levelUpState = useLocalStorage<{
+	let levelUpState = useHybridLocalStorage<{
 		buttonEnabled: boolean;
 		dialogOpened: boolean;
 		playerName: string;
@@ -292,7 +312,7 @@
 	//);
 	let customActionReceiver: 'Game Command' | 'Character Action' | 'GM Question' | 'Dice Roll' =
 		$state('Character Action');
-	const eventEvaluationState = useLocalStorage<EventEvaluation>(
+	const eventEvaluationState = useHybridLocalStorage<EventEvaluation>(
 		'eventEvaluationState',
 		initialEventEvaluationState
 	);
@@ -301,11 +321,14 @@
 	let controller = $state<ReturnType<typeof createGameController> | undefined>(undefined);
 
 	//feature toggles
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	let useDynamicCombat = useLocalStorage<boolean>('useDynamicCombat', false);
-	let gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState', defaultGameSettings());
-	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
-	const gameTimeState = useLocalStorage<GameTime | null>('gameTimeState', null);
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
+	let useDynamicCombat = useHybridLocalStorage<boolean>('useDynamicCombat', false);
+	let gameSettingsState = useHybridLocalStorage<GameSettings>(
+		'gameSettingsState',
+		defaultGameSettings()
+	);
+	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
+	const gameTimeState = useHybridLocalStorage<GameTime | null>('gameTimeState', null);
 
 	onMount(async () => {
 		beforeNavigate(({ cancel }) => {
@@ -316,6 +339,29 @@
 				}
 			}
 		});
+
+		// 🚨 ATTENDRE que apiKeyState soit hydraté avec timeout pour éviter les boucles infinies
+		// useHybridLocalStorage a besoin de temps pour charger depuis localStorage
+		const maxWaitTime = 3000; // 3 secondes maximum
+		const startTime = Date.now();
+
+		while (
+			(!apiKeyState.storageInfo.isHydrated || apiKeyState.storageInfo.isInitializing) &&
+			Date.now() - startTime < maxWaitTime
+		) {
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+
+		// Si l'hydratation n'est toujours pas terminée après le timeout, on continue quand même
+		if (!apiKeyState.storageInfo.isHydrated) {
+			console.warn('⚠️ Hydratation timeout - continuation avec les valeurs par défaut');
+		}
+		if (apiKeyState.storageInfo.isInitializing) {
+			console.warn('⚠️ Initialisation timeout - continuation avec les valeurs par défaut');
+		}
+
+		console.log('🔑 API Key après hydratation:', apiKeyState.value?.length || 0, 'caractères');
+
 		const llm = LLMProvider.provideLLM(
 			{
 				temperature: temperatureState.value,
@@ -412,7 +458,7 @@
 					modalManager.setLevelUpPlayerName(state.playerName);
 					modalManager.setLevelUpButtonEnabled(state.buttonEnabled);
 				}
-				// Remove complex reactivity callback - not needed with useLocalStorage
+				// Remove complex reactivity callback - not needed with useHybridLocalStorage
 			},
 			skills: {
 				skillsProgressionForCurrentActionState: {
@@ -449,8 +495,19 @@
 			getRelatedHistoryForStory();
 		}
 
-		// Start game when not already started
-		if (!currentGameActionState?.story) {
+		// 🚨 ATTENDRE que gameActionsState soit aussi hydraté avant de décider de démarrer le jeu
+		while (!gameActionsState.storageInfo.isHydrated && Date.now() - startTime < maxWaitTime) {
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+
+		// Start game when not already started - but only after all states are hydrated
+		const hasExistingGame =
+			gameActionsState.value &&
+			gameActionsState.value.length > 0 &&
+			gameActionsState.value.some((action) => action.story && action.story.trim().length > 0);
+
+		if (!hasExistingGame && gameActionsState.storageInfo.isHydrated) {
+			console.log('🎮 Starting new game - no existing story found');
 			await controller!.sendAction({
 				characterName: characterState.value.name,
 				text: GameAgent.getStartingPrompt()
@@ -467,6 +524,7 @@
 				playerCharactersGameState.value = updatedPlayerCharactersGameState;
 			}
 		} else {
+			console.log('🔄 Initializing from saved state - existing story found');
 			await initializeGameFromSavedState();
 		}
 	});

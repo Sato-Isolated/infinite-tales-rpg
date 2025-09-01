@@ -107,7 +107,7 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 			loseResource('ÉNERGIE_ÆTHÉRIQUE', 2);
 
-			// Assert: avec useLocalStorage, la réactivité doit être automatique
+			// Assert: avec useHybridLocalStorage, la réactivité doit être automatique
 			expect(
 				mockPlayerCharactersGameState[mockCharacterId]['ÉNERGIE_ÆTHÉRIQUE'].current_value
 			).toBe(6);
@@ -157,12 +157,12 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 		});
 	});
 
-	describe('useLocalStorage Pattern Compliance', () => {
+	describe('useHybridLocalStorage Pattern Compliance', () => {
 		it('should follow project standards for state management', () => {
 			// Test que la nouvelle structure suit les conventions du projet
 
-			// Mock useLocalStorage pattern
-			const mockUseLocalStorage = <T>(key: string, defaultValue: T) => ({
+			// Mock useHybridLocalStorage pattern
+			const mockuseHybridLocalStorage = <T>(key: string, defaultValue: T) => ({
 				value: defaultValue,
 				reset: () => {}
 			});
@@ -170,7 +170,7 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 			const expectedStateKeys = ['playerCharactersGameState', 'characterState', 'gameActionsState'];
 
 			expectedStateKeys.forEach((key) => {
-				const state = mockUseLocalStorage(key, {});
+				const state = mockuseHybridLocalStorage(key, {});
 				expect(state).toHaveProperty('value');
 				expect(state).toHaveProperty('reset');
 			});
@@ -278,8 +278,8 @@ describe('Regression Tests - Fixed Issues', () => {
 		expect(protectedLevelUp(50)).toBe(false); // Aucune action car état non initialisé
 	});
 
-	it('should verify useLocalStorage replaces $state pattern correctly', () => {
-		// Test pour s'assurer qu'on utilise bien useLocalStorage et pas $state
+	it('should verify useHybridLocalStorage replaces $state pattern correctly', () => {
+		// Test pour s'assurer qu'on utilise bien useHybridLocalStorage et pas $state
 
 		// Pattern attendu (correct)
 		const correctPattern = {
@@ -296,7 +296,7 @@ describe('Regression Tests - Fixed Issues', () => {
 		const fixes = [
 			'Added null check before accessing XP in confirmCharacterChangeEvent',
 			'Added optional chaining for XP access in levelUpClicked',
-			'Replaced $state with useLocalStorage for automatic reactivity',
+			'Replaced $state with useHybridLocalStorage for automatic reactivity',
 			'Improved getCurrentCharacterGameState to return undefined safely'
 		];
 

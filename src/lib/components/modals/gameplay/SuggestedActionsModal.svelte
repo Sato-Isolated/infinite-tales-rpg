@@ -2,7 +2,7 @@
 	import { type CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 	import { onMount } from 'svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { type CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { LLMMessage } from '$lib/ai/llm';
 	import type { Story } from '$lib/ai/agents/storyAgent';
@@ -33,19 +33,19 @@
 		itemForSuggestActionsState: ItemWithId;
 	} = $props();
 
-	const storyState = useLocalStorage<Story>('storyState');
-	const characterState = useLocalStorage<CharacterDescription>('characterState');
-	const characterStatsState = useLocalStorage<CharacterStats>('characterStatsState');
-	const historyMessagesState = useLocalStorage<LLMMessage[]>('historyMessagesState');
-	const inventoryState = useLocalStorage<InventoryState>('inventoryState', {});
-	const additionalActionInputState = useLocalStorage<string>('additionalActionInputState', '');
+	const storyState = useHybridLocalStorage<Story>('storyState');
+	const characterState = useHybridLocalStorage<CharacterDescription>('characterState');
+	const characterStatsState = useHybridLocalStorage<CharacterStats>('characterStatsState');
+	const historyMessagesState = useHybridLocalStorage<LLMMessage[]>('historyMessagesState');
+	const inventoryState = useHybridLocalStorage<InventoryState>('inventoryState', {});
+	const additionalActionInputState = useHybridLocalStorage<string>('additionalActionInputState', '');
 
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
-	const temperatureState = useLocalStorage<number>('temperatureState');
-	const customSystemInstruction = useLocalStorage<string>('customSystemInstruction');
-	const customActionAgentInstruction = useLocalStorage<string>('customActionAgentInstruction');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
+	const temperatureState = useHybridLocalStorage<number>('temperatureState');
+	const customSystemInstruction = useHybridLocalStorage<string>('customSystemInstruction');
+	const customActionAgentInstruction = useHybridLocalStorage<string>('customActionAgentInstruction');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	let thoughtsState = $state('');
 	let suggestedActions: Array<Action> = $state([]);
 	let customActionInput: string = $state('');

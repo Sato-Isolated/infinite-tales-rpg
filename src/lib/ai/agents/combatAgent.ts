@@ -1,3 +1,12 @@
+// TODO: Implement tactical AI for smarter enemy behavior
+// TODO: Add combat animation sequence generation for better immersion
+// TODO: Create dynamic difficulty scaling based on player performance  
+// TODO: Implement environmental interaction effects (terrain, weather)
+// TODO: Add combo system for action chaining and special effects
+// TODO: Create combat prediction system for strategic decision making
+// TODO: Implement morale and psychological effects in combat
+// TODO: Add equipment durability and breakage mechanics
+
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type {
@@ -32,6 +41,10 @@ export class CombatAgent {
 		this.llm = llm;
 	}
 
+	// TODO: Implement status effects tracking (stunned, poisoned, etc.) via historyMessages analysis
+	// TODO: Add initiative system with action sequence planning
+	// TODO: Create combat round management with proper turn order
+	// TODO: Implement action interruption system for reactive abilities
 	//TODO are effects like stunned etc. considered via historyMessages?
 	//TODO far future improvement, include initiative with chain of actions, some actions then are skipped due to stun, death etc.
 	async generateActionsFromContext(
@@ -46,17 +59,17 @@ export class CombatAgent {
 	) {
 		const agent = [
 			"You are RPG combat agent, you decide which actions the NPCs take in response to the player character's action " +
-				'and what the consequences of these actions are. ' +
-				'\n You must not apply self damage to player character because of a failed action unless explicitly stated!' +
-				'\n You must include an action for each NPC from the list. You must also describe one action for player character, even if the action is a failure.' +
-				'\n You must include the results of the actions as stats_update for each action. NPCs can never be finished off with a single attack!',
+			'and what the consequences of these actions are. ' +
+			'\n You must not apply self damage to player character because of a failed action unless explicitly stated!' +
+			'\n You must include an action for each NPC from the list. You must also describe one action for player character, even if the action is a failure.' +
+			'\n You must include the results of the actions as stats_update for each action. NPCs can never be finished off with a single attack!',
 			`Only for the player character ${action.characterName} use the following resources:\n ${stringifyPretty(playerCharResources)}\n\nFor stats_update regarding NPC, you must exactly use resourceKey "hp" or "mp", and no deviations of that.`,
 			"The following is the character's inventory, if an item is relevant in the current situation then apply it's effect." +
-				'\n' +
-				stringifyPretty(inventoryState),
+			'\n' +
+			stringifyPretty(inventoryState),
 			'The following is a description of the story setting to keep the actions consistent on.' +
-				'\n' +
-				stringifyPretty(storyState),
+			'\n' +
+			stringifyPretty(storyState),
 			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
                  {
                   "actions": [

@@ -72,12 +72,20 @@ export function refillResourcesFully(
 	// Copy the game actions state and update the last action's stats_update log
 	const updatedGameActionsState = [...gameActionsState];
 	const lastIndex = updatedGameActionsState.length - 1;
-	if (lastIndex >= 0) {
+	if (lastIndex >= 0 && updatedGameActionsState[lastIndex]) {
+		const currentAction = updatedGameActionsState[lastIndex];
+		const existingStatsUpdate = Array.isArray(currentAction.stats_update) 
+			? currentAction.stats_update 
+			: [];
+		const newStatsUpdate = Array.isArray(statsUpdate.stats_update) 
+			? statsUpdate.stats_update 
+			: [];
+		
 		updatedGameActionsState[lastIndex] = {
-			...updatedGameActionsState[lastIndex],
+			...currentAction,
 			stats_update: [
-				...updatedGameActionsState[lastIndex].stats_update,
-				...statsUpdate.stats_update
+				...existingStatsUpdate,
+				...newStatsUpdate
 			]
 		};
 	}

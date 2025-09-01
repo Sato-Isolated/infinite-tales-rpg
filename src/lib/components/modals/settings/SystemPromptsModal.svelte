@@ -1,12 +1,12 @@
 <!-- src/lib/components/CustomBehaviorModal.svelte -->
 <script lang="ts">
 	import { initialSystemInstructionsState, type SystemInstructionsState } from '$lib/ai/llm';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 
 	// --- Props ---
 	let { onclose }: { onclose: () => void } = $props();
 
-	const systemInstructionsState = useLocalStorage<SystemInstructionsState>(
+	const systemInstructionsState = useHybridLocalStorage<SystemInstructionsState>(
 		'systemInstructionsState',
 		initialSystemInstructionsState
 	);

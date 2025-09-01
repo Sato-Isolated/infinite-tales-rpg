@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
 	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
@@ -7,8 +7,8 @@
 	import type { Ability } from '$lib/ai/agents/characterStatsAgent';
 	import { onMount } from 'svelte';
 
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	const storyState = useLocalStorage<Story>('storyState');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
+	const storyState = useHybridLocalStorage<Story>('storyState');
 	let isMounted = $state(false);
 
 	onMount(() => {

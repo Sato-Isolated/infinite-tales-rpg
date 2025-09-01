@@ -5,7 +5,7 @@
 
 import type { GameTime } from '$lib/types/gameTime';
 import type { DiceRollResult } from '$lib/game/logic/diceRollLogic';
-import { useLocalStorage } from './useLocalStorage.svelte';
+import { useHybridLocalStorage } from './hybrid/useHybridLocalStorage.svelte';
 
 export interface UIStateManager {
 	// UI State
@@ -17,10 +17,10 @@ export interface UIStateManager {
 	customActionReceiver: 'Game Command' | 'Character Action' | 'GM Question' | 'Dice Roll';
 
 	// Persistent UI State
-	gameTime: ReturnType<typeof useLocalStorage<GameTime | null>>;
-	useDynamicCombat: ReturnType<typeof useLocalStorage<boolean>>;
-	ttsVoice: ReturnType<typeof useLocalStorage<string>>;
-	didAIProcessDiceRollAction: ReturnType<typeof useLocalStorage<boolean>>;
+	gameTime: ReturnType<typeof useHybridLocalStorage<GameTime | null>>;
+	useDynamicCombat: ReturnType<typeof useHybridLocalStorage<boolean>>;
+	ttsVoice: ReturnType<typeof useHybridLocalStorage<string>>;
+	didAIProcessDiceRollAction: ReturnType<typeof useHybridLocalStorage<boolean>>;
 
 	// Actions
 	setAiGenerating: (value: boolean) => void;
@@ -42,11 +42,11 @@ export function createUIStateManager(): UIStateManager {
 		'Game Command' | 'Character Action' | 'GM Question' | 'Dice Roll'
 	>('Character Action');
 
-	// Persistent UI state using useLocalStorage
-	const gameTime = useLocalStorage<GameTime | null>('gameTimeState', null);
-	const useDynamicCombat = useLocalStorage<boolean>('useDynamicCombat', false);
-	const ttsVoice = useLocalStorage<string>('ttsVoice');
-	const didAIProcessDiceRollAction = useLocalStorage<boolean>('didAIProcessDiceRollAction');
+	// Persistent UI state using useHybridLocalStorage
+	const gameTime = useHybridLocalStorage<GameTime | null>('gameTimeState', null);
+	const useDynamicCombat = useHybridLocalStorage<boolean>('useDynamicCombat', false);
+	const ttsVoice = useHybridLocalStorage<string>('ttsVoice');
+	const didAIProcessDiceRollAction = useHybridLocalStorage<boolean>('didAIProcessDiceRollAction');
 
 	// Action methods
 	const setAiGenerating = (value: boolean) => {

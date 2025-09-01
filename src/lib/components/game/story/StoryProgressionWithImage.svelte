@@ -13,7 +13,7 @@
 
 <script lang="ts">
 	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import TTSComponent from '$lib/components/ui/media/TTSComponent.svelte';
 	import type { AIConfig } from '$lib';
 
@@ -24,8 +24,8 @@
 		imagePrompt = '',
 		stream_finished = true
 	}: StoryProgressionWithImageProps = $props();
-	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
+	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 
 	/**
 	 * Clean AI-generated HTML and ensure DaisyUI class compatibility

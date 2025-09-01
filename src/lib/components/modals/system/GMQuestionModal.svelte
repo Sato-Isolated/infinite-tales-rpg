@@ -10,7 +10,7 @@
 		type InventoryState,
 		type PlayerCharactersGameState
 	} from '$lib/ai/agents/gameAgent';
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import {
@@ -35,28 +35,28 @@
 		playerCharactersGameState: PlayerCharactersGameState;
 	} = $props();
 
-	const apiKeyState = useLocalStorage<string>('apiKeyState');
-	const systemInstructionsState = useLocalStorage<SystemInstructionsState>(
+	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
+	const systemInstructionsState = useHybridLocalStorage<SystemInstructionsState>(
 		'systemInstructionsState',
 		initialSystemInstructionsState
 	);
-	const aiLanguage = useLocalStorage<string>('aiLanguage');
-	const storyState = useLocalStorage<Story>('storyState');
-	const characterState = useLocalStorage<CharacterDescription>('characterState');
-	const historyMessagesState = useLocalStorage<LLMMessage[]>('historyMessagesState');
-	const inventoryState = useLocalStorage<InventoryState>('inventoryState', {});
-	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
-	const gameActionsState = useLocalStorage<GameActionState[]>('gameActionsState');
-	const customMemoriesState = useLocalStorage<string>('customMemoriesState');
-	const customGMNotesState = useLocalStorage<string>('customGMNotesState');
-	const npcState = useLocalStorage<NPCState>('npcState', {});
-	const gameSettingsState = useLocalStorage<GameSettings>(
+	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
+	const storyState = useHybridLocalStorage<Story>('storyState');
+	const characterState = useHybridLocalStorage<CharacterDescription>('characterState');
+	const historyMessagesState = useHybridLocalStorage<LLMMessage[]>('historyMessagesState');
+	const inventoryState = useHybridLocalStorage<InventoryState>('inventoryState', {});
+	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
+	const gameActionsState = useHybridLocalStorage<GameActionState[]>('gameActionsState');
+	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState');
+	const customGMNotesState = useHybridLocalStorage<string>('customGMNotesState');
+	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
+	const gameSettingsState = useHybridLocalStorage<GameSettings>(
 		'gameSettingsState',
 		defaultGameSettings()
 	);
-	const thoughtsState = useLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
-	const campaignState = useLocalStorage<Campaign>('campaignState');
-	const currentChapterState = useLocalStorage<number>('currentChapterState');
+	const thoughtsState = useHybridLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
+	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
+	const currentChapterState = useHybridLocalStorage<number>('currentChapterState');
 	const getCurrentCampaignChapter = (): CampaignChapter | undefined =>
 		campaignState.value?.chapters.find(
 			(chapter) => chapter.chapterId === currentChapterState.value
@@ -72,6 +72,35 @@
 	let isGeneratingState: boolean = $state(false);
 
 	onMount(async () => {
+		// 🚨 ATTENDRE que apiKeyState soit hydraté avec timeout pour éviter les boucles infinies
+		const maxWaitTime = 3000; // 3 secondes maximum
+		const startTime = Date.now();
+
+		while (
+			(!apiKeyState.storageInfo.isHydrated || apiKeyState.storageInfo.isInitializing) &&
+			Date.now() - startTime < maxWaitTime
+		) {
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+
+		// Si l'hydratation n'est toujours pas terminée après le timeout, on continue quand même
+		if (!apiKeyState.storageInfo.isHydrated) {
+			console.warn(
+				'⚠️ GMQuestionModal - Hydratation timeout - continuation avec les valeurs par défaut'
+			);
+		}
+		if (apiKeyState.storageInfo.isInitializing) {
+			console.warn(
+				'⚠️ GMQuestionModal - Initialisation timeout - continuation avec les valeurs par défaut'
+			);
+		}
+
+		console.log(
+			'🔑 GMQuestionModal - API Key après hydratation:',
+			apiKeyState.value?.length || 0,
+			'caractères'
+		);
+
 		const llm = LLMProvider.provideLLM(
 			{
 				temperature: 0.7,

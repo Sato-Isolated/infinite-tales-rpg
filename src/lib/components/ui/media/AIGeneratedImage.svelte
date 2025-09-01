@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
+	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import isEqual from 'fast-deep-equal';
 	import { onMount } from 'svelte';
 	import LoadingIcon from '../loading/LoadingIcon.svelte';
@@ -45,7 +45,7 @@
 	};
 	let imageState = $state({ value: { ...initialImageState } });
 	if (storageKey) {
-		imageState = useLocalStorage(storageKey, { ...initialImageState, prompt: imagePrompt?.trim() });
+		imageState = useHybridLocalStorage(storageKey, { ...initialImageState, prompt: imagePrompt?.trim() });
 	}
 
 	$effect(() => {

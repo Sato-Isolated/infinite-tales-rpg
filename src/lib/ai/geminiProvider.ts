@@ -1,3 +1,12 @@
+// TODO: Implement AI response quality metrics and monitoring
+// TODO: Add automatic prompt optimization based on response quality
+// TODO: Create response caching system for development efficiency
+// TODO: Implement fallback model switching on API failures
+// TODO: Add token usage tracking and optimization recommendations
+// TODO: Create A/B testing framework for different prompt strategies
+// TODO: Implement response time optimization with smart batching
+// TODO: Add intelligent retry logic with exponential backoff
+
 import { handleError } from '../util.svelte';
 import {
 	type Content,
@@ -203,7 +212,10 @@ export class GeminiProvider extends LLM {
 	async generateContent(
 		request: LLMRequest
 	): Promise<{ thoughts: string; content: object } | undefined> {
+		console.log('🔑 API Key check:', !!this.llmConfig.apiKey, 'Length:', this.llmConfig.apiKey?.length || 0);
+
 		if (!this.llmConfig.apiKey) {
+			console.error('❌ No API key provided');
 			errorState.userMessage = 'Please enter your Google Gemini API Key first in the settings.';
 			return;
 		}
@@ -271,11 +283,19 @@ export class GeminiProvider extends LLM {
 			}
 
 			// Call SDK generateContent directly
+			console.log('🚀 About to call SDK generateContent with model:', modelToUse);
+			console.log('📡 API Key available:', !!this.llmConfig.apiKey);
+			console.log('⚙️ Config keys:', Object.keys(config));
+
 			const response = await this.genAI.models.generateContent({
 				model: modelToUse,
 				contents,
 				config
 			});
+
+			console.log('📨 SDK Response received:', !!response);
+			console.log('📝 Response text available:', !!response?.text);
+			console.log('📏 Response text length:', response?.text?.length || 0);
 
 			// Extract thoughts from response
 			const thoughts = getThoughtsFromResponse(response);
