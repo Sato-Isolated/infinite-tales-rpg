@@ -29,6 +29,3 @@ export {
 	getConfigStats,
 	logConfigInfo
 } from './config.js';
-
-// Gestionnaire File System (pour usage avancé)
-export { fileSystemManager } from './fileSystemManager.js';

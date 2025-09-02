@@ -152,4 +152,9 @@ NPC STATS GENERATION RULES:
 - background_notes: Personal history, motivations, and context that explains their behavior
 `;
 
-export const npcRank = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
+/**
+ * Dynamic NPC rank generator for prompts - no caching
+ */
+function getNpcRanksForPrompt(): string[] {
+	return ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
+}

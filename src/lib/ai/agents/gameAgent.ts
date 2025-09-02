@@ -29,9 +29,7 @@ import {
 	DIALOGUE_CONSISTENCY_PROMPT,
 	DIALOGUE_MEMORY_CHECK,
 	ACTION_DIALOGUE_DISTINCTION_PROMPT,
-	generateDynamicFidelityPrompt,
-	ANTI_TRANSFORMATION_PROMPT,
-	FIDELITY_SYSTEM_INSTRUCTION
+	USER_DIALOGUE_PATTERNS
 } from '$lib/ai/prompts/shared';
 import { systemBehaviour, jsonSystemInstructionForGameAgent, jsonSystemInstructionForPlayerQuestion } from '$lib/ai/prompts/system';
 import { statsUpdatePromptObject, currentlyPresentNPCSForPrompt } from '$lib/ai/prompts/formats';
@@ -461,23 +459,11 @@ export class GameAgent {
 		// 🎭 ADD ACTION/DIALOGUE DISTINCTION INSTRUCTIONS
 		// This critical instruction helps LLM distinguish between physical actions and spoken dialogue
 		combinedText += '\n\n' + ACTION_DIALOGUE_DISTINCTION_PROMPT;
+		
+		// Add user's specific dialogue patterns
+		combinedText += '\n\n' + USER_DIALOGUE_PATTERNS;
+		
 		console.log('🎭 Added action/dialogue distinction instructions');
-
-		// Add fidelity instructions to the combined text
-		const fidelityPrompt = generateDynamicFidelityPrompt(
-			concreteFidelityLevel as 'preserve_exact' | 'preserve_essence' | 'allow_creative',
-			fidelityAnalysis.detected_patterns,
-			action.text,
-			fidelityAnalysis.reasoning
-		);
-
-		combinedText += '\n\n' + fidelityPrompt;
-
-		// Add anti-transformation safeguards if exact preservation is required
-		if (concreteFidelityLevel === 'preserve_exact') {
-			combinedText += '\n\n' + ANTI_TRANSFORMATION_PROMPT;
-			console.log('🛡️ Added anti-transformation safeguards for exact preservation');
-		}
 
 		const gameAgent = this.getGameAgentSystemInstructionsFromStates(
 			storyState,
@@ -489,7 +475,7 @@ export class GameAgent {
 			customStoryAgentInstruction,
 			customCombatAgentInstruction,
 			gameSettings,
-			fidelityPrompt
+			undefined // No complex fidelity prompt needed - using simple prompts above
 		);
 		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
 

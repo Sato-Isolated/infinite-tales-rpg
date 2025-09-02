@@ -22,12 +22,18 @@
 
 	let { diceRollDialog = $bindable(), action, resetState }: Props = $props();
 
-	// State management
-	const rolledValueState = useHybridLocalStorage<number>('rolledValueState');
-	const rollDifferenceHistoryState = useHybridLocalStorage<number[]>('rollDifferenceHistoryState', []);
+	// State management avec valeurs initiales explicites
+	const rolledValueState = useHybridLocalStorage<number | undefined>('rolledValueState', undefined);
+	const rollDifferenceHistoryState = useHybridLocalStorage<number[]>(
+		'rollDifferenceHistoryState',
+		[]
+	);
 	const difficultyState = useHybridLocalStorage<'Easy' | 'Default'>('difficultyState', 'Default');
 	const useKarmicDice = useHybridLocalStorage<boolean>('useKarmicDice', true);
-	const diceRollRequiredValueState = useHybridLocalStorage<number>('diceRollRequiredValueState');
+	const diceRollRequiredValueState = useHybridLocalStorage<number | undefined>(
+		'diceRollRequiredValueState',
+		undefined
+	);
 	const gameSettingsState = useHybridLocalStorage<GameSettings>(
 		'gameSettingsState',
 		defaultGameSettings()
@@ -38,10 +44,13 @@
 	let simulationMode = $state<'3d' | '2d'>('2d');
 	let simulationModeReason = $state<string>('Detecting capabilities...');
 
-	// UI state
+	// UI state (non-persistent)
 	let isRolling = $state<boolean>(false);
 	let isMounted = $state(false);
 	let diceBox: any;
+
+	// Action tracking pour reset automatique
+	let previousActionId = $state<string | undefined>();
 
 	// Derived states for modifiers and calculations
 	let modifierReasonState = $derived<string>(action?.dice_roll?.modifier_explanation || '');
@@ -53,7 +62,7 @@
 			? 0
 			: diceRollLogic.getKarmaModifier(
 					rollDifferenceHistoryState.value,
-					diceRollRequiredValueState.value
+					diceRollRequiredValueState.value ?? 20
 				)
 	);
 
@@ -71,14 +80,14 @@
 
 	// Derived states for better UX
 	const totalModifier = $derived(getModifier());
-	const hasRolled = $derived(!!rolledValueState.value);
+	const hasRolled = $derived(rolledValueState.value !== undefined);
 	const canContinue = $derived(hasRolled && !isRolling);
-	const rollResult = $derived(rolledValueState.value + totalModifier);
+	const rollResult = $derived((rolledValueState.value ?? 0) + totalModifier);
 
 	const diceRollResultState = $derived(
 		diceRollLogic.determineDiceRollResult(
-			diceRollRequiredValueState.value,
-			rolledValueState.value,
+			diceRollRequiredValueState.value ?? 20,
+			rolledValueState.value ?? 0,
 			getModifier()
 		)
 	);
@@ -91,15 +100,39 @@
 	const isSuccess = $derived(diceRollResultState?.includes('success'));
 	const isFailure = $derived(diceRollResultState?.includes('failure'));
 
+	// Reset quand resetState devient true
 	$effect(() => {
 		if (resetState) {
-			rolledValueState.reset();
-			diceRollRequiredValueState.reset();
+			rolledValueState.reset(); // reset to undefined
+			diceRollRequiredValueState.reset(); // reset to undefined
+			previousActionId = undefined;
 		}
 	});
 
+	// Détection de changement d'action pour reset automatique
 	$effect(() => {
-		if (isMounted && action && !diceRollRequiredValueState.value && !resetState) {
+		if (isMounted && action) {
+			// Créer un ID unique pour l'action basé sur ses propriétés
+			const currentActionId = JSON.stringify({
+				text: action.text,
+				characterName: action.characterName,
+				dice_roll: action.dice_roll,
+				action_difficulty: action.action_difficulty
+			});
+
+			if (previousActionId !== undefined && previousActionId !== currentActionId) {
+				// Nouvelle action détectée, reset les valeurs
+				rolledValueState.value = undefined;
+				diceRollRequiredValueState.value = undefined;
+			}
+
+			previousActionId = currentActionId;
+		}
+	});
+
+	// Initialisation de la valeur requise pour le lancement
+	$effect(() => {
+		if (isMounted && action && diceRollRequiredValueState.value === undefined && !resetState) {
 			if (action.is_possible === false) {
 				rollDifferenceHistoryState.reset();
 				diceRollRequiredValueState.value = 99;
@@ -177,7 +210,9 @@
 	}
 
 	function getRollResult() {
-		return `${rolledValueState.value || '?'} + ${getModifier()} = ${rollResult || '?'}`;
+		const rolledValue = rolledValueState.value;
+		if (rolledValue === undefined) return '? + ? = ?';
+		return `${rolledValue} + ${getModifier()} = ${rollResult}`;
 	}
 
 	const handleRoll = async (evt: MouseEvent & { currentTarget: HTMLButtonElement }) => {
@@ -187,16 +222,21 @@
 		evt.currentTarget.disabled = true;
 
 		try {
+			let result: number;
+
 			if (simulationMode === '2d') {
 				// Use random number generation for 2D mode
-				rolledValueState.value = getRandomInteger(1, 20);
+				result = getRandomInteger(1, 20);
 				// Add a small delay to simulate rolling time
 				await new Promise((resolve) => setTimeout(resolve, 500));
 			} else {
 				// Use 3D physics simulation
 				const results = await diceBox.roll('1d20');
-				rolledValueState.value = results[0].value;
+				result = results[0].value;
 			}
+
+			// Assigner la valeur seulement après le roll réussi
+			rolledValueState.value = result;
 		} catch (error) {
 			console.error('Error rolling dice:', error);
 			// Fallback to random number if dice roll fails
@@ -210,11 +250,18 @@
 		if (diceBox) {
 			diceBox.clear();
 		}
+
+		// Sauvegarder le résultat seulement si on a vraiment lancé
+		const finalResult = rolledValueState.value;
+		if (finalResult !== undefined) {
+			const requiredValue = diceRollRequiredValueState.value ?? 20;
+			rollDifferenceHistoryState.value = [
+				...rollDifferenceHistoryState.value.slice(-2),
+				finalResult + getModifier() - requiredValue
+			];
+		}
+
 		diceRollDialog.close($state.snapshot(diceRollResultState));
-		rollDifferenceHistoryState.value = [
-			...rollDifferenceHistoryState.value.slice(-2),
-			rolledValueState.value + getModifier() - diceRollRequiredValueState.value
-		];
 	};
 </script>
 
@@ -231,7 +278,7 @@
 			<div class="flex items-center gap-3">
 				<span class="text-base-content/70 text-lg">Difficulty Class:</span>
 				<div class="badge badge-primary badge-lg px-4 py-3 text-xl font-bold">
-					{diceRollRequiredValueState.value}
+					{diceRollRequiredValueState.value ?? '?'}
 				</div>
 			</div>
 		</div>

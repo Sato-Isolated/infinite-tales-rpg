@@ -22,106 +22,117 @@ import type {
 import { HarmCategory as HC, HarmBlockThreshold as HBT } from '@google/genai';
 
 /**
- * Default safety settings for RPG content generation
- * Allows creative content while maintaining safety
+ * Dynamic safety settings generator for RPG content - no caching
+ * Generates fresh settings on each call to prevent repetitive content
  */
-export const DEFAULT_SAFETY_SETTINGS: SafetySetting[] = [
-  {
-    category: HC.HARM_CATEGORY_CIVIC_INTEGRITY,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_HARASSMENT,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HBT.OFF
-  }
-];
+function generateDefaultSafetySettings(): SafetySetting[] {
+  return [
+    {
+      category: HC.HARM_CATEGORY_CIVIC_INTEGRITY,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_HARASSMENT,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HBT.OFF
+    }
+  ];
+}
 
 /**
- * Safe safety settings for more restrictive content
+ * Dynamic safe safety settings generator - no caching
+ * Generates fresh settings on each call to prevent repetitive content
  */
-export const SAFE_SAFETY_SETTINGS: SafetySetting[] = [
-  {
-    category: HC.HARM_CATEGORY_CIVIC_INTEGRITY,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_HARASSMENT,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HBT.OFF
-  },
-  {
-    category: HC.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HBT.OFF
-  }
-];
+function generateSafeSafetySettings(): SafetySetting[] {
+  return [
+    {
+      category: HC.HARM_CATEGORY_CIVIC_INTEGRITY,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_HARASSMENT,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HBT.OFF
+    },
+    {
+      category: HC.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HBT.OFF
+    }
+  ];
+}
 
 /**
- * Configuration presets for different scenarios
+ * Dynamic configuration presets generator - no caching
+ * Generates fresh configuration objects on each call to prevent repetitive content
  */
-export const CONFIG_PRESETS = {
-  // For story generation with creative freedom
-  CREATIVE_STORY: {
-    temperature: 1.0,
-    topP: 0.95,
-    topK: 40,
-    maxOutputTokens: 2048
-  },
+function generateConfigPresets() {
+  return {
+    // For story generation with creative freedom
+    CREATIVE_STORY: {
+      temperature: 1.0,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 2048
+    },
 
-  // For action generation requiring consistency
-  STRUCTURED_ACTIONS: {
-    temperature: 0.7,
-    topP: 0.9,
-    topK: 30,
-    maxOutputTokens: 1024
-  },
+    // For action generation requiring consistency
+    STRUCTURED_ACTIONS: {
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 30,
+      maxOutputTokens: 1024
+    },
 
-  // For character stats requiring precision
-  PRECISE_STATS: {
-    temperature: 0.3,
-    topP: 0.8,
-    topK: 20,
-    maxOutputTokens: 512
-  },
+    // For character stats requiring precision
+    PRECISE_STATS: {
+      temperature: 0.3,
+      topP: 0.8,
+      topK: 20,
+      maxOutputTokens: 512
+    },
 
-  // For combat requiring balanced randomness
-  COMBAT_BALANCED: {
-    temperature: 0.8,
-    topP: 0.9,
-    topK: 35,
-    maxOutputTokens: 1024
-  }
-} as const;
+    // For combat requiring balanced randomness
+    COMBAT_BALANCED: {
+      temperature: 0.8,
+      topP: 0.9,
+      topK: 35,
+      maxOutputTokens: 1024
+    }
+  };
+}
 
 /**
- * Thinking budget presets for different complexity levels
+ * Dynamic thinking budgets generator - no caching
+ * Generates fresh budget values on each call to prevent repetitive content
  */
-export const THINKING_BUDGETS = {
-  FAST: 256,
-  NORMAL: 512,
-  DEEP: 1024,
-  COMPLEX: 2048,
-  UNLIMITED: -1,
-  DISABLED: 0
-} as const;
+function generateThinkingBudgets() {
+  return {
+    FAST: 256,
+    NORMAL: 512,
+    DEEP: 1024,
+    COMPLEX: 2048,
+    UNLIMITED: -1,
+    DISABLED: 0
+  };
+}
 
 /**
  * Centralized configuration builder
@@ -135,10 +146,10 @@ export class GeminiConfigBuilder {
   }
 
   /**
-   * Apply a configuration preset
+   * Apply a configuration preset - generates fresh config each time
    */
-  withPreset(preset: keyof typeof CONFIG_PRESETS): this {
-    const presetConfig = CONFIG_PRESETS[preset];
+  withPreset(preset: 'CREATIVE_STORY' | 'STRUCTURED_ACTIONS' | 'PRECISE_STATS' | 'COMBAT_BALANCED'): this {
+    const presetConfig = generateConfigPresets()[preset];
     Object.assign(this.config, presetConfig);
     return this;
   }
@@ -168,13 +179,13 @@ export class GeminiConfigBuilder {
   }
 
   /**
-   * Configure thinking with budget and inclusion settings
+   * Configure thinking with budget and inclusion settings - generates fresh values each time
    */
-  withThinking(budget?: number | keyof typeof THINKING_BUDGETS, includeThoughts: boolean = true): this {
+  withThinking(budget?: number | 'FAST' | 'NORMAL' | 'DEEP' | 'COMPLEX' | 'UNLIMITED' | 'DISABLED', includeThoughts: boolean = true): this {
     let actualBudget: number | undefined;
 
     if (typeof budget === 'string') {
-      actualBudget = THINKING_BUDGETS[budget];
+      actualBudget = generateThinkingBudgets()[budget];
     } else {
       actualBudget = budget;
     }
@@ -187,11 +198,11 @@ export class GeminiConfigBuilder {
   }
 
   /**
-   * Configure safety settings with presets or custom settings
+   * Configure safety settings with dynamic generation - no caching
    */
   withSafety(settings: SafetySetting[] | 'default' | 'safe' = 'default'): this {
     if (typeof settings === 'string') {
-      this.config.safetySettings = settings === 'safe' ? SAFE_SAFETY_SETTINGS : DEFAULT_SAFETY_SETTINGS;
+      this.config.safetySettings = settings === 'safe' ? generateSafeSafetySettings() : generateDefaultSafetySettings();
     } else {
       this.config.safetySettings = settings;
     }

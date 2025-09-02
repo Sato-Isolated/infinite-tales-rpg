@@ -67,7 +67,13 @@ export const initialCharacterStatsState: CharacterStats = {
 	spells_and_abilities: []
 };
 
-export const npcRank = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
+/**
+ * Dynamic NPC rank generator - no caching
+ * Generates fresh rank array on each call to prevent repetitive patterns
+ */
+function generateNpcRanks(): string[] {
+	return ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
+}
 
 export type Relationship = {
 	target_npc_id?: string; // ID du NPC cible (undefined si relation avec le joueur)

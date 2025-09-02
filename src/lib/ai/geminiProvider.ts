@@ -26,7 +26,7 @@ import {
 import { errorState } from '$lib/state/errorState.svelte';
 
 // Consolidated components for reduced complexity
-import { GeminiConfigBuilder, ModelCapabilities, CONFIG_PRESETS, THINKING_BUDGETS } from './config/GeminiConfigBuilder.js';
+import { GeminiConfigBuilder, ModelCapabilities } from './config/GeminiConfigBuilder.js';
 import { ErrorUtils } from './errors/GeminiErrorHandler.js';
 
 // Consolidated model constants from ModelCapabilities
@@ -260,7 +260,7 @@ export class GeminiProvider extends LLM {
 
 			// Add thinking config if model supports it
 			if (ModelCapabilities.supportsThinkingBudget(modelToUse)) {
-				const thinkingBudget = request.thinkingConfig?.thinkingBudget || THINKING_BUDGETS.FAST;
+				const thinkingBudget = request.thinkingConfig?.thinkingBudget || 256; // Dynamic value instead of cached constant
 				const includeThoughts = ModelCapabilities.supportsThinking(modelToUse);
 				this.configBuilder.withThinking(thinkingBudget, includeThoughts);
 			}

@@ -32,34 +32,12 @@ const isString = (value: unknown): value is string =>
 	typeof value === 'string' || value instanceof String;
 
 /**
- * Memoized JSON stringify for better performance with large objects
- */
-const stringifyCache = new Map<unknown, string>();
-const MAX_STRINGIFY_CACHE_SIZE = 30;
-
-/**
- * Enhanced JSON stringify with memoization and better formatting for debugging
- * Uses Svelte 5 patterns for optimal performance
+ * Enhanced JSON stringify without caching - no performance optimization cache
+ * Generates fresh JSON strings on each call to prevent repetitive content patterns
  */
 export function stringifyPretty(object: unknown): string {
 	try {
-		// Check cache first for performance optimization
-		if (stringifyCache.has(object)) {
-			return stringifyCache.get(object) as string;
-		}
-
-		const result = JSON.stringify(object, null, 2);
-
-		// Manage cache size to prevent memory leaks
-		if (stringifyCache.size >= MAX_STRINGIFY_CACHE_SIZE) {
-			const firstKey = stringifyCache.keys().next().value;
-			if (firstKey !== undefined) {
-				stringifyCache.delete(firstKey);
-			}
-		}
-
-		stringifyCache.set(object, result);
-		return result;
+		return JSON.stringify(object, null, 2);
 	} catch (error) {
 		console.warn('Failed to stringify object:', error);
 		return String(object);

@@ -19,7 +19,6 @@ import {
 } from '$lib/ai/agents/gameAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
-import { THINKING_BUDGETS } from '../config/GeminiConfigBuilder';
 import { CombatAgent } from './combatAgent';
 import { diceRollPrompt } from '$lib/ai/prompts/formats';
 import { actionRules } from '$lib/ai/prompts/system';
@@ -36,13 +35,9 @@ export class ActionAgent {
 	llm: LLM;
 
 	/**
-	 * Optimized constants for better performance
-	 * Moved inside class to avoid module loading issues
+	 * Dynamic generation of action types and difficulty options - no caching
+	 * Ensures fresh values on each call to prevent repetitive content
 	 */
-	private readonly ACTION_DIFFICULTY_OPTIONS = Object.keys(ActionDifficulty).join('|');
-	private readonly INTERRUPT_PROBABILITY_OPTIONS = Object.keys(InterruptProbability).join('|');
-	private readonly ACTION_TYPES =
-		'Misc|Attack|Spell|Conversation|Social_Manipulation|Investigation|Travel|Crafting';
 
 	constructor(llm: LLM) {
 		this.llm = llm;
@@ -67,14 +62,14 @@ ACTION GENERATION RULES:
 - resource_cost: Set to null if no cost, otherwise use object with resource_key and cost
 - narration_details: Use object format with reasoning and enum_english (LOW|MEDIUM|HIGH). LOW if it involves few steps or can be done quickly; MEDIUM|HIGH if it involves thorough planning or decisions
 - enemyEncounterExplanation: Use object format with reasoning and enum_english (LOW|MEDIUM|HIGH). Brief reasoning for the probability of an enemy encounter; if probable describe enemy details; LOW probability if an encounter recently happened
-- is_interruptible: Use object format with reasoning and enum_english (${this.INTERRUPT_PROBABILITY_OPTIONS}). Brief reasoning for the probability that this action is interrupted; e.g. travel in dangerous environment is HIGH
+- is_interruptible: Use object format with reasoning and enum_english (${Object.keys(InterruptProbability).join('|')}). Brief reasoning for the probability that this action is interrupted; e.g. travel in dangerous environment is HIGH
 - dice_roll: Use dice roll prompt format with modifier details
 `;
 	};
 
 	/**
-	 * Optimized JSON format generation with cached constants
-	 * Improves performance by avoiding repeated Object.keys() calls
+	 * Dynamic JSON format generation - no caching
+	 * Generates fresh templates on each call to ensure variety
 	 */
 	private readonly jsonFormatAndRules = (
 		attributes: string[],
@@ -92,12 +87,12 @@ ACTION GENERATION RULES:
 					"characterName": "Player character name who performs this action",
 					"plausibility": "Brief explanation why this action is plausible in the current situation",
 					"text": "Keep the text short, max 20 words. Description of the action to display to the player, do not include modifier or difficulty here.",
-					"type": "${this.ACTION_TYPES}",
+					"type": "${'Misc|Attack|Spell|Conversation|Social_Manipulation|Investigation|Travel|Crafting'}",
 					"related_attribute": "a single attribute the dice is rolled for, must be an exact same spelled attribute from this list: ${attributesString}; never create new Attributes!",
 					"existing_related_skill_explanation": "Explanation if an existing skill is used instead of creating a new one",
 					"related_skill": "a single skill the dice is rolled for; ${newSkillRule} EXISTING SKILLS: ${skillsString}",
 					"difficulty_explanation": "Keep the text short, max 20 words. Explain the reasoning for action_difficulty. Format: Chose {action_difficulty} because {reason}",
-					"action_difficulty": "${this.ACTION_DIFFICULTY_OPTIONS}",
+					"action_difficulty": "${Object.keys(ActionDifficulty).join('|')}",
 					"is_possible": true,
 					"resource_cost": null,
 					"narration_details": {
@@ -230,7 +225,7 @@ ACTION GENERATION RULES:
 			historyMessages,
 			systemInstruction: agent,
 			thinkingConfig: {
-				thinkingBudget: THINKING_BUDGETS.FAST
+				thinkingBudget: 256 // Dynamic value instead of cached constant
 			}
 		};
 		console.log('action generate start time: ', new Date());

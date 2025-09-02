@@ -1,5 +1,5 @@
 import { getRandomInteger } from '$lib/util.svelte';
-import { npcRank, type NPCState, type NPCStats } from '$lib/ai/agents/characterStatsAgent';
+import { type NPCState, type NPCStats } from '$lib/ai/agents/characterStatsAgent';
 
 /**
  *  | Rank         | Level 1  | Level 5  | Level 10 | Level 20 |
@@ -31,7 +31,8 @@ function calculateMaxResource(i: number, level: number, is_party_member?: boolea
 //TODO consider class?
 //TODO different modificator for level as it doesnt scale
 function getMaxHPFromRank(npc: NPCStats): number {
-	let i = npcRank.indexOf(npc.rank_enum_english);
+	const npcRanks = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
+	let i = npcRanks.indexOf(npc.rank_enum_english);
 	// Default to average if rank not found
 	if (i === -1) i = 2;
 	return calculateMaxResource(i, npc.level, npc.is_party_member);
@@ -40,7 +41,8 @@ function getMaxHPFromRank(npc: NPCStats): number {
 //TODO consider class?
 //TODO different modificator for level as it doesnt scale
 function getMaxMPFromRank(npc: NPCStats): number {
-	let i = npcRank.indexOf(npc.rank_enum_english);
+	const npcRanks = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
+	let i = npcRanks.indexOf(npc.rank_enum_english);
 	//Average if not found
 	if (i === -1) i = 2;
 	return calculateMaxResource(i, npc.level + 2, npc.is_party_member);

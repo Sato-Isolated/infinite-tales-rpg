@@ -21,12 +21,23 @@ export type DialogueFidelitySettings = {
 	detect_explicit_markers: boolean;
 };
 
-export const DEFAULT_FIDELITY_SETTINGS: DialogueFidelitySettings = {
-	default_mode: 'auto_detect',
-	preserve_quoted_text: true,
-	preserve_first_person_dialogue: true,
-	detect_explicit_markers: true
-};
+/**
+ * Dynamic fidelity settings generator - no caching
+ * Generates fresh settings on each call to prevent repetitive patterns
+ */
+function generateDefaultFidelitySettings(): DialogueFidelitySettings {
+	return {
+		default_mode: 'auto_detect',
+		preserve_quoted_text: true,
+		preserve_first_person_dialogue: true,
+		detect_explicit_markers: true
+	};
+}
+
+/**
+ * Default fidelity settings export
+ */
+export const DEFAULT_FIDELITY_SETTINGS = generateDefaultFidelitySettings();
 
 /**
  * Agent responsable de détecter et gérer la fidélité des dialogues utilisateur
@@ -34,8 +45,8 @@ export const DEFAULT_FIDELITY_SETTINGS: DialogueFidelitySettings = {
 export class DialogueFidelityAgent {
 	private settings: DialogueFidelitySettings;
 
-	constructor(settings: DialogueFidelitySettings = DEFAULT_FIDELITY_SETTINGS) {
-		this.settings = settings;
+	constructor(settings?: DialogueFidelitySettings) {
+		this.settings = settings || generateDefaultFidelitySettings();
 	}
 
 	/**

@@ -6,19 +6,30 @@
 	const { notation, onClose }: { notation: string; onClose: (result: number) => void } = $props();
 
 	// State management using Svelte 5 runes
-	let rollResult = $state<number>(NaN);
+	let rollResult = $state<number | undefined>(undefined);
 	let isRolling = $state<boolean>(false);
 	let diceBox: any;
 
+	// Notation tracking pour reset automatique
+	let previousNotation = $state<string | undefined>();
+
 	// Derived states
-	const hasResult = $derived(!isNaN(rollResult));
+	const hasResult = $derived(rollResult !== undefined);
 	const canContinue = $derived(hasResult && !isRolling);
+
+	// Détection de changement de notation pour reset automatique
+	$effect(() => {
+		if (notation !== previousNotation) {
+			rollResult = undefined;
+			previousNotation = notation;
+		}
+	});
 
 	const handleRoll = async () => {
 		if (isRolling || !diceBox) return;
 
 		isRolling = true;
-		rollResult = NaN; // Reset previous result
+		rollResult = undefined; // Reset to undefined instead of NaN
 
 		try {
 			await diceBox.roll(notation);
@@ -28,14 +39,20 @@
 		}
 	};
 
-	const handleClose = (result: number) => {
+	const handleClose = (result: number | undefined) => {
 		if (diceBox) {
 			diceBox.clear();
 		}
-		onClose(result);
+		// Seulement appeler onClose si on a un résultat valide
+		if (result !== undefined) {
+			onClose(result);
+		}
 	};
 
 	onMount(async () => {
+		// Reset au montage pour s'assurer d'un état frais
+		rollResult = undefined;
+
 		try {
 			// Ensure the dice container is ready
 			const diceContainer = document.getElementById('simple-dice-box');
@@ -120,7 +137,7 @@
 						{rollResult}
 					</output>
 				{:else}
-					<span class="text-base-content/40 text-2xl">?</span>
+					<span class="text-base-content/40 text-2xl">Ready to roll...</span>
 				{/if}
 			</div>
 		</div>
