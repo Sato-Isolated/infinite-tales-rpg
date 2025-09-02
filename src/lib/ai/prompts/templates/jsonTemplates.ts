@@ -90,7 +90,6 @@ export const characterAgentJsonTemplate = `{
   "appearance": "Detailed physical description",
   "personality": "Character traits and motivations", 
   "background": "Character history and context",
-  "image_prompt": "Character appearance for image generation"
 }`;
 
 /**

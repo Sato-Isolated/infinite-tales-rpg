@@ -20,7 +20,6 @@
   "gameTimeState",
     "skillsProgressionState",
     "characterTransformState",
-    "characterImageState",
     "aiConfigState",
     "levelUpState",
     "thoughtsState",
@@ -39,7 +38,6 @@
     "customMemoriesState",
     "additionalStoryInputState",
     "additionalActionInputState",
-    "ttsVoice",
     "customGMNotesState",
   "relatedActionHistoryState",
     "apiKeyState"

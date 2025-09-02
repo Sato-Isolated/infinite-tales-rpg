@@ -862,11 +862,6 @@ Maintain narrative coherence with these plot developments throughout the story.`
 			value: { result: xpCost }
 		};
 	}
-
-	static getItemImagePrompt(item_id: string, item: Item, storyImagePrompt: string): string {
-		return `${storyImagePrompt} RPG game icon ${item_id} ${item.description}`;
-	}
-
 	static getPromptForGameMasterNotes = (notes: Array<string>) => {
 		if (!notes || notes.length === 0) {
 			return '';

@@ -33,7 +33,6 @@
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	//TODO migrate all AI settings into this object to avoid too many vars in local storage
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
-		disableAudioState: false,
 		useFallbackLlmState: false
 	});
 	let showGenerationSettingsModal = $state<boolean>(false);

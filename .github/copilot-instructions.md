@@ -74,7 +74,7 @@ Pattern: `const someState = useLocalStorage<Type>('stateKey', initialValue);` Al
 `relatedStoryHistoryState`, `relatedActionHistoryState`, `customMemoriesState`, `customGMNotesState`, `thoughtsState`, `rollDifferenceHistoryState`.
 
 **UI & Settings:**
-`gameSettingsState`, `aiConfigState`, `apiKeyState`, `temperatureState`, `systemInstructionsState`, `aiLanguage`, `ttsVoiceState`, `useDynamicCombat`.
+`gameSettingsState`, `aiConfigState`, `apiKeyState`, `temperatureState`, `systemInstructionsState`, `aiLanguage`, `useDynamicCombat`.
 
 **Actions & Input:**
 `chosenActionState`, `additionalStoryInputState`, `additionalActionInputState`, `didAIProcessDiceRollAction`.
@@ -238,7 +238,6 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
 - UI components (Section 1 & 9)
   - `src/lib/components/StoryProgressionWithImage.svelte`: Story + image area.
   - `src/lib/components/AIGeneratedImage.svelte`: Image rendering (Pollinations).
-  - `src/lib/components/TTSComponent.svelte`: Text-to-speech (msedge).
   - `src/lib/components/ImportExportSaveGame.svelte`: Save/load persistence.
   - `src/lib/components/LoadingModal.svelte` / `LoadingIcon.svelte`: Streaming/loading UI.
   - `src/lib/components/ResourcesComponent.svelte`: Player resources.

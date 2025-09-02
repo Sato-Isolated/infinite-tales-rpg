@@ -17,7 +17,6 @@ describe('npcPresenceManager', () => {
       currentPlotPoint: 'At School - PLOT_ID: 12',
       nextPlotPoint: '',
       story: '',
-      image_prompt: '',
       inventory_update: [],
       stats_update: [],
       is_character_in_combat: false,

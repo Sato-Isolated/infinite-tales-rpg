@@ -29,18 +29,6 @@ declare module '@3d-dice/dice-box' {
 		onRollComplete?: (result: Array<{ value: number }>) => void;
 	}
 }
-declare module 'msedge-tts' {
-	export type Voice = { ShortName: string; FriendlyName: string; Gender: string; Locale: string };
-	export enum OUTPUT_FORMAT {
-		AUDIO_24KHZ_48KBITRATE_MONO_MP3 = 'audio-24khz-48kbitrate-mono-mp3',
-		AUDIO_24KHZ_96KBITRATE_MONO_MP3 = 'audio-24khz-96kbitrate-mono-mp3'
-	}
-	export class MsEdgeTTS {
-		setMetadata(voice: string, format: OUTPUT_FORMAT): Promise<void>;
-		toStream(text: string): { audioStream: any };
-		getVoices(): Promise<Voice[]>;
-	}
-}
 declare module 'dice-notation-js' {
 	type DetailedResult = {
 		result: number;

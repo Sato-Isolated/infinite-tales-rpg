@@ -27,7 +27,6 @@
 	} from '$lib/ai/agents/gameAgent';
 	import { onMount, tick } from 'svelte';
 	import {
-		getTextForActionButton,
 		handleError,
 		initialThoughtsState,
 		stringifyPretty,
@@ -68,7 +67,6 @@
 		// Campaign removed
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/ui/loading/LoadingIcon.svelte';
-	import TTSComponent from '$lib/components/ui/media/TTSComponent.svelte';
 	import { getXPNeededForLevel } from '$lib/game/logic/levelLogic';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
 	import type { AIConfig } from '$lib';
@@ -281,11 +279,6 @@
 			playerId
 		);
 
-	let actionsTextForTTS = $derived(
-		(Array.isArray(characterActionsState.value) ? characterActionsState.value : [])
-			.map((a) => getTextForActionButton(a))
-			.join(' ')
-	);
 	//TODO const lastCombatSinceXActions: number = $derived(
 	//	gameActionsState.value && (gameActionsState.value.length - (gameActionsState.value.findLastIndex(state => state.is_character_in_combat ) + 1))
 	//);
@@ -306,7 +299,6 @@
 		'gameSettingsState',
 		defaultGameSettings()
 	);
-	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
 	const gameTimeState = useHybridLocalStorage<GameTime | null>('gameTimeState', null);
 
 	onMount(async () => {
@@ -1057,24 +1049,6 @@
 						{/if}
 					</div>
 				</div>
-
-				<!-- TTS Component - Integrated in Left Panel -->
-				{#if !aiConfigState.value?.disableAudioState && actionsTextForTTS}
-					<div class="card bg-base-100 shadow-lg">
-						<div class="card-body p-3">
-							<h3 class="card-title mb-2 text-xs">
-								<span class="text-sm">🔊</span>
-								Audio
-							</h3>
-							<TTSComponent
-								text={actionsTextForTTS}
-								voice={ttsVoiceState.value}
-								hidden={!Array.isArray(characterActionsState.value) ||
-									characterActionsState.value.length === 0}
-							/>
-						</div>
-					</div>
-				{/if}
 			</div>
 		</div>
 

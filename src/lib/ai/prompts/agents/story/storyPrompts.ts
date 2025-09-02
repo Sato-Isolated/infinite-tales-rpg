@@ -28,10 +28,7 @@ export const storyStateForPrompt = {
 	main_scenario:
 		'Describe the central situation or context. This can range from mundane daily life to epic adventures, depending on the chosen story pace. Focus on what fits the selected rhythm.',
 	character_simple_description:
-		'Generate a character fitting the GAME system in the MAIN_SCENARIO context, providing a simple description without excessive detail',
-	general_image_prompt:
-		'Create a general visual prompt (max 10 words) for this setting. Format: {visualStyle} {genre} {artistReference}',
-	theme: 'Overall theme or setting of the story',
+		'Generate a character fitting the GAME system in the MAIN_SCENARIO context, providing a simple description without excessive detail',	theme: 'Overall theme or setting of the story',
 	tonality: 'Writing style and mood that fits the GAME system',
 	background_context:
 		'Generate background elements that color the setting (daily routines, festivals, ongoing situations, local rumors, seasonal changes, etc.). These should create atmosphere and context for the story, matching the chosen pace.',

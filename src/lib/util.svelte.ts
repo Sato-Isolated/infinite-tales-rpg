@@ -368,24 +368,6 @@ export const removeEmptyValues = (object: Record<string, any>) =>
 			)
 	);
 
-export function playAudioFromStream(
-	text: string,
-	voice: string,
-	onended?: () => void
-): HTMLAudioElement {
-	const audio = new Audio();
-	audio.src = getTTSUrl(text, voice);
-	audio.autoplay = true;
-	if (onended) {
-		audio.onended = onended;
-	}
-	return audio;
-}
-
-export function getTTSUrl(text: string, voice: string) {
-	return '/api/edgeTTSStream?voice=' + encodeURI(voice) + '&text=' + encodeURI(text);
-}
-
 export function getTextForActionButton(action: Action) {
 	// Handle undefined action.text gracefully with logging
 	if (!action.text) {

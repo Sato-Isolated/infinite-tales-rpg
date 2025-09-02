@@ -65,10 +65,6 @@
 		const resource_key = event.currentTarget.value || undefined; // Handle empty string as undefined
 		_onUpdate(index, { resource_cost: { ...ability.resource_cost, resource_key } });
 	};
-
-	const handleImagePromptInput = (event: Event & { currentTarget: HTMLInputElement }) => {
-		// Image prompts are no longer supported
-	};
 </script>
 
 <details class="collapse-arrow textarea bg-base-200 textarea-md collapse mb-4 border">

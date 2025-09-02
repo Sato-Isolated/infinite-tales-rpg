@@ -5,8 +5,7 @@
 	let { onclose }: { onclose?: () => void } = $props();
 
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
-		useFallbackLlmState: false,
-		disableAudioState: false
+		useFallbackLlmState: false
 	});
 	const temperatureState = useHybridLocalStorage<number>('temperatureState', 1);
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage', '');

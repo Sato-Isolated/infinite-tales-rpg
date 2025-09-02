@@ -56,10 +56,6 @@ export const StoryResponseSchema = {
         location: { type: 'string' as const, nullable: true }
       }
     },
-    image_prompt: {
-      type: 'string' as const,
-      description: 'Prompt for generating an image for this scene'
-    },
     plotPointAdvancingNudgeExplanation: {
       type: 'string' as const,
       nullable: true,
@@ -85,7 +81,7 @@ export const StoryResponseSchema = {
       items: { type: 'string' as const }
     }
   },
-  required: ['story', 'xp_gain', 'inventory_update', 'stats_update', 'image_prompt']
+  required: ['story', 'xp_gain', 'inventory_update', 'stats_update']
 };
 
 export interface StoryResponse {

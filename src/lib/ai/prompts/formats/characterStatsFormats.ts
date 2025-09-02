@@ -8,7 +8,7 @@ export const ATTRIBUTE_MIN_VALUE = -10;
 /**
  * Ability JSON format template
  */
-export const abilityJsonFormat = '{"name": "ability name", "effect": "clearly state the effect caused, include dice notation like 1d6+2 or 2d4 if causing damage", "resource_cost": null, "image_prompt": "short prompt for RPG game icon"}';
+export const abilityJsonFormat = '{"name": "ability name", "effect": "clearly state the effect caused, include dice notation like 1d6+2 or 2d4 if causing damage", "resource_cost": null}';
 
 /**
  * Ability format instructions
@@ -19,8 +19,7 @@ export const abilityInstructions = [
 	'- effect: Detailed effect description with dice notation for damage (1d6+2, 2d4, etc.)',
 	'- resource_cost: null if no cost, otherwise object with resource_key and cost',
 	'  - resource_key: must match one of character_stats.resources',
-	'  - cost: numeric value for resource consumption',
-	'- image_prompt: Short description for RPG icon generation'
+	'  - cost: numeric value for resource consumption'
 ].join('\n');
 
 /**
@@ -60,8 +59,7 @@ export const characterStatsStateForPrompt = `{
         {
             "name": "Ability Name",
             "effect": "Effect description with dice notation if applicable",
-            "resource_cost": null,
-            "image_prompt": "Icon description"
+            "resource_cost": null
         }
     ]
 }`;
@@ -90,8 +88,7 @@ export const levelUpPrompt = `{
 		"ability": {
             "name": "Ability Name",
             "effect": "Effect description",
-            "resource_cost": null,
-            "image_prompt": "Icon description"
+            "resource_cost": null
         },
 		"formerAbilityName": null
 }`;

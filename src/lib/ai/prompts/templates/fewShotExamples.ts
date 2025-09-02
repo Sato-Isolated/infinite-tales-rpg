@@ -93,8 +93,7 @@ Expected Response:
   "plotPointAdvancingNudgeExplanation": "CURRENT_PLOT_ID: 3; NEXT_PLOT_ID: 4; Character now inside, can discover the hidden documents",
   "story": "<p class='text-base-content leading-relaxed mb-4'>The shadows embrace you as you press against the cold stone wall. The guards' torchlight flickers past, casting dancing shadows that seem to welcome your presence.</p><div class='border-l-4 border-success pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg'><strong class='text-success text-sm uppercase tracking-wide'>Success:</strong> <em class='text-success font-medium'>You slip past undetected</em></div>",
   "story_memory_explanation": "Successful infiltration opens new story possibilities - LONG_TERM_IMPACT: HIGH",
-  "image_prompt": "Dark medieval courtyard at night, hooded figure in shadows moving past torch-bearing guards, stone walls and architecture",
-  "xpGainedExplanation": "Medium XP for overcoming significant challenge and advancing plot",
+   "xpGainedExplanation": "Medium XP for overcoming significant challenge and advancing plot",
   "time_passed_minutes": 15,
   "time_passed_explanation": "Careful stealth movement - Brief complex activity",
   "stats_update": [{"type": "xp_gained", "targetName": "Elara", "value": "MEDIUM", "explanation": "Successfully infiltrated guarded area"}],
@@ -113,7 +112,6 @@ Expected Response:
   "plotPointAdvancingNudgeExplanation": "CURRENT_PLOT_ID: 5; NEXT_PLOT_ID: 6; Failed diplomacy forces character toward more dangerous confrontation path",
   "story": "<p class='text-base-content leading-relaxed mb-4'>The king's face darkens as your words hang in the throne room air.</p><div class='border-l-4 border-primary pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg'><strong class='text-primary text-sm uppercase tracking-wide'>King Aldric:</strong> <em class='text-primary font-medium'>'You dare suggest I abandon my throne? Guards!'</em></div><div class='border-l-3 border-error pl-3 py-1 mb-2 bg-error/5'><span class='text-error font-semibold'>✗ Diplomatic Failure</span></div>",
   "story_memory_explanation": "Diplomatic failure with major political consequences - LONG_TERM_IMPACT: HIGH",
-  "image_prompt": "Grand throne room with angry king on ornate throne, guards stepping forward, tense medieval court atmosphere",
   "xpGainedExplanation": "No XP - diplomatic failure with negative consequences",
   "time_passed_minutes": 10,
   "time_passed_explanation": "Formal audience and failed negotiation - Brief conversation",
@@ -168,7 +166,6 @@ Expected Response:
   "appearance": "Tall and gaunt with silver-streaked black hair pulled back severely. Deep violet eyes that seem to hold ancient knowledge. Wears dark robes embroidered with constellation patterns. Carries a staff topped with a crystal that shifts between purple and black.",
   "personality": "Intellectually curious but emotionally distant. Speaks precisely and rarely shows emotion. Values knowledge above relationships. Has a hidden compassionate side that emerges in crisis moments. Slightly paranoid due to past betrayals.",
   "background": "Former court wizard who discovered forbidden knowledge about dimensional magic. Exiled after a magical experiment went wrong, causing temporal distortions. Now wanders seeking redemption while researching ways to undo the damage. Haunted by the lives lost in the experiment.",
-  "image_prompt": "Tall gaunt male wizard with silver-streaked black hair and violet eyes, dark constellation-embroidered robes, crystal-topped staff, mysterious scholarly appearance in dark fantasy style"
 }
 
 Now create your character following this pattern:

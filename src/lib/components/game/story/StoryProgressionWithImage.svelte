@@ -11,18 +11,12 @@
 </script>
 
 <script lang="ts">
-	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import TTSComponent from '$lib/components/ui/media/TTSComponent.svelte';
-	import type { AIConfig } from '$lib';
-
 	let {
 		storyTextRef = $bindable(),
 		story,
 		gameUpdates = [],
 		stream_finished = true
 	}: StoryProgressionWithImageProps = $props();
-	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
-	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 
 	/**
 	 * Clean AI-generated HTML and ensure DaisyUI class compatibility
@@ -43,14 +37,6 @@
 	const cleanedStory = $derived(cleanAIGeneratedHTML(story));
 </script>
 
-{#if !aiConfigState.value?.disableAudioState}
-	<div class="mt-4 flex">
-		<TTSComponent
-			text={stream_finished ? story?.replaceAll(/<[^>]*>/g, '').replaceAll('_', ' ') : ''}
-			voice={ttsVoiceState.value}
-		/>
-	</div>
-{/if}
 <div bind:this={storyTextRef} class="scroll-mt-24">
 	<article class="prose prose-lg max-w-none">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->

@@ -19,7 +19,6 @@ export interface UIStateManager {
 	// Persistent UI State
 	gameTime: ReturnType<typeof useHybridLocalStorage<GameTime | null>>;
 	useDynamicCombat: ReturnType<typeof useHybridLocalStorage<boolean>>;
-	ttsVoice: ReturnType<typeof useHybridLocalStorage<string>>;
 	didAIProcessDiceRollAction: ReturnType<typeof useHybridLocalStorage<boolean>>;
 
 	// Actions
@@ -45,7 +44,6 @@ export function createUIStateManager(): UIStateManager {
 	// Persistent UI state using useHybridLocalStorage
 	const gameTime = useHybridLocalStorage<GameTime | null>('gameTimeState', null);
 	const useDynamicCombat = useHybridLocalStorage<boolean>('useDynamicCombat', false);
-	const ttsVoice = useHybridLocalStorage<string>('ttsVoice');
 	const didAIProcessDiceRollAction = useHybridLocalStorage<boolean>('didAIProcessDiceRollAction');
 
 	// Action methods
@@ -105,7 +103,6 @@ export function createUIStateManager(): UIStateManager {
 		// Persistent UI State
 		gameTime,
 		useDynamicCombat,
-		ttsVoice,
 		didAIProcessDiceRollAction,
 
 		// Actions

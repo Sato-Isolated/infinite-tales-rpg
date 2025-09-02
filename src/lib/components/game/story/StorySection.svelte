@@ -1,7 +1,6 @@
 <script lang="ts">
 	// Import necessary components and types
 	import type { AIConfig } from '$lib';
-	import TTSComponent from '$lib/components/ui/media/TTSComponent.svelte';
 	import StoryProgressionWithImage, {
 		type StoryProgressionWithImageProps
 	} from '$lib/components/game/story/StoryProgressionWithImage.svelte';

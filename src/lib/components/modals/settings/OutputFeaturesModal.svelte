@@ -1,27 +1,13 @@
 <!-- src/lib/components/OutputFeaturesModal.svelte -->
 <script lang="ts">
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import type { AIConfig } from '$lib'; // Assuming AIConfig defines disableImagesState, disableAudioState
-	import type { Voice } from 'msedge-tts';
-	import { onMount } from 'svelte';
-	import { playAudioFromStream } from '$lib/util.svelte';
+	import type { AIConfig } from '$lib';
 
 	let { onclose }: { onclose: () => void } = $props();
 
 	// --- State Management ---
-	// Assuming a default structure for AIConfig
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
-		useFallbackLlmState: false,
-		disableAudioState: false
-	});
-	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
-	let ttsVoices: Voice[] = $state([]);
-
-	onMount(async () => {
-		ttsVoices = (await (await fetch('/api/edgeTTSStream/voices')).json()).sort(
-			(a: Voice, b: Voice) =>
-				a.Locale === b.Locale ? 0 : a.Locale.includes(navigator.language) ? -1 : 1
-		);
+		useFallbackLlmState: false
 	});
 </script>
 
@@ -29,38 +15,9 @@
 	<div class="modal-box flex flex-col items-center text-center">
 		<h3 class="text-lg font-bold">Output Features & Media Settings</h3>
 
-		<!-- Disable Text To Speech Generation -->
-		<fieldset class="mt-5 w-full sm:w-2/3">
-			<div class="flex flex-col items-center gap-2">
-				<span>Disable Text To Speech Generation</span>
-				<input
-					type="checkbox"
-					class="toggle toggle-info"
-					bind:checked={aiConfigState.value.disableAudioState}
-				/>
-			</div>
-		</fieldset>
-
-		<!-- Voice For Text To Speech (Only show if TTS is enabled) -->
-		{#if !aiConfigState.value.disableAudioState}
-			<fieldset class="mt-5 w-full sm:w-1/2">
-				<p class="mb-2">Voice For Text To Speech</p>
-				<!-- Dropdown -->
-				<select bind:value={ttsVoiceState.value} class="select select-md w-full text-center">
-					{#each ttsVoices as v (v.ShortName)}
-						<option value={v.ShortName}>{v.FriendlyName} - {v.Gender}</option>
-					{/each}
-				</select>
-				<!-- Test Button -->
-				<button
-					class="btn btn-outline btn-sm mt-3"
-					onclick={() => {
-						playAudioFromStream("Let's embark on an epic adventure!", ttsVoiceState.value);
-					}}
-					>Test Voice
-				</button>
-			</fieldset>
-		{/if}
+		<p class="mt-5 text-sm text-base-content/70">
+			Output features settings will be available here in future updates.
+		</p>
 
 		<!-- Close Button -->
 		<div class="modal-action mt-6">
