@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Campaign } from '$lib/ai/agents/campaignAgent';
 	import { initialCharacterState, type CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import {
 		CharacterStatsAgent,
@@ -35,7 +34,7 @@
 		'characterStatsState',
 		initialCharacterStatsState
 	);
-	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
+	// campaign removed
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	const gameSettingsState = useHybridLocalStorage<GameSettings>(
 		'gameSettingsState',
@@ -272,11 +271,7 @@
 	<!--TODO  -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
-	{#if campaignState.value?.campaign_title}
-		<li class="step step-primary cursor-pointer" onclick={() => goto('campaign')}>Campaign</li>
-	{:else}
-		<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>
-	{/if}
+	<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
 	<li class="step step-primary cursor-pointer" onclick={() => goto('systemPrompts')}>

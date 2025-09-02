@@ -45,7 +45,6 @@ Files under `src/lib/ai/agents/`:
 | `characterAgent.ts` | Character narrative description & image prompt. |
 | `characterStatsAgent.ts` | Initialize/update character numerical & categorical stats/resources. |
 | `combatAgent.ts` | Combat resolution & combat-oriented JSON updates. |
-| `campaignAgent.ts` | Multi-chapter campaign generation & chapter advancement support. |
 | `eventAgent.ts` | Detect & emit special events (abilities unlock, transformations). |
 | `summaryAgent.ts` | Story/history summarization & retrieval of related details (context pruning). |
 | `jsonFixingInterceptorAgent.ts` | Attempts to repair malformed JSON from LLM before parsing. |
@@ -92,11 +91,11 @@ Use snapshots before deep mutations when required: `$state.snapshot(variable.val
 
 ### 7. Gameplay Flow
 
-1. Creation (tale/campaign/character) -> initial agents invoked for baseline state.
+1. Creation (tale/character) -> initial agents invoked for baseline state.
 2. On `game/+page.svelte`, `sendAction()` triggers Action or Story flow.
 3. `actionAgent` proposes candidate actions.
 4. Player selects or inputs custom action; may trigger dice roll (combat/skill gating) via `gameLogic.ts`.
-5. Context is enriched (campaign advancement, combat, memory retrieval) -> `gameAgent.generateStoryProgression`.
+5. Context is enriched (combat, memory retrieval) -> `gameAgent.generateStoryProgression`.
 6. Streaming updates UI; on completion, structured JSON parsed & local states updated.
 7. Summarization if thresholds exceeded (`summaryAgent`).
 8. Event evaluation (`eventAgent`).
@@ -106,7 +105,7 @@ Use snapshots before deep mutations when required: `$state.snapshot(variable.val
 
 ### 8. JSON Contracts (Do Not Break)
 
-Story Progression JSON (gameAgent): keys include `story`, `xp_gain`, `inventory_update`, `stats_update`, `image_prompt`, `plotPointAdvancingNudgeExplanation`, etc. Campaign JSON: chapters list with plot points metadata. Summary JSON: `{ keyDetails: string[], story: string }`. Related history retrieval JSON: `{ relatedDetails: Array<{ storyReference: string; relevanceScore: number }> }`. Combat/stat update JSON: defined in combat & character stats prompts (enums uppercase). Maintain stable casing & enumeration values.
+Story Progression JSON (gameAgent): keys include `story`, `xp_gain`, `inventory_update`, `stats_update`, `image_prompt`, `plotPointAdvancingNudgeExplanation`, etc. Summary JSON: `{ keyDetails: string[], story: string }`. Related history retrieval JSON: `{ relatedDetails: Array<{ storyReference: string; relevanceScore: number }> }`. Combat/stat update JSON: defined in combat & character stats prompts (enums uppercase). Maintain stable casing & enumeration values.
 
 If adding a field: 1) extend type/interface, 2) adjust prompt instructions, 3) add parser & safe default, 4) write test, 5) document here.
 
@@ -144,9 +143,9 @@ Minimize token usage: rely on summaries (`summaryAgent`) & related retrieval. Av
 
 ---
 
-### 14. Campaign Progression
+### 14. Progression Notes
 
-Use `campaignLogic.ts` functions (`advanceChapterIfApplicable`, `getNextChapterPrompt`) to transition chapters. Keep chapter transitions explicit in story JSON to help LLM maintain continuity.
+Campaign feature has been removed. Keep story continuity via plot point hints within `gameAgent` JSON only.
 
 ---
 
@@ -193,7 +192,7 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
 
 ### 20. Quick Reference Links
 
-`src/routes/game/+page.svelte` • `src/lib/ai/agents/gameAgent.ts` • `src/lib/ai/agents/actionAgent.ts` • `src/lib/ai/agents/summaryAgent.ts` • `src/lib/ai/agents/campaignAgent.ts` • `src/lib/ai/agents/combatAgent.ts` • `src/lib/ai/agents/characterStatsAgent.ts` • `src/lib/ai/agents/eventAgent.ts` • `src/routes/game/memoryLogic.ts` • `src/routes/game/gameLogic.ts` • `src/routes/game/campaignLogic.ts` • `src/lib/ai/llm.ts` • `src/lib/ai/geminiProvider.ts` • `src/lib/ai/pollinationsProvider.ts` • `src/lib/state/useLocalStorage.svelte.ts` (state util).
+`src/routes/game/+page.svelte` • `src/lib/ai/agents/gameAgent.ts` • `src/lib/ai/agents/actionAgent.ts` • `src/lib/ai/agents/summaryAgent.ts` • `src/lib/ai/agents/combatAgent.ts` • `src/lib/ai/agents/characterStatsAgent.ts` • `src/lib/ai/agents/eventAgent.ts` • `src/routes/game/memoryLogic.ts` • `src/routes/game/gameLogic.ts` • `src/lib/ai/llm.ts` • `src/lib/ai/geminiProvider.ts` • `src/lib/ai/pollinationsProvider.ts` • `src/lib/state/useLocalStorage.svelte.ts` (state util).
 
 ---
 
@@ -209,7 +208,6 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/routes/game/gameController.ts`: Orchestrates action/story cycle, coordinates agents and state updates. See Sections 4, 7, 17.
   - `src/routes/game/gameLogic.ts`: Dice gates, side-effects injection, core flow helpers. See Sections 13, 11.
   - `src/routes/game/gameStateUtils.ts`: Game state utility functions and helpers for state management.
-  - `src/routes/game/campaignLogic.ts`: Chapter progression, prompts (Section 14).
   - `src/routes/game/combatLogic.ts`: Combat outcomes and JSON updates (Section 8/Combat contract).
   - `src/routes/game/characterLogic.ts`: Character-related helpers.
   - `src/routes/game/resourceLogic.ts`: Resource calculations and updates.

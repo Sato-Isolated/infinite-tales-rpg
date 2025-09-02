@@ -23,7 +23,7 @@
 	import type { AIConfig } from '$lib';
 	import { SummaryAgent } from '$lib/ai/agents/summaryAgent';
 	import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
-	import type { Campaign, CampaignChapter } from '$lib/ai/agents/campaignAgent';
+	// campaign removed
 
 	let {
 		onclose,
@@ -55,12 +55,7 @@
 		defaultGameSettings()
 	);
 	const thoughtsState = useHybridLocalStorage<ThoughtsState>('thoughtsState', initialThoughtsState);
-	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
-	const currentChapterState = useHybridLocalStorage<number>('currentChapterState');
-	const getCurrentCampaignChapter = (): CampaignChapter | undefined =>
-		campaignState.value?.chapters.find(
-			(chapter) => chapter.chapterId === currentChapterState.value
-		);
+	// campaign chapter removed
 	const currentGameActionState: GameActionState = $derived(
 		(gameActionsState.value && gameActionsState.value[gameActionsState.value.length - 1]) ||
 			({} as GameActionState)
@@ -133,7 +128,6 @@
 			npcState.value,
 			relatedQuestionHistory,
 			gameSettingsState.value,
-			getCurrentCampaignChapter(),
 			customGMNotesState.value,
 			currentGameActionState.is_character_restrained_explanation
 		);

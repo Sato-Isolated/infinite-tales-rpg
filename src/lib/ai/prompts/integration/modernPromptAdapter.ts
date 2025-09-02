@@ -44,7 +44,7 @@ import {
 	DETAILED_LANGUAGE_PROMPT
 } from '../shared/languagePrompt';
 
-export type AgentType = 'game' | 'action' | 'combat' | 'story' | 'character' | 'campaign' | 'summary';
+export type AgentType = 'game' | 'action' | 'combat' | 'story' | 'character' | 'summary';
 
 export interface ModernPromptConfig {
 	// Quelle version utiliser pour chaque amélioration
@@ -113,7 +113,7 @@ export class ModernPromptAdapter {
 			
 			const mappedType: SupportedAgentType = supportedTypes.includes(config.agentType as SupportedAgentType) 
 				? config.agentType as SupportedAgentType
-				: 'game'; // fallback pour 'story' et 'campaign'
+				: 'game'; // fallback pour 'story'
 				
 			const examples = getFewShotExamples(mappedType);
 			if (examples) {

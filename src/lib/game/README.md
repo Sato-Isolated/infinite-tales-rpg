@@ -11,7 +11,6 @@ Game controllers that orchestrate game operations and manage state.
 ### `/logic`
 Core business logic separated by domain:
 - `gameLogic.ts` - Core game mechanics and state management
-- `campaignLogic.ts` - Campaign and chapter progression logic
 - `characterLogic.ts` - Character management and progression
 - `combatLogic.ts` - Combat mechanics and calculations
 - `levelLogic.ts` - Experience and level progression

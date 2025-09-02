@@ -179,39 +179,6 @@ SUMMARIZATION REASONING:
 Then create your summary JSON.
 `;
 
-/**
- * Campaign Agent specific chain-of-thought
- */
-export const CAMPAIGN_AGENT_CHAIN_OF_THOUGHT = `
-CAMPAIGN PLANNING REASONING:
-
-1. 🎪 THEME DEVELOPMENT
-   - What core themes should this campaign explore?
-   - How do chapters build on each other?
-   - What emotional journey is the player on?
-
-2. 📈 PROGRESSION STRUCTURE
-   - How should difficulty and complexity scale?
-   - What new mechanics or challenges emerge?
-   - How does character growth align with plot?
-
-3. 🌟 CLIMAX PLANNING
-   - What are the major story peaks?
-   - How do minor conflicts build to major ones?
-   - What resolution opportunities exist?
-
-4. 🔄 FLEXIBILITY DESIGN
-   - How can the campaign adapt to player choices?
-   - What alternative paths might emerge?
-   - How to maintain coherence with variation?
-
-5. 🎯 ENGAGEMENT OPTIMIZATION
-   - What will keep the player invested?
-   - How to balance familiar and surprising elements?
-   - What pacing best serves the story?
-
-Then generate your campaign structure JSON.
-`;
 
 /**
  * Character Agent specific chain-of-thought

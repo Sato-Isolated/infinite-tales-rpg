@@ -112,7 +112,7 @@ export function normalizeGameTime(time: GameTime): GameTime {
 
 /**
  * Generate an initial game time based on story and character context
- * This should be called when starting a new tale/campaign
+ * This should be called when starting a new tale
  */
 export async function generateStoryAppropriateTime(
 	storyState: Story,

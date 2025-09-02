@@ -11,7 +11,7 @@
 	const characterState = useHybridLocalStorage('characterState', {});
 	const characterStatsState = useHybridLocalStorage('characterStatsState', {});
 	const storyState = useHybridLocalStorage('storyState', {});
-	const campaignState = useHybridLocalStorage('campaignState', {});
+	// campaign removed
 	const inventoryState = useHybridLocalStorage('inventoryState', {});
 	const gameSettingsState = useHybridLocalStorage('gameSettingsState', {});
 	const aiConfigState = useHybridLocalStorage('aiConfigState', {});
@@ -60,13 +60,7 @@
 				icon: '🎒'
 			},
 			{ id: 'story', category: 'game', title: 'Story State', data: storyState.value, icon: '📖' },
-			{
-				id: 'campaign',
-				category: 'game',
-				title: 'Campaign',
-				data: campaignState.value,
-				icon: '🗺️'
-			},
+			// campaign entry removed
 			{
 				id: 'gameActions',
 				category: 'game',
@@ -140,7 +134,7 @@
 			characterState: characterState.value,
 			characterStatsState: characterStatsState.value,
 			storyState: storyState.value,
-			campaignState: campaignState.value,
+			// campaign removed
 			inventoryState: inventoryState.value,
 			gameActionsState: gameActionsState.value,
 			npcState: npcState.value,
@@ -364,7 +358,7 @@
 							characterState: characterState.value,
 							characterStatsState: characterStatsState.value,
 							storyState: storyState.value,
-							campaignState: campaignState.value,
+								// campaign removed
 							thoughtsState: thoughtsState.value
 						})}
 				>

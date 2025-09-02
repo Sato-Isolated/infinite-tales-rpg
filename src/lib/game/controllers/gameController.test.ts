@@ -20,7 +20,6 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
 				generateSingleAction: vi.fn().mockResolvedValue({ text: 'mocked', is_possible: true })
 			} as any,
 			combatAgent: {} as any,
-			campaignAgent: {} as any,
 			eventAgent: {} as any,
 			characterAgent: {} as any,
 			characterStatsAgent: {} as any
@@ -84,10 +83,8 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
 			setItemForSuggestActions: vi.fn(),
 			setLevelUpState: vi.fn()
 		} as any,
-		helpers: {
-			addCampaignAdditionalStoryInput: vi.fn(async (_a: any, v: string) => v),
-			getGameMasterNotesForCampaignChapter: vi.fn(() => []),
-			getCurrentCampaignChapter: vi.fn(() => undefined),
+			helpers: {
+			addAdditionalStoryInput: vi.fn(async (_a: any, v: string) => v),
 			openDiceRollDialog: vi.fn(),
 			handleError: vi.fn(),
 			resetStatesAfterActionProcessed: vi.fn(),

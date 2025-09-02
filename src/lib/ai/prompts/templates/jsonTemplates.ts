@@ -97,12 +97,7 @@ export const characterAgentJsonTemplate = `{
 /**
  * Campaign Agent JSON template
  */
-export const campaignAgentJsonTemplate = `{
-  "chapters": "Array of chapter objects with plot points",
-  "currentChapter": "Current chapter number",
-  "campaignTheme": "Overall campaign theme",
-  "estimatedDuration": "Expected campaign length"
-}`;
+// Campaign JSON template removed
 
 /**
  * Error handling template for malformed JSON

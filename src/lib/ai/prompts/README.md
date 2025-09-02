@@ -23,7 +23,6 @@ src/lib/ai/prompts/
 │   ├── characterFormats.ts      # characterDescriptionForPrompt
 │   ├── characterStatsFormats.ts # abilityFormatForPrompt, npcIDForPrompt, etc.
 │   ├── combatFormats.ts         # diceRollPrompt, statsUpdatePromptObject (avec chain-of-thought)
-│   ├── campaignFormats.ts       # chaptersPrompt, campaignJsonPrompt
 │   ├── eventFormats.ts          # eventJsonFormat
 │   └── index.ts
 ├── system/           # Instructions système complexes (optimisées)
@@ -34,7 +33,6 @@ src/lib/ai/prompts/
 ├── agents/           # Prompts spécifiques aux agents
 │   ├── story/        # Story agent prompts
 │   ├── character/    # Character agent prompts
-│   ├── campaign/     # Campaign agent prompts
 │   ├── summary/      # Summary agent prompts
 │   ├── action/       # Action agent prompts
 │   └── index.ts

@@ -3,6 +3,6 @@
  */
 export * from './story';
 export * from './character';
-export * from './campaign';
+// campaign prompts removed
 export * from './summary';
 export * from './action';

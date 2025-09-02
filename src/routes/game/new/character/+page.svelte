@@ -13,7 +13,6 @@
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { initialStoryState, type Story } from '$lib/ai/agents/storyAgent';
-	import type { Campaign } from '$lib/ai/agents/campaignAgent';
 	import type { AIConfig } from '$lib';
 	import type { PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
 	import {
@@ -25,7 +24,7 @@
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	const storyState = useHybridLocalStorage<Story>('storyState', initialStoryState);
-	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
+	// campaign removed
 	const characterState = useHybridLocalStorage<CharacterDescription>(
 		'characterState',
 		initialCharacterState
@@ -122,11 +121,7 @@
 	<!--TODO  -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
-	{#if campaignState.value?.campaign_title}
-		<li class="step step-primary cursor-pointer" onclick={() => goto('campaign')}>Campaign</li>
-	{:else}
-		<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>
-	{/if}
+	<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
 	<li class="step step-primary cursor-pointer" onclick={() => goto('systemPrompts')}>
@@ -159,25 +154,14 @@
 	>
 		Clear All
 	</button>
-	{#if campaignState.value?.campaign_title}
-		<button
-			class="btn btn-primary btn-md m-auto w-1/2"
-			onclick={() => {
-				navigate('/new/campaign');
-			}}
-		>
-			Previous Step:<br /> Customize Campaign
-		</button>
-	{:else}
-		<button
-			class="btn btn-primary btn-md m-auto w-1/2"
-			onclick={() => {
-				navigate('/new/tale');
-			}}
-		>
-			Previous Step:<br /> Customize Tale
-		</button>
-	{/if}
+	<button
+		class="btn btn-primary btn-md m-auto w-1/2"
+		onclick={() => {
+			navigate('/new/tale');
+		}}
+	>
+		Previous Step:<br /> Customize Tale
+	</button>
 
 	<button
 		class="btn btn-primary btn-md m-auto w-1/2"

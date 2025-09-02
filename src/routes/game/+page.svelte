@@ -65,7 +65,7 @@
 		type CharacterDescription,
 		initialCharacterState
 	} from '$lib/ai/agents/characterAgent';
-	import { type Campaign, CampaignAgent, type CampaignChapter } from '$lib/ai/agents/campaignAgent';
+		// Campaign removed
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/ui/loading/LoadingIcon.svelte';
 	import TTSComponent from '$lib/components/ui/media/TTSComponent.svelte';
@@ -75,11 +75,7 @@
 	import ResourcesComponent from '$lib/components/ui/data/ResourcesComponent.svelte';
 
 	import { initializeMissingResources, refillResourcesFully } from '$lib/game/logic/resourceLogic';
-	import {
-		advanceChapterIfApplicable,
-		getGameMasterNotesForCampaignChapter,
-		getNextChapterPrompt
-	} from '$lib/game/logic/campaignLogic';
+		// Campaign logic removed
 	import { getRelatedHistory } from '$lib/game/memory/memoryLogic';
 	import { getLatestStoryMessagesFromHistory } from '$lib/game/memory/messages';
 	import {
@@ -159,7 +155,7 @@
 		characterAgent: CharacterAgent,
 		characterStatsAgent: CharacterStatsAgent,
 		combatAgent: CombatAgent,
-		campaignAgent: CampaignAgent,
+		// campaignAgent removed
 		actionAgent: ActionAgent,
 		eventAgent: EventAgent;
 
@@ -195,24 +191,12 @@
 	);
 	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState', '');
 	const customGMNotesState = useHybridLocalStorage<string>('customGMNotesState', '');
-	const currentChapterState = useHybridLocalStorage<number>('currentChapterState', 1);
+		// currentChapterState removed
 
 	// Initialize conversation state manager for dialogue tracking
 	const conversationStateManager = new ConversationStateManager();
 
-	// Initialize campaign state with proper default instead of unsafe cast
-	const defaultCampaign: Campaign = {
-		game: '',
-		campaign_title: '',
-		campaign_description: '',
-		world_details: '',
-		character_simple_description: '',
-		chapters: [],
-		general_image_prompt: '',
-		theme: '',
-		tonality: ''
-	};
-	const campaignState = useHybridLocalStorage<Campaign>('campaignState', defaultCampaign);
+		// campaignState removed
 
 	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
 
@@ -374,7 +358,7 @@
 		characterStatsAgent = new CharacterStatsAgent(llm);
 		combatAgent = new CombatAgent(llm);
 		summaryAgent = new SummaryAgent(llm);
-		campaignAgent = new CampaignAgent(llm);
+		// campaignAgent removed
 		actionAgent = new ActionAgent(llm);
 		eventAgent = new EventAgent(llm);
 		characterAgent = new CharacterAgent(llm);
@@ -386,7 +370,7 @@
 				summaryAgent,
 				actionAgent,
 				combatAgent,
-				campaignAgent,
+			// campaignAgent removed
 				eventAgent,
 				characterAgent,
 				characterStatsAgent
@@ -432,9 +416,8 @@
 				useDynamicCombat
 			},
 			helpers: {
-				addCampaignAdditionalStoryInput,
-				getGameMasterNotesForCampaignChapter,
-				getCurrentCampaignChapter,
+				addAdditionalStoryInput,
+			// campaign helpers removed
 				openDiceRollDialog,
 				handleError,
 				resetStatesAfterActionProcessed,
@@ -741,35 +724,9 @@
 		}
 	}
 
-	async function addCampaignAdditionalStoryInput(action: Action, additionalStoryInput: string) {
+	async function addAdditionalStoryInput(action: Action, additionalStoryInput: string) {
 		// If the game is played in campaign mode
-		if (campaignState.value?.chapters?.length > 0) {
-			//advance the chapter if applicable.
-			const { newAdditionalStoryInput, newChapter } = await advanceChapterIfApplicable(
-				action,
-				additionalStoryInput,
-				didAIProcessActionState,
-				campaignState.value,
-				currentChapterState.value,
-				currentGameActionState,
-				gameActionsState.value,
-				campaignAgent,
-				historyMessagesState.value
-			);
-			additionalStoryInput = newAdditionalStoryInput;
-
-			if (newChapter) {
-				currentChapterState.value += 1;
-				currentGameActionState.currentPlotPoint = 'PLOT_ID: 1';
-				const { prompt, updatedStory } = getNextChapterPrompt(
-					campaignState.value,
-					currentChapterState.value,
-					storyState.value
-				);
-				additionalStoryInput += prompt;
-				storyState.value = updatedStory;
-			}
-		}
+		// campaign additional input removed
 		return additionalStoryInput;
 	}
 
@@ -865,10 +822,7 @@
 		modalManager.setItemForSuggestActions(undefined);
 	};
 
-	const getCurrentCampaignChapter = (): CampaignChapter | undefined =>
-		campaignState.value?.chapters.find(
-			(chapter) => chapter.chapterId === currentChapterState.value
-		);
+		// getCurrentCampaignChapter removed
 
 	const generateActionFromCustomInput = async (action: Action) => {
 		await controller!.generateActionFromCustomInput(action);

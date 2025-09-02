@@ -24,7 +24,7 @@ import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgen
 import { CombatAgent } from '$lib/ai/agents/combatAgent';
 import type { ActionAgent } from '$lib/ai/agents/actionAgent';
 import type { SummaryAgent } from '$lib/ai/agents/summaryAgent';
-import type { CampaignAgent, CampaignChapter } from '$lib/ai/agents/campaignAgent';
+// Campaign removed
 import type { EventAgent, EventEvaluation, CharacterChangedInto } from '$lib/ai/agents/eventAgent';
 import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 import * as gameLogic from '../logic/gameLogic';
@@ -98,7 +98,7 @@ export type ControllerCtx = {
 		summaryAgent: SummaryAgent;
 		actionAgent: ActionAgent;
 		combatAgent: CombatAgent;
-		campaignAgent: CampaignAgent;
+		// campaignAgent removed
 		eventAgent: EventAgent;
 		characterAgent: import('$lib/ai/agents/characterAgent').CharacterAgent;
 		characterStatsAgent: import('$lib/ai/agents/characterStatsAgent').CharacterStatsAgent;
@@ -142,15 +142,11 @@ export type ControllerCtx = {
 	};
 	modals: ModalManager;
 	helpers: {
-		addCampaignAdditionalStoryInput: (
+		addAdditionalStoryInput: (
 			action: Action,
 			additionalStoryInput: string
 		) => Promise<string>;
-		getGameMasterNotesForCampaignChapter: (
-			chapter: CampaignChapter | undefined,
-			currentPlotPoint?: string
-		) => string[];
-		getCurrentCampaignChapter: () => CampaignChapter | undefined;
+		// campaign GM notes removed
 		openDiceRollDialog: () => void;
 		handleError: (e: string) => void;
 		resetStatesAfterActionProcessed: () => void;
@@ -258,17 +254,14 @@ export function createGameController(ctx: ControllerCtx) {
 			console.warn('Presence continuity prompt generation failed:', e);
 		}
 
-		additionalStoryInput = await ctx.helpers.addCampaignAdditionalStoryInput(
+		additionalStoryInput = await ctx.helpers.addAdditionalStoryInput(
 			action,
 			additionalStoryInput
 		);
 
-		const gmNotes = ctx.helpers.getGameMasterNotesForCampaignChapter(
-			ctx.helpers.getCurrentCampaignChapter(),
-			currentGameActionState.currentPlotPoint
-		);
-		if (ctx.state.customGMNotesState.value) gmNotes.unshift(ctx.state.customGMNotesState.value);
-		additionalStoryInput += GameAgent.getPromptForGameMasterNotes(gmNotes);
+		if (ctx.state.customGMNotesState.value) {
+			additionalStoryInput += GameAgent.getPromptForGameMasterNotes([ctx.state.customGMNotesState.value]);
+		}
 
 		if (action.type?.toLowerCase() === 'crafting') {
 			additionalStoryInput += GameAgent.getCraftingPrompt();

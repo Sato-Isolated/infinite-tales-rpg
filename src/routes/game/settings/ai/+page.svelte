@@ -11,7 +11,6 @@
 		initialCharacterStatsState,
 		type NPCState
 	} from '$lib/ai/agents/characterStatsAgent';
-	import { initialCampaignState } from '$lib/ai/agents/campaignAgent';
 	import { onMount } from 'svelte';
 	import type { AIConfig } from '$lib';
 	import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
@@ -52,8 +51,7 @@
 	const storyState = useHybridLocalStorage('storyState', initialStoryState);
 	const isGameEnded = useHybridLocalStorage('isGameEnded', false);
 	const rollDifferenceHistoryState = useHybridLocalStorage('rollDifferenceHistoryState', []);
-	const campaignState = useHybridLocalStorage('campaignState', initialCampaignState);
-	const currentChapterState = useHybridLocalStorage('currentChapterState');
+	// campaign removed
 	const characterActionsState = useHybridLocalStorage('characterActionsState');
 	const levelUpState = useHybridLocalStorage('levelUpState');
 	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState');
@@ -120,8 +118,7 @@
 		rollDifferenceHistoryState.reset();
 		npcState.reset();
 		inventoryState.reset();
-		campaignState.reset();
-		currentChapterState.reset();
+		// campaign states removed
 		characterActionsState.reset();
 		levelUpState.reset();
 		relatedStoryHistoryState.reset();
@@ -197,10 +194,7 @@
 		navigate('/new/tale');
 	}
 
-	function onNewCampaign() {
-		clearStates();
-		navigate('/new/campaign');
-	}
+	// campaign start removed
 </script>
 
 {#if quickstartModalOpen}
@@ -393,34 +387,7 @@
 				</div>
 			</div>
 
-			<!-- Campaign Card -->
-			<div
-				class="card bg-base-100 shadow-lg transition-shadow hover:shadow-xl lg:col-span-2 xl:col-span-1"
-			>
-				<div class="card-body text-center">
-					<div class="mb-4 flex justify-center">
-						<div class="badge badge-secondary">📚 Advanced</div>
-					</div>
-					<h3 class="card-title mb-4 justify-center text-xl">New Campaign</h3>
-					<p class="text-base-content/70 mb-6">
-						Structured multi-chapter adventure with detailed plot planning. Perfect for longer
-						gameplay.
-					</p>
-					<div class="card-actions justify-center">
-						<button
-							class="btn btn-secondary btn-lg gap-2"
-							disabled={!apiKeyState.value}
-							onclick={onNewCampaign}
-						>
-							<span>🗺️</span>
-							Start Campaign
-						</button>
-					</div>
-					{#if !apiKeyState.value}
-						<div class="text-base-content/50 mt-2 text-xs">API key required</div>
-					{/if}
-				</div>
-			</div>
+			<!-- Campaign card removed -->
 		</div>
 
 		<div class="divider my-12">

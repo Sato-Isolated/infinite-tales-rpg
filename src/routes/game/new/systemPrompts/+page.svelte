@@ -3,24 +3,19 @@
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { navigate } from '$lib/util.svelte';
 	import { goto } from '$app/navigation';
-	import type { Campaign } from '$lib/ai/agents/campaignAgent';
 
 	const systemInstructionsState = useHybridLocalStorage<SystemInstructionsState>(
 		'systemInstructionsState',
 		initialSystemInstructionsState
 	);
 
-	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
+	// campaign removed
 </script>
 
 <ul class="steps mt-3 w-full">
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
-	{#if campaignState.value?.campaign_title}
-		<li class="step step-primary cursor-pointer" onclick={() => goto('campaign')}>Campaign</li>
-	{:else}
-		<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>
-	{/if}
+	<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>
 	<li class="step step-primary">System Prompts</li>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
@@ -112,14 +107,10 @@
 					type="button"
 					class="btn btn-neutral"
 					onclick={() => {
-						if (campaignState.value?.campaign_title) {
-							navigate('/new/campaign');
-						} else {
-							navigate('/new/tale');
-						}
+						navigate('/new/tale');
 					}}
 				>
-					← Previous: {campaignState.value?.campaign_title ? 'Campaign' : 'Tale'}
+					← Previous: Tale
 				</button>
 
 				<button

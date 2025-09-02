@@ -2,7 +2,6 @@
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { navigate } from '$lib/util.svelte';
 	import ImportExportSaveGame from '$lib/components/ui/data/ImportExportSaveGame.svelte';
-	import type { Campaign } from '$lib/ai/agents/campaignAgent';
 	import GameSettingsModal from '$lib/components/modals/settings/GameSettingsModal.svelte';
 	import AiGameSettingsModal from '$lib/components/modals/settings/AiGameSettings.svelte';
 	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
@@ -16,7 +15,7 @@
 	let showAiGameSettingsModal = $state<boolean>(false);
 	let isRegeneratingTime = $state<boolean>(false);
 
-	const campaignState = useHybridLocalStorage<Campaign>('campaignState');
+	// campaign removed
 	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState');
 	const customGMNotesState = useHybridLocalStorage<string>('customGMNotesState');
 	const gameTimeState = useHybridLocalStorage<GameTime>('gameTimeState', createDefaultTime());
@@ -29,11 +28,7 @@
 	//TODO migrate all settings that can be changed during game here
 
 	const taleSettingsClicked = () => {
-		if (campaignState.value?.chapters.length > 0) {
-			navigate('/new/campaign');
-		} else {
-			navigate('/new/tale');
-		}
+		navigate('/new/tale');
 	};
 
 	const regenerateGameTime = async () => {

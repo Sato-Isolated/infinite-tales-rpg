@@ -73,9 +73,7 @@ export class UndoManager {
     'skillsProgressionState',
     'eventEvaluationState',
     'characterTransformState',
-    'levelUpState',
-    'campaignState',
-    'currentChapterState',
+  'levelUpState',
     'gameTimeState',
     'isGameEnded'
   ] as const;

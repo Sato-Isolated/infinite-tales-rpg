@@ -17,7 +17,6 @@ import {
 	type NPCState,
 	type Resources
 } from '$lib/ai/agents/characterStatsAgent';
-import type { CampaignChapter } from '$lib/ai/agents/campaignAgent';
 import { DialogueTrackingAgent } from '$lib/ai/agents/dialogueTrackingAgent';
 import { DialogueFidelityAgent, DEFAULT_FIDELITY_SETTINGS, type DialogueFidelitySettings } from '$lib/ai/agents/dialogueFidelityAgent';
 import type { DiceSimulationMode } from '$lib/utils/webglDetection';
@@ -33,7 +32,12 @@ import {
 } from '$lib/ai/prompts/shared';
 import { systemBehaviour, jsonSystemInstructionForGameAgent, jsonSystemInstructionForPlayerQuestion } from '$lib/ai/prompts/system';
 import { statsUpdatePromptObject, currentlyPresentNPCSForPrompt } from '$lib/ai/prompts/formats';
-import { mapPlotStringToIds } from '$lib/game/logic/campaignLogic';
+// Campaign removed: local helper to extract first numeric PLOT_ID occurrences
+function mapPlotStringToIds(input: string): number[] {
+	if (!input) return [];
+	const matches = Array.from(input.matchAll(/PLOT_ID:\s*(\d+)/g));
+	return matches.map((m) => Number.parseInt(m[1], 10)).filter((n) => !Number.isNaN(n));
+}
 import {
 	NPC_TEMPORAL_CONTINUITY_PROMPT,
 	NPC_ACTIVITY_DURING_ABSENCE_PROMPT,
@@ -523,7 +527,6 @@ export class GameAgent {
 		npcState: NPCState,
 		relatedHistory: string[],
 		gameSettings: GameSettings,
-		campaignChapterState?: CampaignChapter,
 		customGmNotes?: string,
 		is_character_restrained_explanation?: string
 	): Promise<{ thoughts?: string; answer: GameMasterAnswer }> {
@@ -532,13 +535,6 @@ export class GameAgent {
 			'You can refer to the internal state, rules and previous messages that the Game Master has considered',
 			this.generateEnrichedNPCContext(npcState, characterState?.name || "CHARACTER")
 		];
-		if (campaignChapterState) {
-			gameAgent.push(
-				'The following is the state of the current campaign chapter.' +
-				'\n' +
-				stringifyPretty(campaignChapterState)
-			);
-		}
 		if (customGmNotes) {
 			gameAgent.push(
 				'The following are custom gm notes considered to be rules.' + '\n' + customGmNotes

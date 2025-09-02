@@ -19,8 +19,7 @@
 		onImportComplete?: () => void;
 	} = $props();
 	const storyState = useHybridLocalStorage('storyState');
-	const campaignState = useHybridLocalStorage('campaignState');
-	const currentChapterState = useHybridLocalStorage('currentChapterState');
+	// campaign removed
 	const characterState = useHybridLocalStorage('characterState');
 	const characterStatsState = useHybridLocalStorage('characterStatsState');
 	const systemInstructionsState = useHybridLocalStorage<SystemInstructionsState>(
@@ -67,8 +66,7 @@
 				// For save games, still reload as it's a full game state restoration
 				window.location.reload();
 			} else {
-				campaignState.value = parsed.campaignState;
-				currentChapterState.value = 1;
+				// campaign removed
 				storyState.value = parsed.storyState;
 				characterState.value = parsed.characterState;
 				characterStatsState.value = parsed.characterStatsState;
