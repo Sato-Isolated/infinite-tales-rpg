@@ -12,7 +12,6 @@
 	// Assuming a default structure for AIConfig
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
 		useFallbackLlmState: false,
-		disableImagesState: false,
 		disableAudioState: false
 	});
 	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
@@ -29,18 +28,6 @@
 <dialog open class="modal z-50" style="background: rgba(0, 0, 0, 0.3);">
 	<div class="modal-box flex flex-col items-center text-center">
 		<h3 class="text-lg font-bold">Output Features & Media Settings</h3>
-
-		<!-- Disable Image Generation -->
-		<fieldset class="mt-5 w-full sm:w-2/3">
-			<div class="flex flex-col items-center gap-2">
-				<span>Disable Image Generation</span>
-				<input
-					type="checkbox"
-					class="toggle toggle-info"
-					bind:checked={aiConfigState.value.disableImagesState}
-				/>
-			</div>
-		</fieldset>
 
 		<!-- Disable Text To Speech Generation -->
 		<fieldset class="mt-5 w-full sm:w-2/3">

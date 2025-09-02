@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
-	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import { CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 	import type { Ability } from '$lib/ai/agents/characterStatsAgent';
@@ -20,28 +19,8 @@
 
 {#if isMounted}
 	<fieldset class="fieldset bg-base-200 mt-3 w-full border p-4">
-		<div
-			class:sm:grid-cols-6={!aiConfigState.value?.disableImagesState}
-			class="grid-cols mt-2 grid truncate text-center"
-		>
-			<div class="m-auto sm:col-span-3">
-				{#if !aiConfigState.value?.disableImagesState}
-					<AIGeneratedImage
-						noLogo={true}
-						enhance={false}
-						imageClassesString="w-[90px] sm:w-[100px] h-[90px] sm:h-[100px] m-auto"
-						imagePrompt={CharacterStatsAgent.getSpellImagePrompt(
-							ability,
-							storyState?.value?.general_image_prompt
-						)}
-						showGenerateButton={false}
-					></AIGeneratedImage>
-				{/if}
-			</div>
-			<div
-				class:sm:col-span-3={aiConfigState.value?.disableImagesState}
-				class="m-auto w-full sm:col-span-2"
-			>
+		<div class="grid-cols mt-2 grid truncate text-center">
+			<div class="m-auto w-full">
 				{#if ability.resource_cost?.cost > 0}
 					<p class="badge badge-info h-fit capitalize">
 						{ability.resource_cost?.cost}

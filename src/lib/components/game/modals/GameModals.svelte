@@ -131,7 +131,6 @@
 	playerName={characterName}
 	resources={playerCharactersGameState[Object.keys(playerCharactersGameState)[0]] || {}}
 	abilities={characterStatsState?.spells_and_abilities}
-	storyImagePrompt={storyState.general_image_prompt}
 	targets={currentGameActionState.currently_present_npcs}
 	onclose={handleTargetedSpellsOrAbility}
 ></UseSpellsAbilitiesModal>
@@ -141,7 +140,6 @@
 	{onDeleteItem}
 	playerName={characterName}
 	{inventoryState}
-	storyImagePrompt={storyState.general_image_prompt}
 	oncrafting={(craftingPrompt) => {
 		if (craftingPrompt) {
 			handleCustomActionSubmit(craftingPrompt, true);

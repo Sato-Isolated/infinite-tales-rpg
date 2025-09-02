@@ -34,7 +34,6 @@
 	//TODO migrate all AI settings into this object to avoid too many vars in local storage
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
 		disableAudioState: false,
-		disableImagesState: false,
 		useFallbackLlmState: false
 	});
 	let showGenerationSettingsModal = $state<boolean>(false);
@@ -45,7 +44,6 @@
 	const historyMessagesState = useHybridLocalStorage('historyMessagesState', []);
 	const characterState = useHybridLocalStorage('characterState', initialCharacterState);
 	const inventoryState = useHybridLocalStorage('inventoryState', {});
-	const characterImageState = useHybridLocalStorage('characterImageState');
 	const characterStatsState = useHybridLocalStorage('characterStatsState', initialCharacterStatsState);
 	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
 	const storyState = useHybridLocalStorage('storyState', initialStoryState);
@@ -111,7 +109,6 @@
 		historyMessagesState.reset();
 		gameActionsState.reset();
 		characterState.reset();
-		characterImageState.reset();
 		characterStatsState.reset();
 		storyState.reset();
 		isGameEnded.reset();
@@ -425,7 +422,7 @@
 						Output Features
 					</h3>
 					<p class="text-base-content/70 mb-4 text-sm">
-						Toggle audio, images, and other output features
+						Toggle audio and other output features
 					</p>
 					<div class="card-actions justify-center">
 						<button

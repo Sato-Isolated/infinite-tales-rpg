@@ -57,7 +57,7 @@ Never silently change JSON contracts. If modifying: update prompt, parsing code,
 
 ### 5. LLM Providers
 
-`geminiProvider.ts` handles streaming (story & thoughts), safety settings, fallback logic. `pollinationsProvider.ts` builds image prompts & retrieves image. `llmProvider.ts` centralizes provider selection. `llm.ts` defines shared prompt fragments (e.g. `LANGUAGE_PROMPT`).
+`geminiProvider.ts` handles streaming (story & thoughts), safety settings, fallback logic. `llmProvider.ts` centralizes provider selection. `llm.ts` defines shared prompt fragments (e.g. `LANGUAGE_PROMPT`).
 
 Streaming callbacks (expected shapes) must remain stable: `onStoryStreamUpdate(partialText)`, `onThoughtStreamUpdate(kind, partialThought)`.
 
@@ -192,7 +192,7 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
 
 ### 20. Quick Reference Links
 
-`src/routes/game/+page.svelte` • `src/lib/ai/agents/gameAgent.ts` • `src/lib/ai/agents/actionAgent.ts` • `src/lib/ai/agents/summaryAgent.ts` • `src/lib/ai/agents/combatAgent.ts` • `src/lib/ai/agents/characterStatsAgent.ts` • `src/lib/ai/agents/eventAgent.ts` • `src/routes/game/memoryLogic.ts` • `src/routes/game/gameLogic.ts` • `src/lib/ai/llm.ts` • `src/lib/ai/geminiProvider.ts` • `src/lib/ai/pollinationsProvider.ts` • `src/lib/state/useLocalStorage.svelte.ts` (state util).
+`src/routes/game/+page.svelte` • `src/lib/ai/agents/gameAgent.ts` • `src/lib/ai/agents/actionAgent.ts` • `src/lib/ai/agents/summaryAgent.ts` • `src/lib/ai/agents/combatAgent.ts` • `src/lib/ai/agents/characterStatsAgent.ts` • `src/lib/ai/agents/eventAgent.ts` • `src/routes/game/memoryLogic.ts` • `src/routes/game/gameLogic.ts` • `src/lib/ai/llm.ts` • `src/lib/ai/geminiProvider.ts` • `src/lib/state/useLocalStorage.svelte.ts` (state util).
 
 ---
 
@@ -223,7 +223,6 @@ Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting
   - `src/lib/ai/llm.ts`: Shared prompt fragments and language constants.
   - `src/lib/ai/llmProvider.ts`: Provider abstraction selection.
   - `src/lib/ai/geminiProvider.ts`: Modern provider using @google/genai SDK with structured output.
-  - `src/lib/ai/pollinationsProvider.ts`: Image prompt build + retrieval fallback.
   - `src/lib/ai/config/GeminiConfigBuilder.ts`: Centralized configuration with THINKING_BUDGETS.
   - `src/lib/ai/errors/GeminiErrorHandler.ts`: Consolidated error handling utilities.
   - `src/lib/ai/streaming/StructuredStreamHandler.ts`: SDK-native structured streaming (replaces manual parsing).

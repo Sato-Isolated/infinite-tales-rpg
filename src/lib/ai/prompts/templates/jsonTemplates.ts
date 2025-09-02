@@ -39,7 +39,6 @@ export const gameAgentJsonTemplate = `{
   "plotPointAdvancingNudgeExplanation": "VALUE MUST BE ALWAYS IN ENGLISH; CURRENT_PLOT_ID: X; NEXT_PLOT_ID: Y; {Reasoning}",
   "story": "Rich narrative with HTML formatting using DaisyUI classes",
   "story_memory_explanation": "Long-term impact explanation - LONG_TERM_IMPACT: LOW|MEDIUM|HIGH",
-  "image_prompt": "Detailed scene description for image generation",
   "xpGainedExplanation": "Why CHARACTER gains/doesn't gain XP",
   "time_passed_minutes": "Number (realistic duration based on guidelines)",
   "time_passed_explanation": "Brief explanation referencing time guideline category",

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent.ts';
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
@@ -126,17 +125,9 @@
 				<div class="mb-6">
 					<div class="avatar">
 						<div class="mx-auto w-24 rounded-full">
-							{#if storyState.value?.general_image_prompt}
-								<AIGeneratedImage
-									imagePrompt={storyState.value.general_image_prompt}
-									imageClassesString="w-full h-full object-cover"
-									showGenerateButton={false}
-								/>
-							{:else}
-								<div class="bg-primary/20 flex h-full w-full items-center justify-center">
-									<span class="text-4xl">🧙‍♂️</span>
-								</div>
-							{/if}
+							<div class="bg-primary/20 flex h-full w-full items-center justify-center">
+								<span class="text-4xl">🧙‍♂️</span>
+							</div>
 						</div>
 					</div>
 					<h2 class="mt-4 text-center text-xl font-bold">{characterState.value.name}</h2>
@@ -623,17 +614,9 @@
 											<div
 												class="ring-primary ring-offset-base-100 w-32 rounded-full ring ring-offset-2"
 											>
-												{#if storyState.value?.general_image_prompt}
-													<AIGeneratedImage
-														imagePrompt={storyState.value.general_image_prompt}
-														imageClassesString="w-full h-full object-cover"
-														showGenerateButton={false}
-													/>
-												{:else}
-													<div class="bg-primary/20 flex h-full w-full items-center justify-center">
-														<span class="text-6xl">🧙‍♂️</span>
-													</div>
-												{/if}
+												<div class="bg-primary/20 flex h-full w-full items-center justify-center">
+													<span class="text-6xl">🧙‍♂️</span>
+												</div>
 											</div>
 										</div>
 										<h1 class="text-primary mb-2 text-4xl font-bold">

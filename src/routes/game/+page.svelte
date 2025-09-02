@@ -106,7 +106,6 @@
 		storyTextRef?: HTMLElement;
 		story: string;
 		gameUpdates?: Array<RenderedGameUpdate | undefined>;
-		imagePrompt?: string;
 		stream_finished?: boolean;
 	};
 	import StorySection from '$lib/components/game/story/StorySection.svelte';
@@ -240,7 +239,6 @@
 		currentPlotPoint: '',
 		nextPlotPoint: '',
 		story: '',
-		image_prompt: '',
 		inventory_update: [],
 		stats_update: [],
 		is_character_in_combat: false,
@@ -270,9 +268,6 @@
 					playerCharactersIdToNamesMapState.value,
 					playerCharacterIdState
 				),
-		imagePrompt: storyChunkState
-			? ''
-			: [currentGameActionState.image_prompt, storyState.value.general_image_prompt].join(' '),
 		stream_finished: !storyChunkState
 	});
 	let latestStoryProgressionTextComponent = $state<HTMLElement | undefined>();

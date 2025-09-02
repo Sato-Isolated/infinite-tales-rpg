@@ -6,7 +6,6 @@
 		type Item,
 		type ItemWithId
 	} from '$lib/ai/agents/gameAgent';
-	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import { formatItemId } from '$lib/game/logic/gameLogic';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
@@ -16,7 +15,6 @@
 		inventoryState,
 		onDeleteItem,
 		playerName,
-		storyImagePrompt,
 		onclose,
 		oncrafting,
 		dialogRef = $bindable()
@@ -24,7 +22,6 @@
 		inventoryState: InventoryState;
 		onDeleteItem: (item_id: string) => void;
 		playerName: string;
-		storyImagePrompt: string;
 		onclose: (item?: Action | undefined) => void;
 		oncrafting: (actionText: string | undefined) => void;
 		dialogRef: HTMLDialogElement;
@@ -91,26 +88,8 @@
 			<fieldset class="mt-3 w-full">
 				<details class="collapse-arrow textarea bg-base-200 textarea-md collapse border">
 					<summary class="collapse-title capitalize">
-						<div
-							class:sm:grid-cols-6={!aiConfigState.value?.disableImagesState}
-							class="grid grid-cols-1 truncate text-center"
-						>
-							<div class="m-auto sm:col-span-3">
-								{#if !aiConfigState.value?.disableImagesState}
-									<AIGeneratedImage
-										noLogo={true}
-										enhance={false}
-										imageClassesString="w-[90px] sm:w-[100px] h-[90px] sm:h-[100px] m-auto"
-										imagePrompt={GameAgent.getItemImagePrompt(
-											formatItemId(item_id),
-											item,
-											storyImagePrompt
-										)}
-										showGenerateButton={false}
-									></AIGeneratedImage>
-								{/if}
-							</div>
-							<div class="m-auto w-full sm:col-span-2">
+						<div class="grid grid-cols-1 truncate text-center">
+							<div class="m-auto w-full">
 								<p class="mt-2 truncate capitalize">
 									{formatItemId(item_id)}
 								</p>

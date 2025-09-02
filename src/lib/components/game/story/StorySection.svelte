@@ -61,7 +61,6 @@
 		{#each previousStoryActions as gameActionState (gameActionState.id)}
 			<StoryProgressionWithImage
 				story={gameActionState.story}
-				imagePrompt="{gameActionState.image_prompt} {storyState.general_image_prompt}"
 				gameUpdates={getRenderedGameUpdates(gameActionState, playerCharacterIdState)}
 			/>
 			{#if (gameActionState as any)?.fallbackUsed}
@@ -72,7 +71,6 @@
 	<StoryProgressionWithImage
 		bind:storyTextRef
 		story={latestStoryProgressionState.story}
-		imagePrompt={latestStoryProgressionState.imagePrompt}
 		gameUpdates={latestStoryProgressionState.gameUpdates}
 		stream_finished={latestStoryProgressionState.stream_finished}
 	/>

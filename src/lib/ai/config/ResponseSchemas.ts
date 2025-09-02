@@ -109,7 +109,6 @@ export interface StoryResponse {
     mood?: string;
     location?: string;
   };
-  image_prompt: string;
   plotPointAdvancingNudgeExplanation?: string;
   time_progression?: {
     hours_passed: number;
@@ -170,7 +169,6 @@ export const CharacterResponseSchema = {
   type: 'object' as const,
   properties: {
     character_description: { type: 'string' as const },
-    image_prompt: { type: 'string' as const },
     personality_traits: {
       type: 'array' as const,
       items: { type: 'string' as const }
@@ -181,12 +179,11 @@ export const CharacterResponseSchema = {
       items: { type: 'string' as const }
     }
   },
-  required: ['character_description', 'image_prompt', 'personality_traits', 'background_story', 'goals_motivations']
+  required: ['character_description', 'personality_traits', 'background_story', 'goals_motivations']
 };
 
 export interface CharacterResponse {
   character_description: string;
-  image_prompt: string;
   personality_traits: string[];
   background_story: string;
   goals_motivations: string[];

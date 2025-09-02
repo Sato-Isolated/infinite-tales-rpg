@@ -6,7 +6,6 @@
 		initialCharacterState
 	} from '$lib/ai/agents/characterAgent';
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
-	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { getRowsForTextarea, navigate } from '$lib/util.svelte';
 	import isEqual from 'fast-deep-equal';
@@ -33,7 +32,6 @@
 
 	let characterStateOverwrites: Partial<CharacterDescription> = $state({});
 	const characterKeys = Object.keys(initialCharacterState) as Array<keyof CharacterDescription>;
-	let resetImageState = $state(false);
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	const playerCharactersIdToNamesMapState = useHybridLocalStorage<PlayerCharactersIdToNamesMap>(
 		'playerCharactersIdToNamesMapState',
@@ -91,7 +89,6 @@
 		);
 		if (newState) {
 			characterState.value = newState;
-			resetImageState = true;
 		}
 		isGeneratingState = false;
 	};
@@ -106,9 +103,6 @@
 		);
 		if (newState) {
 			characterState.value[stateValue] = newState[stateValue];
-			if (stateValue === 'appearance') {
-				resetImageState = true;
-			}
 		}
 		isGeneratingState = false;
 	};
@@ -149,7 +143,6 @@
 		onclick={() => {
 			characterState.reset();
 			characterStateOverwrites = {};
-			resetImageState = true;
 		}}
 	>
 		Clear All
@@ -206,22 +199,10 @@
 			onclick={() => {
 				characterState.resetProperty(stateValue as keyof CharacterDescription);
 				delete characterStateOverwrites[stateValue];
-				if (stateValue === 'appearance') {
-					resetImageState = true;
-				}
 			}}
 		>
 			Clear {stateValue.replaceAll('_', ' ')}
 		</button>
-		{#if !aiConfigState.value?.disableImagesState && stateValue === 'appearance'}
-			<div class="m-auto flex w-full flex-col">
-				<AIGeneratedImage
-					storageKey="characterImageState"
-					{resetImageState}
-					imagePrompt="{storyState.value.general_image_prompt} {characterState.value.appearance}"
-				/>
-			</div>
-		{/if}
 	{/each}
 	<button
 		class="btn btn-primary btn-md m-auto w-1/2"

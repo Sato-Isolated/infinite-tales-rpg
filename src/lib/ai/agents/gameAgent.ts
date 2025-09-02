@@ -214,7 +214,6 @@ export type GameActionState = {
 	currentPlotPoint: string;
 	nextPlotPoint: string;
 	story: string;
-	image_prompt: string;
 	inventory_update: Array<InventoryUpdate>;
 	stats_update: Array<StatsUpdate>;
 	is_character_in_combat: boolean;

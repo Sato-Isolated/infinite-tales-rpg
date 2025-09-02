@@ -6,7 +6,6 @@
 
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
 		useFallbackLlmState: false,
-		disableImagesState: false,
 		disableAudioState: false
 	});
 	const temperatureState = useHybridLocalStorage<number>('temperatureState', 1);

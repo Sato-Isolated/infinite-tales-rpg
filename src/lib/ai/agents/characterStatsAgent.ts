@@ -1,7 +1,17 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
-import { type Story } from '$lib/ai/agents/storyAgent';
+import type { Story } from '$lib/ai/agents/storyAgent';
+
+export type SpellOrAbility = {
+	name: string;
+	effect: string;
+	resource_cost: {
+		resource_key: string | undefined;
+		cost: number;
+	};
+};
+
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { 
@@ -22,7 +32,6 @@ export type Ability = {
 		resource_key: string | undefined;
 		cost: number;
 	};
-	image_prompt: string;
 };
 
 export type Resource = { max_value: number; start_value: number; game_ends_when_zero: boolean };
@@ -317,6 +326,6 @@ export class CharacterStatsAgent {
 		if (!ability) {
 			return '';
 		}
-		return (storyImagePrompt || '') + ' RPG game icon ' + (ability.image_prompt || ability.name);
+		return (storyImagePrompt || '') + ' RPG game icon ' + ability.name;
 	}
 }

@@ -6,7 +6,6 @@
 		type Resources
 	} from '$lib/ai/agents/characterStatsAgent';
 	import { initialStoryState, type Story } from '$lib/ai/agents/storyAgent';
-	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 
 	type Props = {
@@ -68,27 +67,13 @@
 	};
 
 	const handleImagePromptInput = (event: Event & { currentTarget: HTMLInputElement }) => {
-		_onUpdate(index, { image_prompt: event.currentTarget.value });
+		// Image prompts are no longer supported
 	};
 </script>
 
 <details class="collapse-arrow textarea bg-base-200 textarea-md collapse mb-4 border">
 	<summary class="collapse-title capitalize" tabindex="0">
 		<div class="grid truncate text-center">
-			{#if !aiConfigState.value?.disableImagesState}
-				<div class="m-auto mb-3">
-					<AIGeneratedImage
-						noLogo={true}
-						enhance={false}
-						imageClassesString="w-[90px] sm:w-[100px] h-[90px] sm:h-[100px] m-auto"
-						imagePrompt={CharacterStatsAgent.getSpellImagePrompt(
-							ability,
-							storyState.value?.general_image_prompt || ''
-						)}
-						buttonClassesString="btn-xs no-animation"
-					/>
-				</div>
-			{/if}
 			<div class="m-auto w-full">
 				<p class="content-center truncate" title={ability.name || 'Unnamed Ability'}>
 					{ability.name || 'Unnamed Ability'}
@@ -172,19 +157,6 @@
 					</select>
 				</div>
 			</div>
-			<label class="label mt-2 cursor-pointer" for={`ability-${index}-image-prompt`}
-				><span class="m-auto">Image Prompt</span></label
-			>
-
-			<input
-				type="text"
-				id={`ability-${index}-image-prompt`}
-				class="input input-md w-full"
-				value={ability.image_prompt}
-				oninput={handleImagePromptInput}
-				aria-label="Image Prompt"
-			/>
-
 			<button
 				class="btn btn-accent btn-sm mt-2 w-full"
 				onclick={handleRandomize}

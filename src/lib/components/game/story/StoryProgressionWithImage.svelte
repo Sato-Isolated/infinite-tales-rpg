@@ -6,13 +6,11 @@
 		storyTextRef?: HTMLElement;
 		story: string;
 		gameUpdates?: Array<RenderedGameUpdate | undefined>;
-		imagePrompt?: string;
 		stream_finished?: boolean;
 	}
 </script>
 
 <script lang="ts">
-	import AIGeneratedImage from '$lib/components/ui/media/AIGeneratedImage.svelte';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import TTSComponent from '$lib/components/ui/media/TTSComponent.svelte';
 	import type { AIConfig } from '$lib';
@@ -21,7 +19,6 @@
 		storyTextRef = $bindable(),
 		story,
 		gameUpdates = [],
-		imagePrompt = '',
 		stream_finished = true
 	}: StoryProgressionWithImageProps = $props();
 	const ttsVoiceState = useHybridLocalStorage<string>('ttsVoice');
@@ -75,6 +72,3 @@
 		{/each}
 	</div>
 </div>
-{#if imagePrompt?.trim() && !aiConfigState.value?.disableImagesState}
-	<AIGeneratedImage showLoadingSpinner={false} {imagePrompt} showGenerateButton={false} />
-{/if}
