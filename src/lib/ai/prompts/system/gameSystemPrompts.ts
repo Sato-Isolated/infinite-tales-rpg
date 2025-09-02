@@ -54,7 +54,7 @@ NPC Interactions:
 - Creating some of the NPCs already having an established history with the CHARACTER in the story with some NPCs.
 - When the player character interacts with a NPC you must always include the NPC response within the same action
 ${gameSettingsState.generateAmbientDialogue ? `- Ambient Dialogue Based on CHARACTER Skills: MANDATORY - When the CHARACTER has listening, perception, or awareness skills/abilities, you MUST include overheard conversations in your narrative. This is not optional when the conditions are met. These conversations should be:
-  • ALWAYS presented using the same DaisyUI HTML formatting as all other dialogue in the story field: <div class="border-l-4 border-primary pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg"><strong class="text-primary text-sm uppercase tracking-wide">Speaker Name:</strong> <em class="text-primary font-medium">'Dialogue content here'</em></div>
+  • ALWAYS presented using dialogue markup tags: [dialogue:SpeakerName]Dialogue content here[/dialogue]
   • AUTOMATICALLY triggered when CHARACTER has relevant listening skills AND is in populated areas
   • MANDATORY scaling based on skill level:
     - Low skill: You MUST include at least 1 basic nearby conversation per scene

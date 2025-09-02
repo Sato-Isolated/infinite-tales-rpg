@@ -47,9 +47,10 @@ Files under `src/lib/ai/agents/`:
 | `combatAgent.ts` | Combat resolution & combat-oriented JSON updates. |
 | `eventAgent.ts` | Detect & emit special events (abilities unlock, transformations). |
 | `summaryAgent.ts` | Story/history summarization & retrieval of related details (context pruning). |
-| `jsonFixingInterceptorAgent.ts` | Attempts to repair malformed JSON from LLM before parsing. |
 | `storyAgent.ts` | (If present) Additional story-focused tasks / legacy naming. |
 | `mappers.ts` | Helper mappers / type conversions for agent outputs. |
+
+All agents now use @google/genai structured output schemas from `ResponseSchemas.ts` for type-safe JSON generation.
 
 Never silently change JSON contracts. If modifying: update prompt, parsing code, tests, and this file.
 
@@ -57,7 +58,7 @@ Never silently change JSON contracts. If modifying: update prompt, parsing code,
 
 ### 5. LLM Providers
 
-`geminiProvider.ts` handles streaming (story & thoughts), safety settings, fallback logic. `llmProvider.ts` centralizes provider selection. `llm.ts` defines shared prompt fragments (e.g. `LANGUAGE_PROMPT`).
+`geminiProvider.ts` handles streaming (story & thoughts), safety settings, fallback logic with structured output schemas. `llmProvider.ts` centralizes provider selection. `llm.ts` defines shared prompt fragments (e.g. `LANGUAGE_PROMPT`).
 
 Streaming callbacks (expected shapes) must remain stable: `onStoryStreamUpdate(partialText)`, `onThoughtStreamUpdate(kind, partialThought)`.
 

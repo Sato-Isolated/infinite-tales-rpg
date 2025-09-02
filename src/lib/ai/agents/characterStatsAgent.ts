@@ -2,6 +2,16 @@ import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
+import { 
+	CharacterStatsResponseSchema, 
+	LevelUpResponseSchema, 
+	NPCStatsResponseSchema,
+	AbilitiesResponseSchema,
+	type CharacterStatsResponse,
+	type LevelUpResponse,
+	type NPCStatsResponse,
+	type AbilitiesResponse
+} from '$lib/ai/config/ResponseSchemas';
 
 export type SpellOrAbility = {
 	name: string;
@@ -145,8 +155,7 @@ export class CharacterStatsAgent {
 			agentInstruction.push(statsPrompt);
 		}
 		agentInstruction.push(
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-				characterStatsStateForPrompt
+			'You are generating character stats according to game system requirements. Respond with a structured JSON object containing all required character data.'
 		);
 		if (!statsOverwrites?.level) {
 			statsOverwrites = { ...statsOverwrites, level: 1 };
@@ -164,10 +173,13 @@ export class CharacterStatsAgent {
 					content: 'Description of the character: ' + stringifyPretty(characterState)
 				}
 			],
-			systemInstruction: agentInstruction
+			systemInstruction: agentInstruction,
+			config: {
+				responseSchema: CharacterStatsResponseSchema
+			}
 		};
 		const stats = this.mapStats(
-			(await this.llm.generateContent(request))?.content as CharacterStats
+			(await this.llm.generateContent(request))?.content as CharacterStatsResponse
 		);
 		console.log(stats);
 		return stats;
@@ -214,8 +226,7 @@ export class CharacterStatsAgent {
 			'Current character stats:\n' + stringifyPretty(characterStatsMapped),
 			'The level up must be based on the story progression, in which area the player acted well:\n' +
 				latestHistoryTextOnly,
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-				levelUpPrompt
+			'Generate structured level up data according to the character progress.'
 		];
 
 		const request: LLMRequest = {
@@ -230,10 +241,13 @@ export class CharacterStatsAgent {
 					content: 'Description of the character: ' + stringifyPretty(characterState)
 				}
 			],
-			systemInstruction: agentInstruction
+			systemInstruction: agentInstruction,
+			config: {
+				responseSchema: LevelUpResponseSchema
+			}
 		};
 		console.log(stringifyPretty(request));
-		const aiLevelUp = (await this.llm.generateContent(request))?.content as AiLevelUp;
+		const aiLevelUp = (await this.llm.generateContent(request))?.content as LevelUpResponse;
 		aiLevelUp.ability = this.mapAbility(aiLevelUp.ability);
 		aiLevelUp.character_name = characterState.name;
 		return aiLevelUp;
@@ -259,8 +273,7 @@ export class CharacterStatsAgent {
 			'Include personality traits and speech patterns that make each NPC unique and memorable.',
 			'Background notes should explain WHY each NPC behaves the way they do.',
 			TROPES_CLICHE_PROMPT,
-			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
-                            {"uniqueTechnicalNameId": ${npcStatsStateForPromptAsString}, ...}`
+			'Generate structured NPC data with all required fields for each NPC.'
 		];
 		if (customSystemInstruction) {
 			agent.push('Following instructions overrule all others: ' + customSystemInstruction);
@@ -271,9 +284,12 @@ export class CharacterStatsAgent {
 		const request: LLMRequest = {
 			userMessage: action,
 			systemInstruction: agent,
-			model: GEMINI_MODELS.FLASH_THINKING_2_0
+			model: GEMINI_MODELS.FLASH_THINKING_2_0,
+			config: {
+				responseSchema: NPCStatsResponseSchema
+			}
 		};
-		return (await this.llm.generateContent(request))?.content as NPCState;
+		return (await this.llm.generateContent(request))?.content as NPCStatsResponse;
 	}
 
 	async generateAbilitiesFromPartial(
@@ -291,7 +307,7 @@ export class CharacterStatsAgent {
 			'You are RPG character ability agent, generating new abilities without restrictions on thematic consistency. Generate them according to game system, adventure and character description.\n' +
 				'Scale the ability according to the level',
 			usePartialAsBasePrompt,
-			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n Array length ${abilities.filter((a) => !!a).length} of type ${abilityFormatForPrompt}`
+			'Generate structured abilities array with all required fields.'
 		];
 
 		const request: LLMRequest = {
@@ -310,9 +326,12 @@ export class CharacterStatsAgent {
 					content: 'Stats of the character: ' + stringifyPretty(characterStats)
 				}
 			],
-			systemInstruction: agentInstruction
+			systemInstruction: agentInstruction,
+			config: {
+				responseSchema: AbilitiesResponseSchema
+			}
 		};
-		let response = (await this.llm.generateContent(request))?.content as Ability[];
+		let response = (await this.llm.generateContent(request))?.content as AbilitiesResponse;
 		if (!response) {
 			return [];
 		}

@@ -1,10 +1,15 @@
 /**
- * Reusable JSON templates and instructions
- * Standardizes JSON formatting across all agents
+ * @deprecated
+ * Legacy JSON templates - OBSOLETE since migration to @google/genai structured output
+ * 
+ * This file is kept only for backward compatibility with migration helpers.
+ * All new agents should use ResponseSchemas.ts with structured output instead.
+ * 
+ * TODO: Remove this file once migration system is fully deprecated
  */
 
 /**
- * Creates a standardized JSON instruction with validation rules
+ * @deprecated Use ResponseSchemas.ts with @google/genai structured output instead
  */
 export const createJsonInstruction = (schema: string) => `
 CRITICAL: Respond ONLY with valid JSON in this exact format:
@@ -37,7 +42,7 @@ export const gameAgentJsonTemplate = `{
   "currentPlotPoint": "VALUE MUST BE ALWAYS IN ENGLISH; Brief reasoning - PLOT_ID: {plotId}",
   "gradualNarrativeExplanation": "Reasoning how story development is broken into meaningful moments",
   "plotPointAdvancingNudgeExplanation": "VALUE MUST BE ALWAYS IN ENGLISH; CURRENT_PLOT_ID: X; NEXT_PLOT_ID: Y; {Reasoning}",
-  "story": "Rich narrative with HTML formatting using DaisyUI classes",
+  "story": "Rich narrative using structured markup tags (dialogue, action, atmosphere, etc.)",
   "story_memory_explanation": "Long-term impact explanation - LONG_TERM_IMPACT: LOW|MEDIUM|HIGH",
   "xpGainedExplanation": "Why CHARACTER gains/doesn't gain XP",
   "time_passed_minutes": "Number (realistic duration based on guidelines)",

@@ -11,6 +11,8 @@
 </script>
 
 <script lang="ts">
+	import NarrativeMarkupParser from '$lib/components/narrative/NarrativeMarkupParser.svelte';
+
 	let {
 		storyTextRef = $bindable(),
 		story,
@@ -19,28 +21,22 @@
 	}: StoryProgressionWithImageProps = $props();
 
 	/**
-	 * Clean AI-generated HTML and ensure DaisyUI class compatibility
+	 * Basic cleanup for markup content (minimal processing needed with structured markup)
 	 */
-	const cleanAIGeneratedHTML = (rawStory: string): string => {
+	const cleanMarkupContent = (rawStory: string): string => {
 		if (!rawStory) return '';
 
 		return rawStory
-			.replaceAll('\\n', '')
-			.replaceAll('```html', '')
-			.replaceAll('```', '')
-			.replaceAll('<html>', '')
-			.replaceAll('</html>', '')
-			.replaceAll('_', ' ')
+			.replaceAll('\\n', '\n')  // Fix escaped newlines
 			.trim();
 	};
 
-	const cleanedStory = $derived(cleanAIGeneratedHTML(story));
+	const cleanedStory = $derived(cleanMarkupContent(story));
 </script>
 
 <div bind:this={storyTextRef} class="scroll-mt-24">
 	<article class="prose prose-lg max-w-none">
-		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-		{@html cleanedStory}
+		<NarrativeMarkupParser content={cleanedStory} />
 
 		{#if !stream_finished}
 			<span class="loading loading-dots loading-sm text-primary ml-2"></span>

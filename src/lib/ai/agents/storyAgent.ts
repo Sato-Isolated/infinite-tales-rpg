@@ -4,6 +4,7 @@ import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import isEqual from 'fast-deep-equal';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
 import { storyJsonFormat, storyInstructions } from '$lib/ai/prompts/formats';
+import { StoryGenerationResponseSchema, type StoryGenerationResponse } from '$lib/ai/config/ResponseSchemas';
 
 export type Story = typeof storyStateForPrompt;
 
@@ -93,10 +94,10 @@ export class StoryAgent {
 			'',
 			storyInstructions,
 			'',
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.'
+			'Generate structured story settings with all required fields.'
 		].join('\n');
 
-		const storyAgent = storyAgentInstructions + '\n\n' + storyJsonFormat;
+		const storyAgent = storyAgentInstructions;
 
 		const preset = {
 			...storyStateForPrompt,
@@ -110,7 +111,10 @@ export class StoryAgent {
 				'Create a new randomized story considering the following settings: ' +
 				stringifyPretty(preset),
 			historyMessages: [],
-			systemInstruction: storyAgent
+			systemInstruction: storyAgent,
+			config: {
+				responseSchema: StoryGenerationResponseSchema
+			}
 		};
 		if (characterDescription) {
 			request.historyMessages?.push({
@@ -120,6 +124,6 @@ export class StoryAgent {
 					stringifyPretty(characterDescription)
 			});
 		}
-		return (await this.llm.generateContent(request))?.content as Story;
+		return (await this.llm.generateContent(request))?.content as StoryGenerationResponse;
 	}
 }

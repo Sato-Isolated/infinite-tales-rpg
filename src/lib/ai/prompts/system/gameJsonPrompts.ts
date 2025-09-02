@@ -32,7 +32,18 @@ JSON FORMAT:
 - PHYSICAL/MENTAL ACTIONS: When user describes what character DOES/THINKS → Use action description formatting
 - MIXED ACTIONS: Physical action + spoken words → Separate into action description + dialogue
 
-Format the narration using HTML with DaisyUI classes optimized for the 'business' theme: Use <p class=\\"text-base-content leading-relaxed mb-4\\"> for main narrative paragraphs, <div class=\\"border-l-4 border-primary pl-4 py-2 mb-3 bg-base-200/30 rounded-r-lg\\"><strong class=\\"text-primary text-sm uppercase tracking-wide\\">Speaker Name:</strong> <em class=\\"text-primary font-medium\\">'Dialogue here'</em></div> for CHARACTER SPOKEN WORDS ONLY (not actions or descriptions), <div class=\\"border-l-3 border-info pl-3 py-1 mb-2 bg-info/5\\"><span class=\\"font-semibold text-info\\">*Action description*</span></div> for character actions, physical changes, mental states, magical effects, <blockquote class=\\"text-sm italic text-base-content/70 border-l-4 border-accent pl-4 my-3 bg-base-200/50 p-3 rounded-r-lg\\">Environmental atmosphere...</blockquote> for ambiance, <div class=\\"divider my-6 text-base-content/50\\">• • •</div> for scene transitions, <strong class=\\"font-bold text-primary\\"> for key emphasis, <em class=\\"italic text-secondary\\"> for thoughts, <div class=\\"badge badge-accent mb-2\\"> for status effects, <div class=\\"border-l-3 border-success pl-3 py-1 mb-2 bg-success/5\\"><span class=\\"text-success font-semibold\\">✓ Success</span></div> for positive outcomes, <div class=\\"border-l-3 border-warning pl-3 py-1 mb-2 bg-warning/5\\"><span class=\\"text-warning font-semibold\\">⚠ Warning</span></div> for caution, <div class=\\"border-l-3 border-error pl-3 py-1 mb-2 bg-error/5\\"><span class=\\"text-error font-semibold\\">✗ Danger</span></div> for dangerous situations.",
+Format the narration using structured markup tags for clean, lightweight output:
+- [dialogue:SpeakerName]Text[/dialogue] for CHARACTER SPOKEN WORDS ONLY (not actions or descriptions)
+- [action]Text[/action] for character actions, physical changes, mental states, magical effects
+- [atmosphere]Text[/atmosphere] for environmental descriptions, ambiance, setting details
+- [emphasis]Text[/emphasis] for key story elements that need highlighting
+- [thought]Text[/thought] for character internal thoughts or mental processes
+- [transition] for scene transitions and time passage
+- [status:success]Text[/status] for positive outcomes and achievements
+- [status:warning]Text[/status] for caution, potential dangers, or uncertain situations
+- [status:error]Text[/status] for dangerous situations, failures, or threats
+- [badge]Text[/badge] for status effects, magical conditions, or temporary states
+- Use plain text for main narrative paragraphs (will be auto-wrapped)",
   "story_memory_explanation": "Explanation if story progression has Long-term Impact: Remember events that significantly influence character arcs, plot direction, or the game world in ways that persist or resurface later; Format: {explanation} LONG_TERM_IMPACT: LOW, MEDIUM, HIGH",
   "xpGainedExplanation": "Explain why or why nor the CHARACTER gains xp in this situation",
   "time_passed_minutes": "Number of minutes that have passed during this action (follow the detailed time guidelines provided earlier - CRUCIAL: full night sleep MUST be 360-480 minutes, not 15-20 minutes)",

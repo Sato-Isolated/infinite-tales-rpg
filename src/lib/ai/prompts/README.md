@@ -12,7 +12,7 @@ src/lib/ai/prompts/
 │   ├── slowStoryPrompt.ts   # SLOW_STORY_PROMPT
 │   └── index.ts
 ├── templates/        # 🆕 Templates d'ingénierie des prompts modernes
-│   ├── jsonTemplates.ts         # Templates JSON réutilisables
+│   ├── jsonTemplates.ts         # 🔶 DEPRECATED - Templates JSON legacy (use ResponseSchemas.ts)
 │   ├── instructionHierarchy.ts  # Système de priorité des instructions
 │   ├── chainOfThoughtPrompts.ts # Raisonnement structuré pour tous les agents
 │   ├── fewShotExamples.ts       # Exemples concrets pour améliorer la qualité

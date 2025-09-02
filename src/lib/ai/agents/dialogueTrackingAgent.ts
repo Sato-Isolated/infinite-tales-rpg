@@ -2,6 +2,12 @@ import type { LLM, LLMMessage, LLMRequest } from '../llm';
 import type { GameActionState } from './gameAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { stringifyPretty } from '$lib/util.svelte';
+import { 
+  DialogueTrackingResponseSchema, 
+  ConversationSummaryResponseSchema,
+  type DialogueTrackingResponse,
+  type ConversationSummaryResponse 
+} from '$lib/ai/config/ResponseSchemas';
 
 /**
  * Dialogue tracking result for detecting conversation similarities
@@ -103,19 +109,28 @@ export class DialogueTrackingAgent {
       systemInstruction,
       temperature: 0.1, // Low temperature for consistent analysis
       model: GEMINI_MODELS.FLASH_THINKING_2_0,
-      tryAutoFixJSONError: true
+      tryAutoFixJSONError: true,
+      config: {
+        responseSchema: DialogueTrackingResponseSchema
+      }
     };
 
     try {
       const response = await this.llm.generateContent(request);
-      const result = response?.content as DialogueTrackingResult;
+      const result = response?.content as DialogueTrackingResponse;
 
       if (!result || typeof result.is_similar_conversation !== 'boolean') {
         console.warn('Invalid dialogue tracking response, returning fallback');
         return this.getFallbackSimilarityResult();
       }
 
-      return result;
+      return {
+        is_similar_conversation: result.is_similar_conversation,
+        similarity_score: result.similarity_score,
+        similarity_explanation: result.similarity_explanation,
+        previous_conversation_reference: result.previous_conversation_reference || undefined,
+        alternative_approach_suggestion: result.alternative_approach_suggestion || undefined
+      };
     } catch (error) {
       console.error('Error checking conversation similarity:', error);
       return this.getFallbackSimilarityResult();
@@ -143,12 +158,15 @@ export class DialogueTrackingAgent {
       systemInstruction,
       temperature: 0.3,
       model: GEMINI_MODELS.FLASH_THINKING_2_0,
-      tryAutoFixJSONError: true
+      tryAutoFixJSONError: true,
+      config: {
+        responseSchema: ConversationSummaryResponseSchema
+      }
     };
 
     try {
       const response = await this.llm.generateContent(request);
-      const result = response?.content as ConversationSummary;
+      const result = response?.content as ConversationSummaryResponse;
 
       // Validate that we have a meaningful conversation
       if (!result || !result.participants || result.participants.length === 0 ||
@@ -156,7 +174,15 @@ export class DialogueTrackingAgent {
         return null; // No significant conversation found
       }
 
-      return result;
+      return {
+        conversation_id: result.conversation_id,
+        participants: result.participants,
+        topics: result.topics,
+        key_points: result.key_points,
+        outcome: result.outcome,
+        game_state_id: gameStateId,
+        temporal_context: temporalContext
+      };
     } catch (error) {
       console.error('Error extracting conversation summary:', error);
       return null;
@@ -193,10 +219,7 @@ export class DialogueTrackingAgent {
       '- Characters re-explaining information they\'ve already shared',
       '- Identical introductions or first-meeting dialogues repeating',
       '',
-      'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified.',
-      '',
-      'JSON FORMAT:',
-      '{"is_similar_conversation": boolean, "similarity_score": 0.0-1.0, "similarity_explanation": "detailed explanation", "previous_conversation_reference": "reference if similar", "alternative_approach_suggestion": "suggestion if similar"}'
+      'Generate structured response with similarity analysis and recommendations.'
     ].join('\n');
   }
 
@@ -258,11 +281,7 @@ export class DialogueTrackingAgent {
       '- Brief acknowledgments or single-word responses',
       '- Combat descriptions without character interaction',
       '',
-      'CRITICAL: If no significant conversation is found, return null values or empty arrays.',
-      'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified.',
-      '',
-      'JSON FORMAT:',
-      '{"conversation_id": "unique_id", "participants": ["character1", "character2"], "topics": ["topic1", "topic2"], "key_points": ["point1", "point2"], "outcome": "conversation outcome", "game_state_id": number, "temporal_context": "time context"}'
+      'Generate structured conversation summary or null if no significant conversation found.'
     ].join('\n');
   }
 

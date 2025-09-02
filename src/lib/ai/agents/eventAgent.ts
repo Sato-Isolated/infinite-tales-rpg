@@ -13,6 +13,7 @@ import type { LLM, LLMRequest } from '$lib/ai/llm';
 import type { Ability } from './characterStatsAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { eventJsonFormat } from '$lib/ai/prompts/formats';
+import { EventResponseSchema, type EventResponse } from '$lib/ai/config/ResponseSchemas';
 
 export const initialCharacterTransformState: CharacterChangedInto = {
 	changed_into: '',
@@ -77,6 +78,22 @@ export class EventAgent {
 		);
 	};
 
+	mapEventResponse = (response: EventResponse): EventEvaluation => {
+		return {
+			character_changed: response.character_changed ? {
+				changed_into: response.character_changed.changed_into,
+				description: response.character_changed.description,
+				aiProcessingComplete: true,
+				showEventConfirmationDialog: false
+			} : initialCharacterTransformState,
+			abilities_learned: {
+				showEventConfirmationDialog: false,
+				aiProcessingComplete: true,
+				abilities: response.abilities_learned || []
+			}
+		};
+	};
+
 	/**
 	 * Enhanced event evaluation with modern prompts and retry logic
 	 */
@@ -138,7 +155,10 @@ export class EventAgent {
 				userMessage,
 				systemInstruction,
 				model: GEMINI_MODELS.FLASH_THINKING_2_0,
-				temperature: 0.1
+				temperature: 0.1,
+				config: {
+					responseSchema: EventResponseSchema
+				}
 			};
 
 			console.log(`EventAgent: Calling LLM for attempt ${attempt}...`);
@@ -155,7 +175,8 @@ export class EventAgent {
 			}
 
 			console.log(`EventAgent: Mapping response for attempt ${attempt}...`);
-			const mappedResponse = this.mapResponse(response.content);
+			const eventResponse = response.content as EventResponse;
+			const mappedResponse = this.mapEventResponse(eventResponse);
 			console.log(`EventAgent: Mapped response:`, mappedResponse);
 
 			return {
@@ -210,8 +231,7 @@ export class EventAgent {
     *   Do not list abilities already known: ${currentAbilitiesNames.join(', ')}
     *   If yes, describe the new ability/spell/skill.
     *   If no, empty array.`,
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-			eventJsonFormat
+			'Generate structured event evaluation with character changes and abilities learned.'
 		];
 	}
 

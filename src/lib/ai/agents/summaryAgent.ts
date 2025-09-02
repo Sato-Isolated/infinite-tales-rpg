@@ -2,6 +2,12 @@ import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { GameActionState } from './gameAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
+import { 
+  SummaryResponseSchema, 
+  RelatedHistoryResponseSchema,
+  type SummaryResponse, 
+  type RelatedHistoryResponse 
+} from '$lib/ai/config/ResponseSchemas';
 
 export type RelatedStoryHistory = {
 	relatedDetails: { storyReference: string; relevanceScore: number }[];
@@ -49,12 +55,10 @@ export class SummaryAgent {
 			'- story: Comprehensive narrative summary maintaining chronological order (PRESERVE CONVERSATION HISTORY)',
 			'- timelineEvents: Array of significant events with their temporal context (INCLUDE IMPORTANT DIALOGUES)',
 			'',
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.'
+			'Generate structured summary with all required fields.'
 		].join('\n');
 
-		const summaryJsonFormat = '{"keyDetails": ["string", "string"], "story": "narrative summary text", "timelineEvents": [{"event": "event description", "timeContext": "time reference"}]}';
-
-		const agent = summaryInstructions + '\n\n' + summaryJsonFormat;
+		const agent = summaryInstructions;
 
 		const toSummarize = historyMessages.slice(2, (numOfLastActions + 1) * -1);
 		console.log('toSummarize', toSummarize);
@@ -62,12 +66,12 @@ export class SummaryAgent {
 			userMessage: 'Summarize the following story: \n' + stringifyPretty(toSummarize),
 			systemInstruction: agent,
 			temperature: 1,
-			model: GEMINI_MODELS.FLASH_THINKING_2_0
+			model: GEMINI_MODELS.FLASH_THINKING_2_0,
+			config: {
+				responseSchema: SummaryResponseSchema
+			}
 		};
-		const response = (await this.llm.generateContent(request))?.content as {
-			story: string;
-			timelineEvents?: { event: string; timeContext: string }[];
-		};
+		const response = (await this.llm.generateContent(request))?.content as SummaryResponse;
 		console.log('Summary returned ' + stringifyPretty(response));
 		if (!response) {
 			return { newHistory: historyMessages, summary: '' };
@@ -108,13 +112,10 @@ export class SummaryAgent {
 			'- storyReference: Specific narrative detail from past events (INCLUDE DIALOGUE CONTEXT)',
 			'- relevanceScore: Decimal number between 0.0 and 1.0 indicating relevance (BOOST SCORES FOR DIALOGUE RELEVANCE)',
 			'',
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.'
+			'Generate structured related history with relevance-scored story references.'
 		].join('\n');
 
-		const relatedHistoryJsonFormat = '{"relatedDetails": [{"storyReference": "specific story detail", "relevanceScore": 0.85}]}';
-
-		const jsonPrompt = relatedHistoryInstructions + '\n\n' + relatedHistoryJsonFormat;
-		const agent = jsonPrompt;
+		const agent = relatedHistoryInstructions;
 
 		const currentGameStateId = gameStates[gameStates.length - 1]?.id;
 
@@ -142,13 +143,16 @@ export class SummaryAgent {
 			});
 		}
 		const request: LLMRequest = {
-			userMessage: 'STORY PROGRESSION:\n' + storyProgression + '\n\n' + relatedHistoryJsonFormat,
+			userMessage: 'STORY PROGRESSION:\n' + storyProgression,
 			systemInstruction: agent,
 			historyMessages: consideredHistory,
 			model: GEMINI_MODELS.FLASH_THINKING_2_0,
-			temperature: 0.1
+			temperature: 0.1,
+			config: {
+				responseSchema: RelatedHistoryResponseSchema
+			}
 		};
-		const response = (await this.llm.generateContent(request))?.content as RelatedStoryHistory;
+		const response = (await this.llm.generateContent(request))?.content as RelatedHistoryResponse;
 		console.log(storyProgression, 'Related history returned ', stringifyPretty(response));
 		if (!response.relatedDetails) {
 			return { relatedDetails: [] };

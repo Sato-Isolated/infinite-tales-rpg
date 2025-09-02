@@ -19,6 +19,7 @@ import { ActionDifficulty, getEmptyCriticalResourceKeys } from '$lib/game/logic/
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapStatsUpdates } from '$lib/ai/agents/mappers';
 import { statsUpdatePromptObject } from '$lib/ai/prompts/formats';
+import { CombatResponseSchema, type CombatResponse } from '$lib/ai/config/ResponseSchemas';
 
 export type DiceRoll = {
 	result: any;
@@ -56,7 +57,7 @@ export class CombatAgent {
 		customCombatAgentInstruction: string,
 		historyMessages: Array<LLMMessage>,
 		storyState: Story
-	) {
+	): Promise<CombatResponse> {
 		const agent = [
 			"You are RPG combat agent, you decide which actions the NPCs take in response to the player character's action " +
 			'and what the consequences of these actions are. ' +
@@ -70,20 +71,7 @@ export class CombatAgent {
 			'The following is a description of the story setting to keep the actions consistent on.' +
 			'\n' +
 			stringifyPretty(storyState),
-			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
-                 {
-                  "actions": [
-                    # You must include one object for each npc and one for the player character
-                    {
-                      "sourceId": "NPC id or player character name, who is the initiator of this action",
-                      "targetId": "NPC id or player character name, whose stats must be updated. if sourceId targets self then same as sourceId",
-					  "text": "description of the action the NPC takes",
-                      "explanation": "Short explanation for the reason of this action"
-                    },
-                    ...
-                  ],
-                  ${statsUpdatePromptObject}
-                }`
+			'Generate structured combat resolution with actions and stat updates for all participants.'
 		];
 		if (customSystemInstruction) {
 			agent.push('Following instructions overrule all others: ' + customSystemInstruction);
@@ -104,10 +92,13 @@ export class CombatAgent {
 		const request: LLMRequest = {
 			userMessage: actionToSend,
 			historyMessages: historyMessages,
-			systemInstruction: agent
+			systemInstruction: agent,
+			config: {
+				responseSchema: CombatResponseSchema
+			}
 		};
 
-		const state = (await this.llm.generateContent(request))?.content as any;
+		const state = (await this.llm.generateContent(request))?.content as CombatResponse;
 		mapStatsUpdates(state);
 		return state;
 	}

@@ -6,12 +6,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   createJsonInstruction,
-  gameAgentJsonTemplate,
+  gameAgentJsonTemplate
+} from './jsonTemplates';  // Direct import since deprecated from index
+import {
   GAME_AGENT_CHAIN_OF_THOUGHT,
   getFewShotExamples,
   buildHierarchicalInstructions,
   TIME_CONSISTENCY_PROMPT
-} from '$lib/ai/prompts';
+} from '$lib/ai/prompts/templates';
 import { LANGUAGE_PROMPT, DETAILED_LANGUAGE_PROMPT } from '$lib/ai/prompts/shared';
 import { systemBehaviour } from '$lib/ai/prompts/system';
 import { COMBAT_CHAIN_OF_THOUGHT } from '$lib/ai/prompts/formats';

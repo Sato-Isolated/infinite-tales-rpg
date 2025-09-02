@@ -22,6 +22,12 @@ import { GEMINI_MODELS } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
 import { diceRollPrompt } from '$lib/ai/prompts/formats';
 import { actionRules } from '$lib/ai/prompts/system';
+import { 
+	SingleActionResponseSchema, 
+	ActionsWithThoughtsResponseSchema,
+	type SingleActionResponse,
+	type ActionsWithThoughtsResponse
+} from '$lib/ai/config/ResponseSchemas';
 
 export enum InterruptProbability {
 	NEVER = 'NEVER',
@@ -185,9 +191,7 @@ ACTION GENERATION RULES:
 			'dice_roll modifier can be applied based on high or low resources:' +
 			'\n' +
 			stringifyPretty(characterStats.resources),
-			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed),
-			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
-				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)}`
+			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)
 		];
 		this.addRestrainingStateToAgent(agent, restrainingState);
 		if (customSystemInstruction) {
@@ -226,12 +230,15 @@ ACTION GENERATION RULES:
 			systemInstruction: agent,
 			thinkingConfig: {
 				thinkingBudget: 256 // Dynamic value instead of cached constant
+			},
+			config: {
+				responseSchema: SingleActionResponseSchema
 			}
 		};
 		console.log('action generate start time: ', new Date());
-		const actionGenerated = (await this.llm.generateContent(request))?.content as Action;
+		const actionGenerated = (await this.llm.generateContent(request))?.content as SingleActionResponse;
 		console.log('action generate end time: ', new Date());
-		return actionGenerated;
+		return actionGenerated as Action;
 	}
 
 	async generateActions(
@@ -268,12 +275,7 @@ ACTION GENERATION RULES:
 			'dice_roll modifier can be applied based on high or low resources:' +
 			'\n' +
 			stringifyPretty(characterStats.resources),
-			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed),
-			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
-      [
-				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},
-				...
-  		]`
+			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)
 		];
 
 		this.addRestrainingStateToAgent(agent, restrainingState);
@@ -313,19 +315,20 @@ ACTION GENERATION RULES:
 		const request: LLMRequest = {
 			userMessage,
 			historyMessages,
-			systemInstruction: agent
+			systemInstruction: agent,
+			config: {
+				responseSchema: ActionsWithThoughtsResponseSchema
+			}
 		};
-		const response = (await this.llm.generateContent(request)) as any;
+		const response = (await this.llm.generateContent(request))?.content as ActionsWithThoughtsResponse;
 		console.log('actions response: ', response);
-		//can get not directly arrays but wrapped responses from ai sometimes...
-		const rawActions = response?.content.actions || response?.content.jsonArray || response.content;
 
-		// Validate and filter actions
-		const validActions = this.validateAndFilterActions(rawActions);
+		// Validate and filter actions from structured response
+		const validActions = this.validateAndFilterActions(response.actions || []);
 
 		// if actions were adjusted via custom prompt, make sure that they do not have an order
 		shuffleArray(validActions);
-		return { thoughts: response?.thoughts, actions: validActions };
+		return { thoughts: response?.thoughts || '', actions: validActions };
 	}
 
 	private validateAndFilterActions(rawActions: any[]): Action[] {
@@ -415,12 +418,7 @@ ACTION GENERATION RULES:
 			'dice_roll modifier can be applied based on high or low resources:' +
 			'\n' +
 			stringifyPretty(characterStats.resources),
-			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed),
-			`CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting. 
-      [
-				${this.jsonFormatAndRules(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)},
-				...
-  		]`
+			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)
 		];
 		this.addRestrainingStateToAgent(agent, restrainingState);
 		if (customSystemInstruction) {
@@ -449,19 +447,19 @@ ACTION GENERATION RULES:
 			userMessage,
 			historyMessages,
 			systemInstruction: agent,
-			model: GEMINI_MODELS.FLASH_2_0
+			model: GEMINI_MODELS.FLASH_2_0,
+			config: {
+				responseSchema: ActionsWithThoughtsResponseSchema
+			}
 		};
-		const response = (await this.llm.generateContent(request)) as any;
+		const response = (await this.llm.generateContent(request))?.content as ActionsWithThoughtsResponse;
 
-		//can get not directly arrays but wrapped responses from ai sometimes...
-		const rawActions = response?.content.actions || response?.content.jsonArray || response.content;
-
-		// Validate and filter actions
-		const validActions = this.validateAndFilterActions(rawActions);
+		// Validate and filter actions from structured response
+		const validActions = this.validateAndFilterActions(response.actions || []);
 
 		// if actions were adjusted via custom prompt, make sure that they do not have an order
 		shuffleArray(validActions);
-		return { thoughts: response?.thoughts, actions: validActions };
+		return { thoughts: response?.thoughts || '', actions: validActions };
 	}
 
 	private getCurrentGameStateMapped(currentGameState: GameActionState) {

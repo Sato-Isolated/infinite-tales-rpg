@@ -20,6 +20,10 @@ import {
 import { DialogueTrackingAgent } from '$lib/ai/agents/dialogueTrackingAgent';
 import { DialogueFidelityAgent, DEFAULT_FIDELITY_SETTINGS, type DialogueFidelitySettings } from '$lib/ai/agents/dialogueFidelityAgent';
 import type { DiceSimulationMode } from '$lib/utils/webglDetection';
+import { 
+	GameTimeResponseSchema,
+	type GameTimeResponse
+} from '$lib/ai/config/ResponseSchemas';
 import {
 	PAST_STORY_PLOT_RULE,
 	SLOW_STORY_PROMPT,
@@ -915,24 +919,24 @@ export async function generateInitialGameTime(
 		stringifyPretty(storyState),
 		'',
 		'Character context:',
-		stringifyPretty(characterState),
-		'',
-		'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.',
-		'{"day": 15, "dayName": "Monday", "month": 6, "monthName": "June", "year": 2024, "hour": 12, "minute": 30, "timeOfDay": "midday", "season": "summer", "weather": {"type": "clear", "intensity": "light", "description": "brief atmospheric description"}, "explanation": "Brief explanation of why this time and weather fits the story"}'
+		stringifyPretty(characterState)
 	];
 
 	const request: LLMRequest = {
 		userMessage:
 			'Generate an appropriate initial game time for this story and character. Consider what time would create the most dramatic and engaging opening scene.',
 		systemInstruction: agent,
-		temperature: 0.8
+		temperature: 0.8,
+		config: {
+			responseSchema: GameTimeResponseSchema
+		}
 	};
 
 	console.log('Making LLM request for time generation...');
 	try {
 		const response = await llm.generateContent(request);
 		console.log('LLM response received:', response);
-		const timeData = response?.content as any;
+		const timeData = response?.content as GameTimeResponse;
 
 		if (timeData && timeData.day && timeData.hour !== undefined) {
 			console.log('Valid time data received:', timeData);

@@ -2,6 +2,7 @@ import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
 import { characterDescriptionForPrompt } from '$lib/ai/prompts/formats';
+import { CharacterDescriptionResponseSchema, type CharacterDescriptionResponse } from '$lib/ai/config/ResponseSchemas';
 
 export type CharacterDescription = {
 	name: string;
@@ -53,8 +54,7 @@ export class CharacterAgent {
 			);
 		}
 		agentInstruction.push(
-			'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-				characterDescriptionForPrompt
+			'Generate structured character description with all required fields.'
 		);
 
 		const preset = {
@@ -63,8 +63,11 @@ export class CharacterAgent {
 		};
 		const request: LLMRequest = {
 			userMessage: 'Create the character: ' + stringifyPretty(preset),
-			systemInstruction: agentInstruction
+			systemInstruction: agentInstruction,
+			config: {
+				responseSchema: CharacterDescriptionResponseSchema
+			}
 		};
-		return (await this.llm.generateContent(request))?.content as CharacterDescription;
+		return (await this.llm.generateContent(request))?.content as CharacterDescriptionResponse;
 	}
 }

@@ -7,7 +7,9 @@
 import type { GameSettings } from '$lib/ai/agents/gameAgent';
 import { 
   createJsonInstruction, 
-  gameAgentJsonTemplate,
+  gameAgentJsonTemplate
+} from './jsonTemplates';  // Direct import since deprecated from index
+import {
   GAME_AGENT_CHAIN_OF_THOUGHT,
   getFewShotExamples,
   buildHierarchicalInstructions,

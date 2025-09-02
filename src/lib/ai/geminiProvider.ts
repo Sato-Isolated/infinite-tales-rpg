@@ -15,7 +15,6 @@ import {
 	GoogleGenAI,
 	type Part
 } from '@google/genai';
-import { JsonFixingInterceptorAgent } from './agents/jsonFixingInterceptorAgent';
 import {
 	LLM,
 	type LLMconfig,
@@ -65,7 +64,6 @@ export const defaultGeminiJsonConfig: GenerationConfig = {
  */
 export class GeminiProvider extends LLM {
 	genAI: GoogleGenAI;
-	jsonFixingInterceptorAgent: JsonFixingInterceptorAgent;
 	fallbackLLM?: LLM;
 	private configBuilder: GeminiConfigBuilder;
 
@@ -76,7 +74,6 @@ export class GeminiProvider extends LLM {
 		super(llmConfig);
 		this.fallbackLLM = fallbackLLM;
 		this.genAI = new GoogleGenAI({ apiKey: llmConfig.apiKey || '' });
-		this.jsonFixingInterceptorAgent = new JsonFixingInterceptorAgent(this);
 		this.configBuilder = new GeminiConfigBuilder();
 	}
 
@@ -300,46 +297,19 @@ export class GeminiProvider extends LLM {
 			// Extract thoughts from response
 			const thoughts = getThoughtsFromResponse(response);
 
-			// Parse JSON response with robust error handling
+			// Parse JSON response - with structured schemas, JSON should always be valid
 			let content: object = {};
 			if (response.text) {
 				try {
 					content = JSON.parse(response.text);
 					console.log('✅ JSON parsed successfully');
 				} catch (jsonError) {
-					console.error('❌ JSON parsing failed:', jsonError);
+					console.error('❌ JSON parsing failed (unexpected with structured schema):', jsonError);
 					console.log('📝 Raw response text (first 500 chars):', response.text.substring(0, 500));
-					console.log('📝 Raw response text (around error position):', response.text.substring(6300, 6500));
-
-					// Check retry count to prevent infinite loops
-					const retryCount = (request._retryCount || 0) + 1;
-					const maxRetries = 3;
-
-					if (retryCount > maxRetries) {
-						console.error(`❌ Max retries (${maxRetries}) exceeded, falling back to empty object`);
-						content = {};
-					} else {
-						// Try to fix the malformed JSON using the interceptor agent
-						try {
-							console.log(`🔧 Attempting JSON fixing (attempt ${retryCount}/${maxRetries})...`);
-							const errorMessage = jsonError instanceof Error ? jsonError.message : String(jsonError);
-
-							// Create a new request with retry tracking
-							const fixRequest = { ...request, _retryCount: retryCount };
-							const fixed = await this.jsonFixingInterceptorAgent.fixJSON(response.text, errorMessage, fixRequest);
-							content = fixed || {};
-
-							if (fixed) {
-								console.log('✅ JSON successfully fixed');
-							} else {
-								console.warn('⚠️ JSON fixing returned undefined, using empty object');
-							}
-						} catch (fixError) {
-							console.error('❌ JSON fixing failed:', fixError);
-							// Return empty object as fallback
-							content = {};
-						}
-					}
+					
+					// With structured schemas, JSON parsing failures should be rare
+					// Return empty object as safe fallback
+					content = {};
 				}
 			}
 
