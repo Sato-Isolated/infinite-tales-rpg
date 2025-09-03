@@ -31,7 +31,6 @@
 
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
-	//TODO migrate all AI settings into this object to avoid too many vars in local storage
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
 		useFallbackLlmState: false
 	});

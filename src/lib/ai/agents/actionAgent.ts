@@ -1,11 +1,3 @@
-// TODO: Implement action quality scoring and suggestion improvement system
-// TODO: Add action categorization and smart filtering (combat/social/exploration)
-// TODO: Create action history analysis to avoid repetitive suggestions
-// TODO: Implement context-aware action difficulty scaling
-// TODO: Add action consequence prediction system
-// TODO: Create smart action grouping by logical category
-// TODO: Implement action feasibility pre-validation before AI generation
-
 import { shuffleArray, stringifyPretty } from '$lib/util.svelte';
 import { ActionDifficulty } from '$lib/game/logic/gameLogic';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';

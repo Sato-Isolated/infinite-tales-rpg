@@ -2,14 +2,6 @@
  * Optimized Game State Manager using modern Svelte 5 patterns
  * Decomposes the large state management from the main component
  * Uses SvelteMap/SvelteSet for better reactivity where appropriate
- * 
- * TODO: Implement state persistence optimization with selective serialization
- * TODO: Add state diff tracking for undo/redo functionality  
- * TODO: Create state snapshots for save game versioning
- * TODO: Implement state validation and repair mechanisms
- * TODO: Add performance monitoring for state updates
- * TODO: Create state migration system for backward compatibility
- * TODO: Implement state compression for large game histories
  */
 
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';

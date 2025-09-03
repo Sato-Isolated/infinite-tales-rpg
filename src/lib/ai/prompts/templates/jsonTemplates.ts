@@ -4,8 +4,6 @@
  * 
  * This file is kept only for backward compatibility with migration helpers.
  * All new agents should use ResponseSchemas.ts with structured output instead.
- * 
- * TODO: Remove this file once migration system is fully deprecated
  */
 
 /**

@@ -14,7 +14,6 @@ import { type NPCState, type NPCStats } from '$lib/ai/agents/characterStatsAgent
  */
 function calculateMaxResource(i: number, level: number, is_party_member?: boolean) {
 	// Using logarithmic growth
-	//TODO boss fight too difficult, limit HP
 	let adapted = i;
 	if (!is_party_member && i > 3) {
 		adapted = 3;
@@ -28,8 +27,6 @@ function calculateMaxResource(i: number, level: number, is_party_member?: boolea
 	return maxResource;
 }
 
-//TODO consider class?
-//TODO different modificator for level as it doesnt scale
 function getMaxHPFromRank(npc: NPCStats): number {
 	const npcRanks = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
 	let i = npcRanks.indexOf(npc.rank_enum_english);
@@ -37,9 +34,6 @@ function getMaxHPFromRank(npc: NPCStats): number {
 	if (i === -1) i = 2;
 	return calculateMaxResource(i, npc.level, npc.is_party_member);
 }
-
-//TODO consider class?
-//TODO different modificator for level as it doesnt scale
 function getMaxMPFromRank(npc: NPCStats): number {
 	const npcRanks = ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
 	let i = npcRanks.indexOf(npc.rank_enum_english);

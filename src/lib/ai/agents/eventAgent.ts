@@ -1,13 +1,3 @@
-// TODO: Implement event chaining system for multi-step transformations
-// TODO: Add event probability calculation based on story context and player actions
-// TODO: Create event templates for different genres (horror, fantasy, sci-fi)
-// TODO: Implement event impact analysis and consequence prediction
-// TODO: Add event history tracking to prevent repetitive transformations
-// TODO: Create event balancing system to maintain game engagement
-// TODO: Implement player preference learning for event customization
-// TODO: Add event visualization system for better player understanding
-// TODO: Create event undo functionality for unwanted transformations
-
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
 import type { Ability } from './characterStatsAgent';

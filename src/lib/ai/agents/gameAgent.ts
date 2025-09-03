@@ -1,9 +1,3 @@
-// TODO: Add performance monitoring for AI response times and token usage
-// TODO: Implement response quality scoring system to detect poor AI outputs
-// TODO: Add automatic prompt optimization based on response quality metrics
-// TODO: Create story branching detection to prevent narrative dead-ends
-// TODO: Implement dynamic difficulty adjustment based on player engagement
-
 import { stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
 import type { GameTime } from '$lib/types/gameTime';
 import { ActionDifficulty } from '$lib/game/logic/gameLogic';
@@ -966,13 +960,8 @@ export async function generateInitialGameTime(
 		}
 	} catch (error) {
 		console.error('LLM request failed in generateInitialGameTime:', error);
-		// TODO: Add fallback time generation with predefined dramatic scenarios
-		// TODO: Implement time generation retry with different prompts
-		// TODO: Create time generation templates for different story genres
 	}
 
-	// TODO: Create more sophisticated fallback time generation based on story context
-	// TODO: Add seasonal event suggestions (festivals, weather patterns, etc.)
 	// Fallback to default time if generation fails
 	console.log('Falling back to default time');
 	const { createDefaultTime } = await import('$lib/types/gameTime');

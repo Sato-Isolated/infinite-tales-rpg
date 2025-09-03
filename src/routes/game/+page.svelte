@@ -1,15 +1,4 @@
 <script lang="ts">
-	// TODO: Extract component into smaller, more focused components for better performance
-	// TODO: Implement smart preloading of AI responses for common actions
-	// TODO: Add game session analytics for balancing improvements
-	// TODO: Create quick action shortcuts for frequently used actions
-	// TODO: Implement story mood tracking and visualization
-	// TODO: Add AI response time monitoring and optimization
-	// TODO: Create save/load system with automatic backup functionality
-	// TODO: Implement experimental features toggle for testing new AI capabilities
-	// TODO: Add story arc visualization and branching path tracker
-	// TODO: Create character development insights and progression recommendations
-
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 	import { beforeNavigate } from '$app/navigation';
@@ -279,9 +268,6 @@
 			playerId
 		);
 
-	//TODO const lastCombatSinceXActions: number = $derived(
-	//	gameActionsState.value && (gameActionsState.value.length - (gameActionsState.value.findLastIndex(state => state.is_character_in_combat ) + 1))
-	//);
 	let customActionReceiver: 'Game Command' | 'Character Action' | 'GM Question' | 'Dice Roll' =
 		$state('Character Action');
 	const eventEvaluationState = useHybridLocalStorage<EventEvaluation>(
@@ -501,7 +487,6 @@
 
 	async function initializeGameFromSavedState() {
 		// Apply previously saved game actions
-		//TODO what happens when character transformed, if stat existed before damage/heal will be applied
 		gameLogic.applyGameActionStates(
 			playerCharactersGameState.value,
 			playerCharactersIdToNamesMapState.value,
@@ -573,7 +558,6 @@
 		);
 
 	function openDiceRollDialog() {
-		//TODO showModal can not be used because it hides the dice roll
 		didAIProcessDiceRollActionState.value = false;
 		if (!modalManager.diceRollDialog) return;
 		modalManager.diceRollDialog.show();
@@ -633,10 +617,8 @@
 		modalManager.setCustomActionImpossibleReason(undefined);
 	}
 
-	//TODO depends on getActionPromptForCombat
 	// getCombatAndNPCState extracted into controller
 
-	//TODO sendAction should not be handled here so it can be externally called
 	async function checkGameEnded() {
 		// Safety check: ensure player character ID and resources exist
 		if (!playerCharacterIdState) {
@@ -873,7 +855,6 @@
 			const time = new Date().toLocaleTimeString();
 			console.log('First story chunk received at:', time);
 			if (gameActionsState.value.length === 1) {
-				//TODO workaround because of the scrollIntoView not working properly for second story
 				setTimeout(() => {
 					console.log('For second story chunk, scroll again');
 					latestStoryProgressionTextComponent?.scrollIntoView();

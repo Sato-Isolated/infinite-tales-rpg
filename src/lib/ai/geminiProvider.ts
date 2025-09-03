@@ -1,11 +1,4 @@
-// TODO: Implement AI response quality metrics and monitoring
-// TODO: Add automatic prompt optimization based on response quality
-// TODO: Create response caching system for development efficiency
-// TODO: Implement fallback model switching on API failures
-// TODO: Add token usage tracking and optimization recommendations
-// TODO: Create A/B testing framework for different prompt strategies
-// TODO: Implement response time optimization with smart batching
-// TODO: Add intelligent retry logic with exponential backoff
+import { stringifyPretty } from '$lib/util.svelte';
 
 import { handleError } from '../util.svelte';
 import {
@@ -341,7 +334,6 @@ export class GeminiProvider extends LLM {
 		const contents: Content[] = [];
 		if (historyMessages) {
 			historyMessages.forEach((message) => {
-				//TODO why can one of these not be present?
 				if (message && message.role && message.content) {
 					contents.push({
 						role: message.role,

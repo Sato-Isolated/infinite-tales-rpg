@@ -25,7 +25,6 @@
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
-	//TODO migrate all settings that can be changed during game here
 
 	const taleSettingsClicked = () => {
 		navigate('/new/tale');

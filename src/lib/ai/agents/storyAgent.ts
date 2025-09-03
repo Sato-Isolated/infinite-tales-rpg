@@ -24,7 +24,6 @@ export const exampleGameSystems = [
 // TROPES_CLICHE_PROMPT moved to prompts/shared/tropesPrompt.ts
 
 // stringifyPretty(storyStateForPrompt) works because no json included in the values
-//TODO if we remove this as object new tale form placeholder wont work anymore...
 export const storyStateForPrompt = {
 	game: 'Any Pen & Paper System e.g. Pathfinder, Call of Cthulhu, Star Wars, Fate Core, World of Darkness, GURPS, Mutants & Masterminds, Dungeons & Dragons',
 	world_details:

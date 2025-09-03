@@ -268,7 +268,6 @@
 </script>
 
 <ul class="steps mt-3 w-full">
-	<!--TODO  -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events  -->
 	<li class="step step-primary cursor-pointer" onclick={() => goto('tale')}>Tale</li>

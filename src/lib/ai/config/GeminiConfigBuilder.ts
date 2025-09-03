@@ -1,15 +1,6 @@
 /**
  * Centralized configuration builder for Gemini API
  * Consolidates configuration logic scattered across providers
- * 
- * TODO: Implement dynamic configuration based on content type (combat vs dialogue)
- * TODO: Add configuration profiles for different game genres and moods
- * TODO: Create A/B testing framework for configuration optimization
- * TODO: Implement user preference learning for personalized AI behavior
- * TODO: Add configuration validation and error recovery mechanisms
- * TODO: Create configuration backup and restore functionality
- * TODO: Implement real-time configuration adjustment based on response quality
- * TODO: Add configuration analytics to track performance impact
  */
 
 import type {

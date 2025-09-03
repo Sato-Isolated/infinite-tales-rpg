@@ -183,7 +183,6 @@ describe('renderStatUpdates', () => {
 	});
 });
 
-//TODO recreate
 /**
  *
  * import { describe, it, expect } from 'vitest';

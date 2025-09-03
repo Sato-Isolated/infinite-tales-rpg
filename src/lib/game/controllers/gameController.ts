@@ -1,13 +1,3 @@
-// TODO: Implement intelligent action prioritization based on story context
-// TODO: Add game session analytics for performance monitoring and balancing
-// TODO: Create automated testing framework for game controller logic
-// TODO: Implement smart action batching for improved performance
-// TODO: Add predictive caching for common game scenarios
-// TODO: Create game state validation and automatic error recovery
-// TODO: Implement dynamic difficulty adjustment based on player engagement
-// TODO: Add game flow optimization suggestions based on player behavior
-// TODO: Create comprehensive logging system for debugging and analysis
-
 import {
 	GameAgent,
 	type Action,

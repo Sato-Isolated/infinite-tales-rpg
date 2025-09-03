@@ -1,7 +1,6 @@
 import type { StatsUpdate } from '$lib/ai/agents/combatAgent';
 import type { AiLevelUp, CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 
-//TODO AI uses LOW too often, so we trick it by just mapping to no XP
 export const XP_INCREASING_SCALE = {
 	SMALL: 0,
 	MEDIUM: 10,

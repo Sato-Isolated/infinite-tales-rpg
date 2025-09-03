@@ -1,12 +1,4 @@
-// TODO: Implement intelligent storage selection based on data size and usage patterns
-// TODO: Add automatic storage cleanup for old game sessions
-// TODO: Create storage analytics dashboard for monitoring usage and performance
-// TODO: Implement storage compression for large game state objects
-// TODO: Add automatic backup scheduling with configurable intervals
-// TODO: Create storage migration tools for data structure changes
-// TODO: Implement storage synchronization between devices (for future cloud features)
-// TODO: Add storage quotas and warnings for large save files
-// TODO: Create storage health monitoring and automatic repair mechanisms
+import { getContext, setContext } from 'svelte';
 
 import { onMount } from 'svelte';
 import cloneDeep from 'lodash.clonedeep';

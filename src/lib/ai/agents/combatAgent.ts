@@ -1,12 +1,3 @@
-// TODO: Implement tactical AI for smarter enemy behavior
-// TODO: Add combat animation sequence generation for better immersion
-// TODO: Create dynamic difficulty scaling based on player performance  
-// TODO: Implement environmental interaction effects (terrain, weather)
-// TODO: Add combo system for action chaining and special effects
-// TODO: Create combat prediction system for strategic decision making
-// TODO: Implement morale and psychological effects in combat
-// TODO: Add equipment durability and breakage mechanics
-
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type {
@@ -42,12 +33,6 @@ export class CombatAgent {
 		this.llm = llm;
 	}
 
-	// TODO: Implement status effects tracking (stunned, poisoned, etc.) via historyMessages analysis
-	// TODO: Add initiative system with action sequence planning
-	// TODO: Create combat round management with proper turn order
-	// TODO: Implement action interruption system for reactive abilities
-	//TODO are effects like stunned etc. considered via historyMessages?
-	//TODO far future improvement, include initiative with chain of actions, some actions then are skipped due to stun, death etc.
 	async generateActionsFromContext(
 		action: Action,
 		playerCharResources: ResourcesWithCurrentValue,
@@ -158,7 +143,6 @@ export class CombatAgent {
 	}
 
 	static getCombatPromptAddition() {
-		//TODO rather do this programatically?
 		const combatDifficulties = [
 			ActionDifficulty.simple,
 			ActionDifficulty.medium,
