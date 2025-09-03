@@ -1,3 +1,7 @@
+this is a fork 
+
+original project : https://github.com/JayJayBinks/infinite-tales-rpg
+
 <h1 align="center">Infinite Tales RPG</h1>
 
 <p align="center">
