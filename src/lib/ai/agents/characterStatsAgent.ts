@@ -2,9 +2,9 @@ import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import { 
-	CharacterStatsResponseSchema, 
-	LevelUpResponseSchema, 
+import {
+	CharacterStatsResponseSchema,
+	LevelUpResponseSchema,
 	NPCStatsResponseSchema,
 	AbilitiesResponseSchema,
 	type CharacterStatsResponse,
@@ -24,16 +24,6 @@ export type SpellOrAbility = {
 
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
 import { GEMINI_MODELS } from '../geminiProvider';
-import { 
-	abilityFormatForPrompt, 
-	npcIDForPrompt, 
-	currentlyPresentNPCSForPrompt, 
-	characterStatsStateForPrompt, 
-	levelUpPrompt, 
-	npcStatsStateForPromptAsString,
-	ATTRIBUTE_MAX_VALUE,
-	ATTRIBUTE_MIN_VALUE 
-} from '$lib/ai/prompts/formats';
 
 export type Ability = {
 	name: string;
@@ -120,9 +110,10 @@ export type NPCStats = {
 
 export class CharacterStatsAgent {
 	llm: LLM;
-
+	ATTRIBUTE_MAX_VALUE: number;
 	constructor(llm: LLM) {
 		this.llm = llm;
+		this.ATTRIBUTE_MAX_VALUE = 10;
 	}
 
 	async generateCharacterStats(
@@ -134,9 +125,9 @@ export class CharacterStatsAgent {
 	): Promise<CharacterStats> {
 		const agentInstruction = [
 			'You are RPG character stats agent, generating the starting stats for a character according to game system, adventure and character description.\n' +
-				'Attributes and skills should be determined based on character description.\n' +
-				'Scale the attributes, skills and abilities according to the level. A low level character has attributes and skills -1 to 1.\n' +
-				'If there is a HP resource or deviation, it must be greater than 20.\n'
+			'Attributes and skills should be determined based on character description.\n' +
+			'Scale the attributes, skills and abilities according to the level. A low level character has attributes and skills -1 to 1.\n' +
+			'If there is a HP resource or deviation, it must be greater than 20.\n'
 		];
 		if (statsOverwrites) {
 			let statsPrompt =
@@ -209,7 +200,7 @@ export class CharacterStatsAgent {
 		const { ['skills']: _, ...characterStatsMapped } = characterStats;
 		// filter out attributes that are already at 10
 		characterStatsMapped.attributes = Object.keys(characterStatsMapped.attributes)
-			.filter((a) => characterStatsMapped.attributes[a] < ATTRIBUTE_MAX_VALUE)
+			.filter((a) => characterStatsMapped.attributes[a] < this.ATTRIBUTE_MAX_VALUE)
 			.reduce(
 				(acc, a) => {
 					acc[a] = characterStatsMapped.attributes[a];
@@ -220,12 +211,12 @@ export class CharacterStatsAgent {
 
 		const agentInstruction = [
 			'You are RPG character stats agent, leveling up a character according to game system, adventure and character description.\n' +
-				'Name one existing attribute to be increased, you must reuse the exact attribute name. ' +
-				'Also invent a new ability or increase one ability by one level granting an improved effect or more damage. Describe what improved from the last ability level.\n' +
-				'In addition, all resources are to be meaningfully increased according to GAME rules',
+			'Name one existing attribute to be increased, you must reuse the exact attribute name. ' +
+			'Also invent a new ability or increase one ability by one level granting an improved effect or more damage. Describe what improved from the last ability level.\n' +
+			'In addition, all resources are to be meaningfully increased according to GAME rules',
 			'Current character stats:\n' + stringifyPretty(characterStatsMapped),
 			'The level up must be based on the story progression, in which area the player acted well:\n' +
-				latestHistoryTextOnly,
+			latestHistoryTextOnly,
 			'Generate structured level up data according to the character progress.'
 		];
 
@@ -266,8 +257,8 @@ export class CharacterStatsAgent {
 			'Description of the adventure: ' + stringifyPretty(storyState),
 			'Latest story progression:\n' + latestHistoryTextOnly,
 			'Scale the stats and abilities according to the player character level: ' +
-				characterStats.level +
-				'\n',
+			characterStats.level +
+			'\n',
 			'IMPORTANT: Generate meaningful relationships between NPCs and with the player character based on the story context.',
 			'Family relationships must be logical and consistent (sister/brother, parent/child, etc.).',
 			'Include personality traits and speech patterns that make each NPC unique and memorable.',
@@ -290,7 +281,7 @@ export class CharacterStatsAgent {
 			}
 		};
 		const response = (await this.llm.generateContent(request))?.content as NPCStatsResponse;
-		
+
 		// Convert array response to NPCState format
 		const npcState: NPCState = {};
 		if (response?.npcs) {
@@ -298,7 +289,7 @@ export class CharacterStatsAgent {
 				npcState[npc.uniqueTechnicalNameId] = npc;
 			});
 		}
-		
+
 		return npcState;
 	}
 
@@ -315,7 +306,7 @@ export class CharacterStatsAgent {
 			'\n';
 		const agentInstruction = [
 			'You are RPG character ability agent, generating new abilities without restrictions on thematic consistency. Generate them according to game system, adventure and character description.\n' +
-				'Scale the ability according to the level',
+			'Scale the ability according to the level',
 			usePartialAsBasePrompt,
 			'Generate structured abilities array with all required fields.'
 		];

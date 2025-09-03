@@ -12,7 +12,6 @@ import {
 	type Resources
 } from '$lib/ai/agents/characterStatsAgent';
 import { DialogueTrackingAgent } from '$lib/ai/agents/dialogueTrackingAgent';
-import { DialogueFidelityAgent, DEFAULT_FIDELITY_SETTINGS, type DialogueFidelitySettings } from '$lib/ai/agents/dialogueFidelityAgent';
 import type { DiceSimulationMode } from '$lib/utils/webglDetection';
 import { 
 	GameTimeResponseSchema,
@@ -31,7 +30,6 @@ import {
 	USER_DIALOGUE_PATTERNS
 } from '$lib/ai/prompts/shared';
 import { systemBehaviour, jsonSystemInstructionForGameAgent, jsonSystemInstructionForPlayerQuestion } from '$lib/ai/prompts/system';
-import { statsUpdatePromptObject, currentlyPresentNPCSForPrompt } from '$lib/ai/prompts/formats';
 // Campaign removed: local helper to extract first numeric PLOT_ID occurrences
 function mapPlotStringToIds(input: string): number[] {
 	if (!input) return [];
@@ -196,7 +194,6 @@ export type GameSettings = {
 	aiIntroducesSkills: boolean;
 	randomEventsHandling: RandomEventsHandling;
 	generateAmbientDialogue: boolean;
-	dialogueFidelitySettings?: DialogueFidelitySettings;
 	diceSimulationMode: DiceSimulationMode;
 };
 export const defaultGameSettings = () => ({
@@ -204,7 +201,6 @@ export const defaultGameSettings = () => ({
 	aiIntroducesSkills: false,
 	randomEventsHandling: 'probability' as const,
 	generateAmbientDialogue: true,
-	dialogueFidelitySettings: DEFAULT_FIDELITY_SETTINGS,
 	diceSimulationMode: 'auto' as const
 });
 
@@ -243,12 +239,10 @@ export type GameMasterAnswer = {
 export class GameAgent {
 	llm: LLM;
 	dialogueTracker: DialogueTrackingAgent;
-	dialogueFidelityAgent: DialogueFidelityAgent;
 
-	constructor(llm: LLM, fidelitySettings?: DialogueFidelitySettings) {
+	constructor(llm: LLM) {
 		this.llm = llm;
 		this.dialogueTracker = new DialogueTrackingAgent(llm);
-		this.dialogueFidelityAgent = new DialogueFidelityAgent(fidelitySettings || DEFAULT_FIDELITY_SETTINGS);
 	}
 
 	/**
@@ -384,9 +378,11 @@ export class GameAgent {
 			.slice(-10) // Check last 10 story entries
 			.map(msg => {
 				try {
+					// Parse the structured JSON response from previous game actions
 					const parsed = JSON.parse(msg.content);
 					return parsed.story || '';
 				} catch {
+					// Fallback for any malformed content - just use as-is
 					return msg.content || '';
 				}
 			})
@@ -442,24 +438,7 @@ export class GameAgent {
 			}
 		}
 
-		// 🎯 DIALOGUE FIDELITY ANALYSIS
-		// Analyze user input to determine dialogue fidelity requirements
-		console.log('🎯 Analyzing dialogue fidelity for user input:', action.text);
-
-		// Update fidelity settings if provided in game settings
-		if (gameSettings.dialogueFidelitySettings) {
-			this.dialogueFidelityAgent.updateSettings(gameSettings.dialogueFidelitySettings);
-		}
-
-		const fidelityAnalysis = this.dialogueFidelityAgent.analyzeDialogueFidelity(action.text);
-		console.log('📊 Fidelity analysis result:', stringifyPretty(fidelityAnalysis));
-
-		// Convert auto_detect to a concrete level for prompt generation
-		const concreteFidelityLevel = fidelityAnalysis.fidelity_level === 'auto_detect'
-			? 'preserve_essence' // Default to essence preservation when auto-detected
-			: fidelityAnalysis.fidelity_level;
-
-		// 🎭 ADD ACTION/DIALOGUE DISTINCTION INSTRUCTIONS
+		//  ADD ACTION/DIALOGUE DISTINCTION INSTRUCTIONS
 		// This critical instruction helps LLM distinguish between physical actions and spoken dialogue
 		combinedText += '\n\n' + ACTION_DIALOGUE_DISTINCTION_PROMPT;
 		
@@ -477,8 +456,7 @@ export class GameAgent {
 			customSystemInstruction,
 			customStoryAgentInstruction,
 			customCombatAgentInstruction,
-			gameSettings,
-			undefined // No complex fidelity prompt needed - using simple prompts above
+			gameSettings
 		);
 		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
 
@@ -573,8 +551,7 @@ export class GameAgent {
 				customSystemInstruction.generalSystemInstruction,
 				customSystemInstruction.storyAgentInstruction,
 				customSystemInstruction.combatAgentInstruction,
-				gameSettings,
-				undefined // No dialogue fidelity prompt needed for rule explanations
+				gameSettings
 			).join('\n');
 		const request: LLMRequest = {
 			userMessage: userMessage,
@@ -597,8 +574,7 @@ export class GameAgent {
 		customSystemInstruction: string,
 		customStoryAgentInstruction: string,
 		customCombatAgentInstruction: string,
-		gameSettings: GameSettings,
-		dialogueFidelityPrompt?: string
+		gameSettings: GameSettings
 	) {
 		const gameAgent = [
 			systemBehaviour(gameSettings),
@@ -612,11 +588,6 @@ export class GameAgent {
 			stringifyPretty(inventoryState),
 			this.generateEnrichedNPCContext(npcState, characterState?.name || "CHARACTER")
 		];
-
-		// Add dialogue fidelity instructions if provided
-		if (dialogueFidelityPrompt) {
-			gameAgent.push(dialogueFidelityPrompt);
-		}
 
 		if (customSystemInstruction) {
 			gameAgent.push('Following instructions overrule all others: ' + customSystemInstruction);

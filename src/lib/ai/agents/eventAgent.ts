@@ -2,7 +2,6 @@ import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
 import type { Ability } from './characterStatsAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
-import { eventJsonFormat } from '$lib/ai/prompts/formats';
 import { EventResponseSchema, type EventResponse } from '$lib/ai/config/ResponseSchemas';
 
 export const initialCharacterTransformState: CharacterChangedInto = {
@@ -201,8 +200,7 @@ export class EventAgent {
 			'',
 			this.buildAbilityExclusionRule(currentAbilitiesNames),
 			'',
-			'CRITICAL: Respond ONLY with valid JSON in this exact format:',
-			eventJsonFormat
+			'Use the structured response schema to provide your evaluation.'
 		];
 
 		return baseInstructions;

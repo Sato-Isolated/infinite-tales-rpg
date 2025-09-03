@@ -1,4 +1,3 @@
-import { currentlyPresentNPCSForPrompt } from '../formats';
 import { storyWordLimitConcise, storyWordLimitDetailed } from '../shared/narrativePrompts';
 import type { GameSettings } from '$lib/ai/agents/gameAgent';
 

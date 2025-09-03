@@ -12,7 +12,6 @@ import {
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
-import { diceRollPrompt } from '$lib/ai/prompts/formats';
 import { actionRules } from '$lib/ai/prompts/system';
 import { 
 	SingleActionResponseSchema, 
@@ -65,53 +64,7 @@ ACTION GENERATION RULES:
 `;
 	};
 
-	/**
-	 * Dynamic JSON format generation - no caching
-	 * Generates fresh templates on each call to ensure variety
-	 */
-	private readonly jsonFormatAndRules = (
-		attributes: string[],
-		skills: string[],
-		newSkillsAllowed: boolean
-	): string => {
-		const newSkillRule = newSkillsAllowed
-			? `Choose or create a single skill that is more specific than the related_attribute but broad enough for multiple actions (e.g. 'Melee Combat' instead of 'Strength'). Use an exact same spelled EXISTING SKILL if applicable; otherwise, add a fitting new one.`
-			: `Choose an exact same spelled single skill from EXISTING SKILLS or null if none fits; Never create a new skill;`;
 
-		const attributesString = attributes.join(', ');
-		const skillsString = skills.join(', ');
-
-		return `{
-					"characterName": "Player character name who performs this action",
-					"plausibility": "Brief explanation why this action is plausible in the current situation",
-					"text": "Keep the text short, max 20 words. Description of the action to display to the player, do not include modifier or difficulty here.",
-					"type": "${'Misc|Attack|Spell|Conversation|Social_Manipulation|Investigation|Travel|Crafting'}",
-					"related_attribute": "a single attribute the dice is rolled for, must be an exact same spelled attribute from this list: ${attributesString}; never create new Attributes!",
-					"existing_related_skill_explanation": "Explanation if an existing skill is used instead of creating a new one",
-					"related_skill": "a single skill the dice is rolled for; ${newSkillRule} EXISTING SKILLS: ${skillsString}",
-					"difficulty_explanation": "Keep the text short, max 20 words. Explain the reasoning for action_difficulty. Format: Chose {action_difficulty} because {reason}",
-					"action_difficulty": "${Object.keys(ActionDifficulty).join('|')}",
-					"is_possible": true,
-					"resource_cost": null,
-					"narration_details": {
-						"reasoning": "Brief reasoning how many details the narration should include",
-						"enum_english": "LOW"
-					},
-					"actionSideEffects": "Reasoning whether this action causes any side effects on the environment or reactions from NPCs",
-  					"enemyEncounterExplanation": {
-						"reasoning": "Brief reasoning for the probability of an enemy encounter",
-						"enum_english": "LOW"
-					},
-					"is_interruptible": {
-						"reasoning": "Brief reasoning for the probability that this action is interrupted",
-						"enum_english": "NEVER"
-					},
-					"dice_roll": {
-						"required": false,
-						"modifier": 0
-					}
-				}`;
-	};
 
 	/**
 	 * Optimized restraining state prompt generation

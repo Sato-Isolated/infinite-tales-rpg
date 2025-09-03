@@ -25,6 +25,12 @@
 			'<div class="border-l-2 border-primary/30 pl-3 py-1 mb-2 bg-primary/5 rounded-r"><span class="text-primary/80 text-sm font-medium">$1:</span> <span class="text-base-content italic">"$2"</span></div>'
 		);
 
+		// Character names: [character:Name]reference[/character] - Highlight character names and references
+		parsed = parsed.replace(
+			/\[character:([^\]]+)\](.*?)\[\/character\]/gs,
+			'<span class="font-semibold text-secondary/90 px-1 py-0.5 bg-secondary/10 rounded">$1</span>'
+		);
+
 		// Highlight: [highlight]important text[/highlight] - Subtle emphasis for key elements
 		parsed = parsed.replace(
 			/\[highlight\](.*?)\[\/highlight\]/gs,

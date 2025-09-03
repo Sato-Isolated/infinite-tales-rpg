@@ -3,7 +3,6 @@ import type { LLM, LLMRequest } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import isEqual from 'fast-deep-equal';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
-import { storyJsonFormat, storyInstructions } from '$lib/ai/prompts/formats';
 import { StoryGenerationResponseSchema, type StoryGenerationResponse } from '$lib/ai/config/ResponseSchemas';
 
 export type Story = typeof storyStateForPrompt;
@@ -20,6 +19,30 @@ export const exampleGameSystems = [
 	'Mutants & Masterminds',
 	'Dungeons & Dragons'
 ];
+
+/**
+ * Story creation instructions
+ */
+const storyInstructions = [
+  'STORY CREATION RULES:',
+  '- game: Choose any pen & paper system (Pathfinder, Call of Cthulhu, Star Wars, Fate Core, etc.)',
+  '- world_details: Key characteristics defining daily life and setting essence',
+  '- story_pace: slice-of-life, balanced, adventure-focused, or player-controlled',
+  '- main_scenario: Central situation ranging from daily life to epic adventures',
+  '- character_simple_description: Character fitting the game system in scenario context',
+  '- theme: Overall theme or setting of the story',
+  '- tonality: Writing style and mood that fits the game system',
+  '- background_context: Background elements matching chosen pace',
+  '- social_dynamics: Social environment, relationships, and daily interactions',
+  '- locations: 2-3 everyday locations plus one optional special location',
+  '- npcs: 2-4 people with simple motivations and relationship dynamics',
+  '- story_catalyst: Initial situation fitting desired pace',
+  '- potential_developments: Optional plot seeds that can remain dormant or develop',
+  '- narrative_flexibility: How story can shift between different paces',
+  '- player_agency: How character choices influence immediate and long-term development',
+  '- content_rating: safe (family-friendly), mid (mild mature), adult (mature), or uncensored',
+  '- tags: 4-6 keywords describing preferred genres, themes, or mood'
+].join('\n');
 
 // TROPES_CLICHE_PROMPT moved to prompts/shared/tropesPrompt.ts
 

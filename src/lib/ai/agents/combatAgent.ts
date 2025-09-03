@@ -9,7 +9,6 @@ import type {
 import { ActionDifficulty, getEmptyCriticalResourceKeys } from '$lib/game/logic/gameLogic';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapStatsUpdates } from '$lib/ai/agents/mappers';
-import { statsUpdatePromptObject } from '$lib/ai/prompts/formats';
 import { CombatResponseSchema, type CombatResponse } from '$lib/ai/config/ResponseSchemas';
 
 export type DiceRoll = {

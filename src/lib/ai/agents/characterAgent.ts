@@ -1,7 +1,6 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
-import { characterDescriptionForPrompt } from '$lib/ai/prompts/formats';
 import { CharacterDescriptionResponseSchema, type CharacterDescriptionResponse } from '$lib/ai/config/ResponseSchemas';
 
 export type CharacterDescription = {
@@ -15,8 +14,6 @@ export type CharacterDescription = {
 	background: string;
 	motivation: string;
 };
-
-// characterDescriptionForPrompt moved to prompts/formats/characterFormats.ts
 
 export const initialCharacterState: CharacterDescription = {
 	name: '',
