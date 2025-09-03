@@ -22,7 +22,9 @@ import { DialogueFidelityAgent, DEFAULT_FIDELITY_SETTINGS, type DialogueFidelity
 import type { DiceSimulationMode } from '$lib/utils/webglDetection';
 import { 
 	GameTimeResponseSchema,
-	type GameTimeResponse
+	GameAgentResponseSchema,
+	type GameTimeResponse,
+	type GameAgentResponse
 } from '$lib/ai/config/ResponseSchemas';
 import {
 	PAST_STORY_PLOT_RULE,
@@ -491,7 +493,10 @@ export class GameAgent {
 			userMessage: combinedText,
 			historyMessages: historyMessages,
 			systemInstruction: gameAgent,
-			returnFallbackProperty: true
+			returnFallbackProperty: true,
+			config: {
+				responseSchema: GameAgentResponseSchema
+			}
 		};
 		const time = new Date().toLocaleTimeString();
 		console.log('Starting game agent:', time);
@@ -499,7 +504,7 @@ export class GameAgent {
 			request,
 			storyUpdateCallback,
 			thoughtUpdateCallback
-		)) as GameActionState;
+		)) as GameAgentResponse;
 
 		// Validate that we got a valid response from the LLM
 		if (!newState) {

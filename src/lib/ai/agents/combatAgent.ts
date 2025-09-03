@@ -104,7 +104,12 @@ export class CombatAgent {
 	}
 
 	static getAdditionalStoryInput(
-		actions: Array<Action>,
+		actions: Array<{
+			sourceId: string;
+			targetId: string;
+			text: string;
+			explanation: string;
+		}>,
 		deadNPCs: string[],
 		aliveNPCs: string[],
 		playerCharactersGameState: PlayerCharactersGameState

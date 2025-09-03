@@ -289,7 +289,17 @@ export class CharacterStatsAgent {
 				responseSchema: NPCStatsResponseSchema
 			}
 		};
-		return (await this.llm.generateContent(request))?.content as NPCStatsResponse;
+		const response = (await this.llm.generateContent(request))?.content as NPCStatsResponse;
+		
+		// Convert array response to NPCState format
+		const npcState: NPCState = {};
+		if (response?.npcs) {
+			response.npcs.forEach((npc) => {
+				npcState[npc.uniqueTechnicalNameId] = npc;
+			});
+		}
+		
+		return npcState;
 	}
 
 	async generateAbilitiesFromPartial(

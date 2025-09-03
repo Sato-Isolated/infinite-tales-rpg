@@ -684,15 +684,15 @@
 					characterStatsState.value,
 					systemInstructionsState.value.generalSystemInstruction
 				)
-				.then((newState: NPCState) => {
-					if (newState) {
-						combatLogic.addResourceValues(newState);
+				.then((newNPCState: NPCState) => {
+					if (newNPCState) {
+						combatLogic.addResourceValues(newNPCState);
 						newNPCsIds.forEach((id) => {
-							if (newState[id.uniqueTechnicalNameId]) {
-								newState[id.uniqueTechnicalNameId].known_names = [id.displayName];
+							if (newNPCState[id.uniqueTechnicalNameId]) {
+								newNPCState[id.uniqueTechnicalNameId].known_names = [id.displayName];
 							}
 						});
-						npcState.value = { ...npcState.value, ...newState };
+						npcState.value = { ...npcState.value, ...newNPCState };
 						console.log(stringifyPretty(npcState.value));
 					}
 				});

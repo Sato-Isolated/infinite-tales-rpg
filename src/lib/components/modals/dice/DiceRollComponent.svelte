@@ -159,8 +159,10 @@
 		simulationModeReason = modeResult.reason;
 
 		try {
-			// Initialize DiceBox with appropriate configuration
+			// Initialize DiceBox with appropriate configuration using v1.1.x API
 			const diceBoxConfig: any = {
+				id: 'dice-canvas',
+				container: '#dice-box',
 				assetPath: '/assets/dice-box/',
 				suspendSimulation: simulationMode === '2d'
 			};
@@ -170,7 +172,7 @@
 				simulationModeReason
 			);
 
-			diceBox = new DiceBox('#dice-box', diceBoxConfig);
+			diceBox = new DiceBox(diceBoxConfig);
 			await diceBox.init();
 			isMounted = true;
 		} catch (error) {
@@ -183,10 +185,13 @@
 				simulationModeReason = 'Fallback: 3D initialization failed';
 
 				try {
-					diceBox = new DiceBox('#dice-box', {
+					const fallbackConfig: any = {
+						id: 'dice-canvas',
+						container: '#dice-box',
 						assetPath: '/assets/dice-box/',
 						suspendSimulation: true
-					} as any);
+					};
+					diceBox = new DiceBox(fallbackConfig);
 					await diceBox.init();
 					isMounted = true;
 				} catch (fallbackError) {

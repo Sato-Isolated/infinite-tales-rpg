@@ -21,4 +21,4 @@ export const characterTransformationInstruction = (transformInto: string) => [
  * Character description JSON format instruction
  */
 export const characterDescriptionJsonInstruction = 
-	'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n';
+	'Create a detailed character description with personality traits, appearance, and image generation prompt.';

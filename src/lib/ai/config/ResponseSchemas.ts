@@ -435,85 +435,93 @@ export interface LevelUpResponse {
 // NPC Stats Response Schema
 export const NPCStatsResponseSchema = {
   type: 'object' as const,
-  additionalProperties: {
-    type: 'object' as const,
-    properties: {
-      known_names: {
-        type: 'array' as const,
-        items: { type: 'string' as const },
-        nullable: true
-      },
-      is_party_member: { type: 'boolean' as const },
-      resources: {
+  properties: {
+    npcs: {
+      type: 'array' as const,
+      items: {
         type: 'object' as const,
-        nullable: true,
         properties: {
-          current_hp: { type: 'number' as const },
-          current_mp: { type: 'number' as const }
-        },
-        required: ['current_hp', 'current_mp']
-      },
-      class: { type: 'string' as const },
-      rank_enum_english: { 
-        type: 'string' as const,
-        enum: ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary']
-      },
-      level: { type: 'number' as const },
-      spells_and_abilities: {
-        type: 'array' as const,
-        items: {
-          type: 'object' as const,
-          properties: {
-            name: { type: 'string' as const },
-            effect: { type: 'string' as const },
-            resource_cost: {
+          uniqueTechnicalNameId: { type: 'string' as const },
+          known_names: {
+            type: 'array' as const,
+            items: { type: 'string' as const },
+            nullable: true
+          },
+          is_party_member: { type: 'boolean' as const },
+          resources: {
+            type: 'object' as const,
+            nullable: true,
+            properties: {
+              current_hp: { type: 'number' as const },
+              current_mp: { type: 'number' as const }
+            },
+            required: ['current_hp', 'current_mp']
+          },
+          class: { type: 'string' as const },
+          rank_enum_english: { 
+            type: 'string' as const,
+            enum: ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary']
+          },
+          level: { type: 'number' as const },
+          spells_and_abilities: {
+            type: 'array' as const,
+            items: {
               type: 'object' as const,
               properties: {
-                resource_key: { type: 'string' as const, nullable: true },
-                cost: { type: 'number' as const }
+                name: { type: 'string' as const },
+                effect: { type: 'string' as const },
+                resource_cost: {
+                  type: 'object' as const,
+                  properties: {
+                    resource_key: { type: 'string' as const, nullable: true },
+                    cost: { type: 'number' as const }
+                  },
+                  required: ['resource_key', 'cost']
+                }
               },
-              required: ['resource_key', 'cost']
+              required: ['name', 'effect', 'resource_cost']
             }
           },
-          required: ['name', 'effect', 'resource_cost']
-        }
-      },
-      relationships: {
-        type: 'array' as const,
-        nullable: true,
-        items: {
-          type: 'object' as const,
-          properties: {
-            target_npc_id: { type: 'string' as const, nullable: true },
-            target_name: { type: 'string' as const },
-            relationship_type: {
-              type: 'string' as const,
-              enum: ['family', 'friend', 'romantic', 'enemy', 'acquaintance', 'professional', 'other']
-            },
-            specific_role: { type: 'string' as const, nullable: true },
-            emotional_bond: {
-              type: 'string' as const,
-              enum: ['very_negative', 'negative', 'neutral', 'positive', 'very_positive']
-            },
-            description: { type: 'string' as const }
+          relationships: {
+            type: 'array' as const,
+            nullable: true,
+            items: {
+              type: 'object' as const,
+              properties: {
+                target_npc_id: { type: 'string' as const, nullable: true },
+                target_name: { type: 'string' as const },
+                relationship_type: {
+                  type: 'string' as const,
+                  enum: ['family', 'friend', 'romantic', 'enemy', 'acquaintance', 'professional', 'other']
+                },
+                specific_role: { type: 'string' as const, nullable: true },
+                emotional_bond: {
+                  type: 'string' as const,
+                  enum: ['very_negative', 'negative', 'neutral', 'positive', 'very_positive']
+                },
+                description: { type: 'string' as const }
+              },
+              required: ['target_name', 'relationship_type', 'emotional_bond', 'description']
+            }
           },
-          required: ['target_name', 'relationship_type', 'emotional_bond', 'description']
-        }
-      },
-      personality_traits: {
-        type: 'array' as const,
-        nullable: true,
-        items: { type: 'string' as const }
-      },
-      speech_patterns: { type: 'string' as const, nullable: true },
-      background_notes: { type: 'string' as const, nullable: true }
-    },
-    required: ['is_party_member', 'class', 'rank_enum_english', 'level', 'spells_and_abilities']
-  }
+          personality_traits: {
+            type: 'array' as const,
+            nullable: true,
+            items: { type: 'string' as const }
+          },
+          speech_patterns: { type: 'string' as const, nullable: true },
+          background_notes: { type: 'string' as const, nullable: true }
+        },
+        required: ['uniqueTechnicalNameId', 'is_party_member', 'class', 'rank_enum_english', 'level', 'spells_and_abilities']
+      }
+    }
+  },
+  required: ['npcs']
 };
 
 export interface NPCStatsResponse {
-  [uniqueTechnicalNameId: string]: {
+  npcs: Array<{
+    uniqueTechnicalNameId: string;
     known_names?: string[];
     is_party_member: boolean;
     resources?: {
@@ -542,7 +550,7 @@ export interface NPCStatsResponse {
     personality_traits?: string[];
     speech_patterns?: string;
     background_notes?: string;
-  };
+  }>;
 }
 
 // Combat Agent Response Schema
@@ -775,9 +783,25 @@ export const SingleActionResponseSchema = {
     plausibility: { type: 'string' as const, nullable: true },
     difficulty_explanation: { type: 'string' as const, nullable: true },
     type: { type: 'string' as const, nullable: true },
-    narration_details: { type: 'object' as const, nullable: true },
+    narration_details: { 
+      type: 'object' as const, 
+      nullable: true,
+      properties: {
+        reasoning: { type: 'string' as const },
+        enum_english: { type: 'string' as const }
+      },
+      required: ['reasoning', 'enum_english']
+    },
     actionSideEffects: { type: 'string' as const, nullable: true },
-    enemyEncounterExplanation: { type: 'object' as const, nullable: true },
+    enemyEncounterExplanation: { 
+      type: 'object' as const, 
+      nullable: true,
+      properties: {
+        reasoning: { type: 'string' as const },
+        enum_english: { type: 'string' as const }
+      },
+      required: ['reasoning', 'enum_english']
+    },
     is_interruptible: {
       type: 'object' as const,
       nullable: true,
@@ -824,9 +848,15 @@ export interface SingleActionResponse {
   plausibility?: string;
   difficulty_explanation?: string;
   type?: string;
-  narration_details?: object;
+  narration_details?: {
+    reasoning: string;
+    enum_english: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
   actionSideEffects?: string;
-  enemyEncounterExplanation?: object;
+  enemyEncounterExplanation?: {
+    reasoning: string;
+    enum_english: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
   is_interruptible?: {
     reasoning: string;
     enum_english: string;
@@ -866,9 +896,31 @@ export const ActionsWithThoughtsResponseSchema = {
           plausibility: { type: 'string' as const, nullable: true },
           difficulty_explanation: { type: 'string' as const, nullable: true },
           type: { type: 'string' as const, nullable: true },
-          narration_details: { type: 'object' as const, nullable: true },
+          narration_details: {
+            type: 'object' as const,
+            nullable: true,
+            properties: {
+              reasoning: { type: 'string' as const },
+              enum_english: { 
+                type: 'string' as const,
+                enum: ['LOW', 'MEDIUM', 'HIGH']
+              }
+            },
+            required: ['reasoning', 'enum_english']
+          },
           actionSideEffects: { type: 'string' as const, nullable: true },
-          enemyEncounterExplanation: { type: 'object' as const, nullable: true },
+          enemyEncounterExplanation: {
+            type: 'object' as const,
+            nullable: true,
+            properties: {
+              reasoning: { type: 'string' as const },
+              enum_english: { 
+                type: 'string' as const,
+                enum: ['LOW', 'MEDIUM', 'HIGH']
+              }
+            },
+            required: ['reasoning', 'enum_english']
+          },
           is_interruptible: {
             type: 'object' as const,
             nullable: true,
@@ -921,9 +973,15 @@ export interface ActionsWithThoughtsResponse {
     plausibility?: string;
     difficulty_explanation?: string;
     type?: string;
-    narration_details?: object;
+    narration_details?: {
+      reasoning: string;
+      enum_english: 'LOW' | 'MEDIUM' | 'HIGH';
+    };
     actionSideEffects?: string;
-    enemyEncounterExplanation?: object;
+    enemyEncounterExplanation?: {
+      reasoning: string;
+      enum_english: 'LOW' | 'MEDIUM' | 'HIGH';
+    };
     is_interruptible?: {
       reasoning: string;
       enum_english: string;
@@ -938,6 +996,232 @@ export interface ActionsWithThoughtsResponse {
       modifier_explanation: string;
     };
   }>;
+}
+
+// Game Agent Response Schema - Complete schema for story progression
+export const GameAgentResponseSchema = {
+  type: 'object' as const,
+  properties: {
+    id: {
+      type: 'number' as const,
+      description: 'Unique identifier for this game action'
+    },
+    currentPlotPoint: {
+      type: 'string' as const,
+      description: 'Current plot point identification and reasoning in English'
+    },
+    nextPlotPoint: {
+      type: 'string' as const,
+      description: 'Next plot point identification and planning'
+    },
+    gradualNarrativeExplanation: {
+      type: 'string' as const,
+      description: 'How the story development breaks down into meaningful narrative moments'
+    },
+    plotPointAdvancingNudgeExplanation: {
+      type: 'string' as const,
+      description: 'Explanation of what could happen next to advance the story in English'
+    },
+    story: {
+      type: 'string' as const,
+      description: 'The main narrative content with structured markup tags'
+    },
+    story_memory_explanation: {
+      type: 'string' as const,
+      description: 'Explanation of long-term story impact with LOW/MEDIUM/HIGH rating'
+    },
+    xpGainedExplanation: {
+      type: 'string' as const,
+      description: 'Explanation of why the character gains or does not gain XP'
+    },
+    time_passed_minutes: {
+      type: 'number' as const,
+      description: 'Number of minutes that passed during this action'
+    },
+    time_passed_explanation: {
+      type: 'string' as const,
+      description: 'Brief explanation of why this amount of time passed'
+    },
+    initial_game_time: {
+      type: 'object' as const,
+      nullable: true,
+      properties: {
+        day: { type: 'number' as const },
+        dayName: { type: 'string' as const },
+        month: { type: 'number' as const },
+        monthName: { type: 'string' as const },
+        year: { type: 'number' as const },
+        hour: { type: 'number' as const },
+        minute: { type: 'number' as const },
+        timeOfDay: { type: 'string' as const },
+        explanation: { type: 'string' as const, nullable: true }
+      },
+      required: ['day', 'dayName', 'month', 'monthName', 'year', 'hour', 'minute', 'timeOfDay'],
+      description: 'Only for initial story setup - starting date and time'
+    },
+    stats_update: {
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          sourceName: { type: 'string' as const, nullable: true },
+          targetName: { type: 'string' as const },
+          value: { 
+            type: 'object' as const,
+            properties: {
+              result: { type: 'number' as const },
+              dice_roll_explanation: { type: 'string' as const }
+            },
+            required: ['result', 'dice_roll_explanation']
+          },
+          type: { type: 'string' as const }
+        },
+        required: ['targetName', 'value', 'type']
+      },
+      description: 'Character statistics and resource updates'
+    },
+    inventory_update: {
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          type: {
+            type: 'string' as const,
+            enum: ['add_item', 'remove_item']
+          },
+          item_id: { type: 'string' as const },
+          item_added: {
+            type: 'object' as const,
+            nullable: true,
+            properties: {
+              description: { type: 'string' as const },
+              effect: { type: 'string' as const }
+            },
+            required: ['description', 'effect']
+          }
+        },
+        required: ['type', 'item_id']
+      },
+      description: 'Inventory changes - items added or removed'
+    },
+    is_character_in_combat: {
+      type: 'boolean' as const,
+      description: 'Whether the character is currently in active combat'
+    },
+    is_character_restrained_explanation: {
+      type: 'string' as const,
+      nullable: true,
+      description: 'Explanation if character is restrained or under external control, null otherwise'
+    },
+    currently_present_npcs_explanation: {
+      type: 'string' as const,
+      description: 'Explanation of which NPCs are present and why'
+    },
+    currently_present_npcs: {
+      type: 'object' as const,
+      properties: {
+        hostile: {
+          type: 'array' as const,
+          items: {
+            type: 'object' as const,
+            properties: {
+              uniqueTechnicalNameId: { type: 'string' as const },
+              displayName: { type: 'string' as const }
+            },
+            required: ['uniqueTechnicalNameId', 'displayName']
+          }
+        },
+        friendly: {
+          type: 'array' as const,
+          items: {
+            type: 'object' as const,
+            properties: {
+              uniqueTechnicalNameId: { type: 'string' as const },
+              displayName: { type: 'string' as const }
+            },
+            required: ['uniqueTechnicalNameId', 'displayName']
+          }
+        },
+        neutral: {
+          type: 'array' as const,
+          items: {
+            type: 'object' as const,
+            properties: {
+              uniqueTechnicalNameId: { type: 'string' as const },
+              displayName: { type: 'string' as const }
+            },
+            required: ['uniqueTechnicalNameId', 'displayName']
+          }
+        }
+      },
+      required: ['hostile', 'friendly', 'neutral'],
+      description: 'NPCs currently present in the scene categorized by relationship'
+    }
+  },
+  required: [
+    'id', 'currentPlotPoint', 'nextPlotPoint', 'gradualNarrativeExplanation', 'plotPointAdvancingNudgeExplanation',
+    'story', 'story_memory_explanation', 'xpGainedExplanation', 'time_passed_minutes',
+    'time_passed_explanation', 'stats_update', 'inventory_update', 'is_character_in_combat',
+    'currently_present_npcs_explanation', 'currently_present_npcs'
+  ]
+};
+
+export interface GameAgentResponse {
+  id: number;
+  currentPlotPoint: string;
+  nextPlotPoint: string;
+  gradualNarrativeExplanation: string;
+  plotPointAdvancingNudgeExplanation: string;
+  story: string;
+  story_memory_explanation: string;
+  xpGainedExplanation: string;
+  time_passed_minutes: number;
+  time_passed_explanation: string;
+  initial_game_time?: {
+    day: number;
+    dayName: string;
+    month: number;
+    monthName: string;
+    year: number;
+    hour: number;
+    minute: number;
+    timeOfDay: string;
+    explanation?: string;
+  };
+  stats_update: Array<{
+    sourceName?: string;
+    targetName: string;
+    value: {
+      result: number;
+      dice_roll_explanation: string;
+    };
+    type: string;
+  }>;
+  inventory_update: Array<{
+    type: 'add_item' | 'remove_item';
+    item_id: string;
+    item_added?: {
+      description: string;
+      effect: string;
+    };
+  }>;
+  is_character_in_combat: boolean;
+  is_character_restrained_explanation?: string;
+  currently_present_npcs_explanation: string;
+  currently_present_npcs: {
+    hostile: Array<{
+      uniqueTechnicalNameId: string;
+      displayName: string;
+    }>;
+    friendly: Array<{
+      uniqueTechnicalNameId: string;
+      displayName: string;
+    }>;
+    neutral: Array<{
+      uniqueTechnicalNameId: string;
+      displayName: string;
+    }>;
+  };
 }
 
 // Game Time Response Schema for GameAgent
@@ -1008,6 +1292,7 @@ export function getResponseSchemaForAgent(agentType: string): any {
   const schemas: Record<string, any> = {
     story: StoryResponseSchema,
     storyGeneration: StoryGenerationResponseSchema,
+    gameAgent: GameAgentResponseSchema,
     action: ActionResponseSchema,
     singleAction: SingleActionResponseSchema,
     actionsWithThoughts: ActionsWithThoughtsResponseSchema,

@@ -5,14 +5,13 @@
 /**
  * Related history JSON format template
  */
-export const relatedHistoryJsonFormat = '{"relatedDetails": [{"storyReference": "specific story detail", "relevanceScore": 0.85}]}';
+export const relatedHistoryJsonFormat = ''; // Deprecated - use RelatedDetailsResponseSchema instead
 
 /**
  * Related history retrieval prompt
  */
 export const relatedHistoryPrompt = (maxRelatedDetails: number) =>
-	'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-	relatedHistoryJsonFormat;
+	'Identify relevant story references from past events that maintain consistency with current progression.';
 
 /**
  * Related history agent instruction
@@ -33,8 +32,7 @@ export const relatedHistoryAgentInstruction =
  * Summary generation prompt
  */
 export const summaryGenerationPrompt =
-	'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.\n' +
-	'{"keyDetails": ["key detail 1", "key detail 2", ...], "story": "chronological story summary"}';
+	'Create a concise chronological summary with key details for story continuity.';
 
 /**
  * Summary agent instruction

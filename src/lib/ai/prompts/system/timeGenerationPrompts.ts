@@ -16,8 +16,7 @@ export const timeGenerationPrompt = [
 	'- Dramatic potential (storms for epic moments, fog for mystery, clear for peaceful starts)',
 	'- Setting realism (desert=heat/dust, mountains=wind/snow, coastal=mist/storms)',
 	'',
-	'CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.',
-	'{"day": 15, "dayName": "Monday", "month": 6, "monthName": "June", "year": 2024, "hour": 12, "minute": 30, "timeOfDay": "midday", "season": "summer", "weather": {"type": "clear", "intensity": "light", "description": "brief atmospheric description"}, "explanation": "Brief explanation of why this time and weather fits the story"}'
+	'Generate appropriate time and weather that fits the story and setting.'
 ];
 
 /**

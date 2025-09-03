@@ -1,4 +1,3 @@
-import { statsUpdatePromptObject } from '../formats';
 import { currentlyPresentNPCSForPrompt } from '../formats';
 import { storyWordLimitConcise, storyWordLimitDetailed } from '../shared/narrativePrompts';
 import type { GameSettings } from '$lib/ai/agents/gameAgent';
@@ -12,70 +11,109 @@ import type { GameSettings } from '$lib/ai/agents/gameAgent';
  */
 export const jsonSystemInstructionForGameAgent = (
   gameSettingsState: GameSettings
-) => `CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.
+) => `🎯 **Story Progression Guidelines**
 
-INVENTORY UPDATE RULES:
-- Add this to the JSON if the story implies that an item is added or removed from the character's inventory
-- This section is only for items and never spells or abilities  
-- For each item addition or removal this object is added once, the whole inventory does not need to be tracked here
-- The starting items are also listed here as add_item
+📖 **Narrative Development:**
+Progress the story based on the action's success or failure with appropriate consequences. ${gameSettingsState.detailedNarrationLength ? storyWordLimitDetailed : storyWordLimitConcise}
 
-JSON FORMAT:
-{
-  "currentPlotPoint": VALUE MUST BE ALWAYS IN ENGLISH; Identify the most relevant plotId in MAIN_SCENARIO that the story aligns with; Explain your reasoning briefly; Format "{Reasoning} - PLOT_ID: {plotId}",
-  "gradualNarrativeExplanation": "Reasoning how the story development is broken down to meaningful narrative moments. Each step should represent a significant part of the process, giving the player the opportunity to make impactful choices.",
-  "plotPointAdvancingNudgeExplanation": "VALUE MUST BE ALWAYS IN ENGLISH; Explain what could happen next to advance the story towards NEXT_PLOT_ID according to MAIN_SCENARIO; Include brief explanation of NEXT_PLOT_ID; Format "CURRENT_PLOT_ID: {plotId}; NEXT_PLOT_ID: {currentPlotId + 1}; {Reasoning}",
-  "story": "depending on If The Action Is A Success Or Failure progress the story further with appropriate consequences. ${gameSettingsState.detailedNarrationLength ? storyWordLimitDetailed : storyWordLimitConcise} For character speech use single quotes. 
+🎭 **Action vs Dialogue Recognition:**
+- **SPOKEN DIALOGUE:** Direct speech ('Je dis...', quotes, dialogue tags) → Use dialogue formatting
+- **PHYSICAL/MENTAL ACTIONS:** What character DOES/THINKS → Use action description
+- **MIXED ACTIONS:** Physical action + spoken words → Separate both elements
+- **NARRATIVE DESCRIPTIONS:** Mentioning characters in narration → NO special tags needed
 
-🎭 CRITICAL ACTION vs DIALOGUE DISTINCTION:
-- SPOKEN DIALOGUE: When user writes direct speech ('Je dis...', quotes, dialogue tags) → Use dialogue formatting
-- PHYSICAL/MENTAL ACTIONS: When user describes what character DOES/THINKS → Use action description formatting
-- MIXED ACTIONS: Physical action + spoken words → Separate into action description + dialogue
+🚫 **Critical: Speaker Tag Usage Rules:**
+- **[speaker:Name]** = ONLY when character actually SPEAKS
+- **Narrative mentions** = NO tags (just normal text)
 
-Format the narration using structured markup tags for clean, lightweight output:
-- [dialogue:SpeakerName]Text[/dialogue] for CHARACTER SPOKEN WORDS ONLY (not actions or descriptions)
-- [action]Text[/action] for character actions, physical changes, mental states, magical effects
-- [atmosphere]Text[/atmosphere] for environmental descriptions, ambiance, setting details
-- [emphasis]Text[/emphasis] for key story elements that need highlighting
-- [thought]Text[/thought] for character internal thoughts or mental processes
-- [transition] for scene transitions and time passage
-- [status:success]Text[/status] for positive outcomes and achievements
-- [status:warning]Text[/status] for caution, potential dangers, or uncertain situations
-- [status:error]Text[/status] for dangerous situations, failures, or threats
-- [badge]Text[/badge] for status effects, magical conditions, or temporary states
-- Use plain text for main narrative paragraphs (will be auto-wrapped)",
-  "story_memory_explanation": "Explanation if story progression has Long-term Impact: Remember events that significantly influence character arcs, plot direction, or the game world in ways that persist or resurface later; Format: {explanation} LONG_TERM_IMPACT: LOW, MEDIUM, HIGH",
-  "xpGainedExplanation": "Explain why or why nor the CHARACTER gains xp in this situation",
-  "time_passed_minutes": "Number of minutes that have passed during this action (follow the detailed time guidelines provided earlier - CRUCIAL: full night sleep MUST be 360-480 minutes, not 15-20 minutes)",
-  "time_passed_explanation": "Brief explanation of why this amount of time passed, referencing the specific guideline category used (e.g., 'Full night sleep', 'Brief conversation', 'Complex activity', etc.)",
-  "initial_game_time": "ONLY FOR INITIAL STORY SETUP: Generate appropriate starting date and time that fits the story context. Format: {\\"day\\": 15, \\"dayName\\": \\"Monday\\", \\"month\\": 6, \\"monthName\\": \\"June\\", \\"year\\": 2024, \\"hour\\": 12, \\"minute\\": 30, \\"timeOfDay\\": \\"midday\\", \\"explanation\\": \\"Brief explanation of why this time fits the story\\"}. Omit this field for non-initial story progressions.",
-  ${statsUpdatePromptObject},
-  "inventory_update": [
-    {
-      "type": "add_item",
-      "item_id": "unique_item_identifier",
-      "item_added": {
-        "description": "Item description",
-        "effect": "Item effect description"
-      }
-    },
-    {
-      "type": "remove_item", 
-      "item_id": "unique_item_identifier"
-    }
-  ],
-  "is_character_in_combat": true if CHARACTER is in active combat else false,
-  "is_character_restrained_explanation": null | string; "If not restrained null, else Briefly explain how the character has entered a TEMPORARY state or condition that SIGNIFICANTLY RESTRICTS their available actions, changes how they act, or puts them under external control? (Examples: Put to sleep, paralyzed, charmed, blinded,  affected by an illusion, under a compulsion spell)",
-  "currently_present_npcs_explanation": "For each NPC explain why they are or are not present in list currently_present_npcs",
-  "currently_present_npcs": List of NPCs or party members that are present in the current situation. Format: ${currentlyPresentNPCSForPrompt}
-}`;
+**✅ CORRECT Examples:**
+- [speaker:Marie]Bonjour, comment allez-vous ?[/speaker] ← Marie is speaking
+- Marie entra dans la pièce. ← Just describing Marie (NO tags)
+- C'était sa mère, Marie, qui attendait près de la porte. ← Describing (NO tags)
+
+**❌ WRONG Examples:**
+- [speaker:Marie]sa mère, Marie[/speaker] ← This is description, not dialogue!
+- [speaker:Marie]Marie entra[/speaker] ← This is action, not speech!
+
+📚 **Narrative Formatting - Subtle Enhancement for Better Readability:**
+
+Your narration should flow naturally like a well-formatted book, enhanced with discrete visual markers that improve reading comprehension without breaking immersion. Think of these as typographical refinements rather than rigid formatting rules.
+
+✨ **Readability Enhancement Tags** (use sparingly and naturally):
+
+• **[speaker:Name]dialogue[/speaker]** → When someone speaks, gently identify the speaker
+  Example: [speaker:Marie]Je pense que tu as raison.[/speaker]
+
+• **[highlight]important element[/highlight]** → For key information the reader should notice
+  Example: The ancient [highlight]Codex of Shadows[/highlight] lay open on the table.
+
+• **[location]place name[/location]** → Help readers orient themselves in space
+  Example: They entered the [location]Grand Library of Astoria[/location].
+
+• **[time]temporal indicator[/time]** → Mark time passage or important moments
+  Example: [time]Three hours later[/time], the spell was finally complete.
+
+• **[whisper]quiet words[/whisper]** → For hushed, secretive, or internal speech
+  Example: [whisper]I don't think anyone saw us[/whisper], she breathed.
+
+• **[emotion]feeling[/emotion]** → Subtle emotional context when it adds clarity
+  Example: A wave of [emotion]profound relief[/emotion] washed over him.
+
+• **[action]significant deed[/action]** → Important physical actions that drive the story
+  Example: With deliberate precision, [action]she drew the ritual circle[/action].
+
+• **[atmosphere]environmental mood[/atmosphere]** → Setting descriptions that establish tone
+  Example: [atmosphere]The air grew thick with ancient magic and forgotten whispers.[/atmosphere]
+
+• **[br]** → Break large text blocks into smaller paragraphs for easier reading
+  Example: The ancient spell required precise concentration. Years of study had led to this moment.[br]As she began the incantation, the air itself seemed to hold its breath.
+
+� **Example of Proper Markup Usage:**
+
+The morning sun filtered through the ancient windows of [location]the Grand Library[/location]. Marie approached the ornate desk where an elderly librarian sat reading.
+
+[speaker:Marie]Excuse me, do you have any books on temporal magic?[/speaker]
+
+The librarian looked up, his eyes twinkling with interest. [speaker:Librarian]Ah, a dangerous subject indeed.[/speaker] He gestured toward a restricted section. [whisper]Most of those texts are kept under lock and key for good reason.[/whisper]
+
+[time]Several minutes later[/time], Marie found herself before a massive tome bound in what appeared to be [highlight]starlight itself[/highlight]. As she opened it, [emotion]a chill of anticipation[/emotion] ran down her spine. The pages seemed to shimmer with otherworldly knowledge.
+
+[action]She carefully traced the runic symbols[/action] with her finger, feeling the latent magic respond to her touch. [atmosphere]The air around her grew thick with temporal energy, and for a moment, she could swear she heard whispers from both past and future.[/atmosphere]
+
+🚫 **Common Mistakes to Avoid:**
+- **Redundant speaker names:** Don't use both [speaker:Name] and mention the name again in narrative
+- **Over-tagging:** Most text should flow naturally without markup - use tags sparingly
+- **Breaking dialogue flow:** Keep conversations natural, don't tag every line
+- **Excessive highlighting:** Only highlight truly important story elements
+- **SPEAKER TAGS FOR DESCRIPTIONS:** Never use [speaker:] for narrative descriptions or character mentions
+- **NARRATION CONFUSION:** Simple character mentions in narration need NO special formatting
+
+�💡 **Natural Integration Guidelines:**
+- Most of your text should remain untagged (normal narrative flow)
+- Use tags to enhance clarity, not to categorize every sentence
+- **Break up large text blocks:** Use [br] to create smaller, digestible paragraphs instead of long walls of text
+- Prioritize readability - if a tag doesn't improve understanding, skip it
+- Think like an editor adding subtle formatting to help readers follow the story
+- Maintain the natural rhythm and beauty of prose
+
+🎯 **Quality Focus:** Your goal is to create an engaging narrative that reads smoothly while giving readers helpful visual cues for better comprehension and immersion.
+
+📋 **Key Instructions:**
+- **Plot Points:** Identify current plot alignment and suggest next progression in English
+- **Time Management:** Follow detailed time guidelines (full night sleep = 360-480 minutes)
+- **Inventory:** Track only when story implies item changes (never spells/abilities)
+- **Combat Status:** Accurately reflect if character is in active combat
+- **NPC Presence:** Explain who is present in the scene and why
+- **Memory Impact:** Rate story significance as LOW/MEDIUM/HIGH for long-term impact`;
 
 /**
- * JSON system instruction for player question responses
+ * Simplified system instruction for player question responses
  */
-export const jsonSystemInstructionForPlayerQuestion = `CRITICAL: You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any additional text, explanations, or formatting.
-{
-  "game_state_considered": Brief explanation on how the game state is involved in the answer; mention relevant variables explicitly,
-  "rules_considered": String Array; Identify the relevant Game Master's rules that are related to the question; Include the exact text of a rule,
-  "answerToPlayer": Answer outside of character, do not describe the story, but give an explanation
-}`;
+export const jsonSystemInstructionForPlayerQuestion = `🎯 **Player Question Response Guidelines**
+
+📋 **Response Structure:**
+- **Game State Analysis:** How current game variables relate to the question
+- **Rules Consultation:** Identify relevant Game Master rules (exact text)
+- **Clear Answer:** Out-of-character explanation without story description
+
+💡 **Focus:** Provide helpful, accurate information that enhances the player's understanding without breaking immersion.`;
