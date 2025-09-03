@@ -2,33 +2,86 @@
 	/**
 	 * NarrativeMarkupParser - Converts structured narrative markup to styled HTML
 	 * Replaces HTML generation in AI prompts with a cleaner, more maintainable system
+	 * Enhanced with UUID resolution for NPCs and validation for unknown markup
 	 */
+
+	import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
+	import { createNPCUuidResolver } from './npcUuidResolver';
 
 	interface NarrativeMarkupParserProps {
 		content: string;
+		npcState?: NPCState;
+		enableValidation?: boolean;
 	}
 
-	let { content }: NarrativeMarkupParserProps = $props();
+	let { content, npcState = {}, enableValidation = true }: NarrativeMarkupParserProps = $props();
+
+	/**
+	 * Valid markup tags that are supported by this parser
+	 */
+	const VALID_MARKUP_TAGS = new Set([
+		'speaker',
+		'character',
+		'highlight',
+		'location',
+		'time',
+		'whisper',
+		'br',
+		'emotion',
+		'action',
+		'atmosphere',
+		'transition',
+		'thought',
+		'status',
+		'badge'
+	]);
 
 	/**
 	 * Parse structured narrative markup into HTML with subtle, book-like styling
 	 * Focus on improving readability without breaking immersion
+	 * Enhanced with NPC UUID resolution and validation
 	 */
 	function parseNarrativeMarkup(text: string): string {
 		if (!text) return '';
 
 		let parsed = text;
+		const resolver = createNPCUuidResolver(npcState);
+
+		// Track unknown tags for validation
+		const unknownTags: string[] = [];
+		const malformedTags: string[] = [];
+
+		// Detect malformed speaker tags (missing closing tag)
+		const unclosedSpeakerMatches = parsed.match(/\[speaker:[^\]]+\](?![^[]*\[\/speaker\])/g);
+		if (unclosedSpeakerMatches && enableValidation) {
+			unclosedSpeakerMatches.forEach(match => {
+				malformedTags.push(`Unclosed speaker tag: ${match} (missing [/speaker])`);
+			});
+		}
+
+		// Detect malformed character tags (missing closing tag)
+		const unclosedCharacterMatches = parsed.match(/\[character:[^\]]+\](?![^[]*\[\/character\])/g);
+		if (unclosedCharacterMatches && enableValidation) {
+			unclosedCharacterMatches.forEach(match => {
+				malformedTags.push(`Unclosed character tag: ${match} (missing [/character])`);
+			});
+		}
+
+		// Character references with UUID resolution: [character:uuid]reference[/character]
+		parsed = parsed.replace(
+			/\[character:([^\]]+)\](.*?)\[\/character\]/gs,
+			(match, uuid, content) => {
+				const result = resolver.resolveUUID(uuid);
+				// Note: resolver.resolveUUID() already handles warning throttling
+				// so we don't need to log additional warnings here
+				return `<span class="font-semibold text-secondary/90 px-1 py-0.5 bg-secondary/10 rounded" title="NPC: ${result.displayName}">${content}</span>`;
+			}
+		);
 
 		// Speaker dialogue: [speaker:Name]dialogue[/speaker] - Subtle dialogue formatting
 		parsed = parsed.replace(
 			/\[speaker:([^\]]+)\](.*?)\[\/speaker\]/gs,
 			'<div class="border-l-2 border-primary/30 pl-3 py-1 mb-2 bg-primary/5 rounded-r"><span class="text-primary/80 text-sm font-medium">$1:</span> <span class="text-base-content italic">"$2"</span></div>'
-		);
-
-		// Character names: [character:Name]reference[/character] - Highlight character names and references
-		parsed = parsed.replace(
-			/\[character:([^\]]+)\](.*?)\[\/character\]/gs,
-			'<span class="font-semibold text-secondary/90 px-1 py-0.5 bg-secondary/10 rounded">$1</span>'
 		);
 
 		// Highlight: [highlight]important text[/highlight] - Subtle emphasis for key elements
@@ -56,10 +109,7 @@
 		);
 
 		// Line break: [br] - Insert line breaks for better text structure using DaisyUI divider
-		parsed = parsed.replace(
-			/\[br\]/gs,
-			'<div class="divider my-2"></div>'
-		);
+		parsed = parsed.replace(/\[br\]/gs, '<div class="divider my-2"></div>');
 
 		// Emotion: [emotion]feeling description[/emotion] - Subtle emotional context
 		parsed = parsed.replace(
@@ -113,22 +163,54 @@
 			'<span class="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full font-medium">$1</span>'
 		);
 
+		// Validation: Check for unknown markup tags
+		if (enableValidation) {
+			const tagMatches = parsed.match(/\[([a-zA-Z]+)[:\]]/g);
+			if (tagMatches) {
+				tagMatches.forEach((match) => {
+					const tagName = match.match(/\[([a-zA-Z]+)/)?.[1];
+					if (tagName && !VALID_MARKUP_TAGS.has(tagName)) {
+						unknownTags.push(tagName);
+					}
+				});
+			}
+
+			// Log unknown tags for debugging
+			if (unknownTags.length > 0) {
+				console.warn('Unknown markup tags detected:', unknownTags);
+				console.info('Valid tags:', Array.from(VALID_MARKUP_TAGS).sort());
+			}
+
+			// Log malformed tags for debugging
+			if (malformedTags.length > 0) {
+				console.warn('Malformed markup tags detected:', malformedTags);
+				console.info('Remember: All opening tags need closing tags, e.g., [speaker:Name]text[/speaker]');
+			}
+
+			// Optional: Strip unknown tags (uncomment if desired)
+			// parsed = parsed.replace(/\[([a-zA-Z]+)(?::[^\]]+)?\](.*?)\[\/\1\]/gs, '$2');
+		}
+
 		// Paragraphs: Wrap remaining text in paragraphs
 		// Split by double newlines and wrap each section
 		const sections = parsed.split(/\n\s*\n/);
-		const wrappedSections = sections.map(section => {
+		const wrappedSections = sections.map((section) => {
 			const trimmed = section.trim();
 			if (!trimmed) return '';
-			
+
 			// Don't wrap if already wrapped in a div/blockquote
-			if (trimmed.startsWith('<div') || trimmed.startsWith('<blockquote') || trimmed.includes('class=')) {
+			if (
+				trimmed.startsWith('<div') ||
+				trimmed.startsWith('<blockquote') ||
+				trimmed.includes('class=')
+			) {
 				return trimmed;
 			}
-			
+
 			return `<p class="text-base-content leading-relaxed mb-4">${trimmed}</p>`;
 		});
 
-		return wrappedSections.filter(s => s).join('\n\n');
+		return wrappedSections.filter((s) => s).join('\n\n');
 	}
 
 	const parsedContent = $derived(parseNarrativeMarkup(content));
@@ -143,7 +225,7 @@
 		font-size: 1rem;
 		line-height: 1.75;
 	}
-	
+
 	/* Remove bottom margin from last paragraph */
 	.narrative-content :global(p:last-child) {
 		margin-bottom: 0;

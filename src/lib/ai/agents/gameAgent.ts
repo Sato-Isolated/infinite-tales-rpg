@@ -13,7 +13,7 @@ import {
 } from '$lib/ai/agents/characterStatsAgent';
 import { DialogueTrackingAgent } from '$lib/ai/agents/dialogueTrackingAgent';
 import type { DiceSimulationMode } from '$lib/utils/webglDetection';
-import { 
+import {
 	GameTimeResponseSchema,
 	GameAgentResponseSchema,
 	type GameTimeResponse,
@@ -25,9 +25,7 @@ import {
 	storyWordLimit,
 	TIME_DURATION_GUIDELINES,
 	DIALOGUE_CONSISTENCY_PROMPT,
-	DIALOGUE_MEMORY_CHECK,
-	ACTION_DIALOGUE_DISTINCTION_PROMPT,
-	USER_DIALOGUE_PATTERNS
+	DIALOGUE_MEMORY_CHECK
 } from '$lib/ai/prompts/shared';
 import { systemBehaviour, jsonSystemInstructionForGameAgent, jsonSystemInstructionForPlayerQuestion } from '$lib/ai/prompts/system';
 // Campaign removed: local helper to extract first numeric PLOT_ID occurrences
@@ -438,14 +436,7 @@ export class GameAgent {
 			}
 		}
 
-		//  ADD ACTION/DIALOGUE DISTINCTION INSTRUCTIONS
-		// This critical instruction helps LLM distinguish between physical actions and spoken dialogue
-		combinedText += '\n\n' + ACTION_DIALOGUE_DISTINCTION_PROMPT;
-		
-		// Add user's specific dialogue patterns
-		combinedText += '\n\n' + USER_DIALOGUE_PATTERNS;
-		
-		console.log('🎭 Added action/dialogue distinction instructions');
+		console.log('🎭 Dialogue analysis completed');
 
 		const gameAgent = this.getGameAgentSystemInstructionsFromStates(
 			storyState,
@@ -458,7 +449,7 @@ export class GameAgent {
 			customCombatAgentInstruction,
 			gameSettings
 		);
-		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
+		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings, npcState));
 
 		console.log(combinedText);
 		const request: LLMRequest = {

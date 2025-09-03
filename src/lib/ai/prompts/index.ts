@@ -4,4 +4,3 @@
  */
 export * from './shared';
 export * from './system';
-export * from './templates';
