@@ -1,7 +1,5 @@
 import { storyWordLimitConcise, storyWordLimitDetailed } from '../shared/narrativePrompts';
 import type { GameSettings } from '$lib/ai/agents/gameAgent';
-import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
-import { generateMarkupReferenceGuide } from '../helpers/npcMarkupHelpers';
 
 /**
  * JSON system instruction for game agent responses
@@ -11,64 +9,34 @@ import { generateMarkupReferenceGuide } from '../helpers/npcMarkupHelpers';
  * - detailedNarrationLength = false: Apply concise 100-160 word limit
  */
 export const jsonSystemInstructionForGameAgent = (
-  gameSettingsState: GameSettings,
-  npcState?: NPCState
+  gameSettingsState: GameSettings
 ) => `🎯 **Story Progression Guidelines**
 
 📖 **Narrative Development:**
 Progress the story based on the action's success or failure with appropriate consequences. ${gameSettingsState.detailedNarrationLength ? storyWordLimitDetailed : storyWordLimitConcise}
 
-${generateMarkupReferenceGuide(npcState)}
+🎭 **Narrative Markup (Optional - Use Sparingly):**
 
-🎭 **Action vs Dialogue Recognition:**
-- **SPOKEN DIALOGUE:** Direct speech ('Je dis...', quotes, dialogue tags) → Use [speaker:Name] tags
-- **PHYSICAL/MENTAL ACTIONS:** What character DOES/THINKS → Use [action] or [thought] tags
-- **MIXED ACTIONS:** Physical action + spoken words → Separate both elements clearly
-- **NARRATIVE DESCRIPTIONS:** Mentioning characters in narration → Use [character:uuid] if important
+**Core Tags (Use only when they enhance readability):**
+• \`[speaker:Name]dialogue[/speaker]\` → When someone speaks out loud
+• \`[character]Name[/character]\` → To highlight an important character
+• \`[highlight]text[/highlight]\` → For crucial information
+• \`[br]\` → Line break to improve text flow
 
-🚫 **Critical Validation Rules - MUST FOLLOW:**
+**Style Tags (Use occasionally):**
+• \`[location]place[/location]\` → Important locations
+• \`[time]moment[/time]\` → Time transitions
+• \`[whisper]quiet text[/whisper]\` → Whispered speech
 
-**1. Speaker Tag Usage:**
-- **[speaker:Name]** = ONLY when character actually SPEAKS OUT LOUD
-- **Narrative mentions** = NO speaker tags (use [character:uuid] if needed)
+**Golden Rule:** Most of your narrative should be plain text without any markup. Only use tags when they genuinely improve the reading experience.
 
-**✅ CORRECT Examples:**
-- [speaker:Marie]Bonjour, comment allez-vous ?[/speaker] ← Marie is speaking
-- Marie entra dans la pièce. ← Just describing Marie (NO tags needed)
-- [character:npc_marie]Marie[/character] entra dans la pièce. ← NPC mention with UUID
+✅ **Good Examples:**
+- The ancient [location]Tower of Mysteries[/location] loomed before them.
+- [speaker:Marie]We should be careful here,[/speaker] she whispered.
+- [character]Captain Jean[/character] nodded in agreement.
 
-**❌ WRONG Examples:**
-- [speaker:Marie]sa mère, Marie[/speaker] ← This is description, not dialogue!
-- [speaker:Marie]Marie entra[/speaker] ← This is action, not speech!
-- [character:Marie]approached[/character] ← Use UUID, not name!
-
-**2. Character Reference Rules:**
-- Always use [character:uuid] with the actual UUID, never the display name
-- Only use character tags for important NPC mentions that need highlighting
-- Regular narrative mentions of characters need NO special formatting
-
-**3. Markup Validation:**
-- ONLY use tags from the approved list in the reference guide above
-- Unknown tags will be flagged as errors and may break formatting
-- When in doubt, use plain text - it's better than invalid markup
-
-**4. Natural Integration Guidelines:**
-- Most text should remain untagged (natural narrative flow)
-- Use tags to enhance clarity, not to categorize every sentence
-- Break up large text blocks with [br] for better readability
-- Think like an editor adding subtle formatting to help readers
-
-💡 **Example of Proper Integrated Usage:**
-
-The morning sun filtered through the ancient windows of [location]the Grand Library[/location]. [character:npc_marie]Marie[/character] approached the ornate desk where an elderly librarian sat reading.
-
-[speaker:Marie]Excuse me, do you have any books on temporal magic?[/speaker]
-
-The librarian looked up, his eyes twinkling with interest. [speaker:Librarian]Ah, a dangerous subject indeed.[/speaker] He gestured toward a restricted section. [whisper]Most of those texts are kept under lock and key for good reason.[/whisper]
-
-[time]Several minutes later[/time], [character:npc_marie]Marie[/character] found herself before a massive tome bound in [highlight]starlight itself[/highlight]. [br]
-
-[thought]This feels dangerous, but I need to know[/thought], she mused as [action]she carefully traced the runic symbols[/action] with her finger.
+❌ **Avoid Over-Tagging:**
+- [character]Marie[/character] [action]walked[/action] to the [location]door[/location] ← Too many tags!
 
 📋 **Key Instructions:**
 - **Plot Points:** Identify current plot alignment and suggest next progression in English

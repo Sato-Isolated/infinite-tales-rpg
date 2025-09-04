@@ -175,7 +175,9 @@ describe('Markup Tag Validation', () => {
     const result = validateMarkupTags(text);
 
     expect(result.isValid).toBe(false);
-    expect(result.suggestions.some(s => s.includes('character:uuid'))).toBe(true);
+    expect(result.suggestions).toBeDefined();
+    expect(result.suggestions!.some(s => s.includes('speaker:Name'))).toBe(true);
+    expect(result.suggestions!.some(s => s.includes('character'))).toBe(true);
   });
 
   it('should detect case sensitivity issues', () => {
@@ -183,10 +185,11 @@ describe('Markup Tag Validation', () => {
     const result = validateMarkupTags(text);
 
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('Unknown markup tag: [Time]');
-    expect(result.errors).toContain('Unknown markup tag: [Speaker]');
-    expect(result.suggestions).toContain('Did you mean [time] instead of [Time]? (tags are case-sensitive)');
-    expect(result.suggestions).toContain('Did you mean [speaker] instead of [Speaker]? (tags are case-sensitive)');
+    // Our improved logic now correctly identifies these as case sensitivity issues, not unknown tags
+    expect(result.errors).toContain('Tag should be lowercase: [time] instead of [Time]');
+    expect(result.errors).toContain('Tag should be lowercase: [speaker] instead of [Speaker]');
+    expect(result.suggestions!).toContain('Did you mean [time] instead of [Time]? (tags are case-sensitive)');
+    expect(result.suggestions!).toContain('Did you mean [speaker] instead of [Speaker]? (tags are case-sensitive)');
   });
 
   it('should handle text without any markup', () => {
@@ -214,9 +217,9 @@ describe('Markup Reference Guide Generation', () => {
     const guide = generateMarkupReferenceGuide(mockNPCState);
 
     expect(guide).toContain('Complete Narrative Markup Reference Guide');
-    expect(guide).toContain('[character:npc_001] → "Marie Dubois"');
-    expect(guide).toContain('[character:npc_002] → "Jean Le Garde"');
-    expect(guide).toContain('Always use the UUID');
+    expect(guide).toContain('Available Characters:');
+    expect(guide).toContain('- Marie Dubois');
+    expect(guide).toContain('simple name-based system');
   });
 });
 
@@ -298,39 +301,39 @@ describe('Edge Cases', () => {
 
   it('should throttle warnings for unknown NPCs to prevent console spam', () => {
     const resolver = createNPCUuidResolver(mockNPCState);
-    
+
     // Spy on console.warn to count calls
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
-    
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => { });
+
     // First resolution should log a warning
     const result1 = resolver.resolveUUID('fenrir');
     expect(result1.isValid).toBe(false);
     expect(result1.displayName).toBe('fenrir');
     expect(warnSpy).toHaveBeenCalledWith('Unknown NPC UUID: "fenrir". Using as fallback display name.');
-    
+
     // Subsequent resolutions should use debug logging, not warn
     const result2 = resolver.resolveUUID('fenrir');
     expect(result2.isValid).toBe(false);
     expect(result2.displayName).toBe('fenrir');
     expect(debugSpy).toHaveBeenCalledWith('Using fallback display name for unknown NPC: "fenrir"');
-    
+
     // Different unknown NPC should still get first warning
     const result3 = resolver.resolveUUID('aether');
     expect(result3.isValid).toBe(false);
     expect(result3.displayName).toBe('aether');
     expect(warnSpy).toHaveBeenCalledWith('Unknown NPC UUID: "aether". Using as fallback display name.');
-    
+
     // Verify warning throttling cache
     const loggedUUIDs = resolver.getLoggedUnknownUUIDs();
     expect(loggedUUIDs.has('fenrir')).toBe(true);
     expect(loggedUUIDs.has('aether')).toBe(true);
-    
+
     // Clear cache and verify warning logs again
     resolver.clearWarningCache();
     const clearedUUIDs = resolver.getLoggedUnknownUUIDs();
     expect(clearedUUIDs.size).toBe(0);
-    
+
     warnSpy.mockRestore();
     debugSpy.mockRestore();
   });
@@ -344,15 +347,15 @@ describe('Edge Cases', () => {
     };
 
     // Spy on console.warn to check for malformed tag warnings
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+
     // This would be called by the actual component's parseNarrativeMarkup function
     // For now, let's test the detection regex directly
     const text = '[speaker:Fenrir][Beaucoup de petits prétentieux, cette année. Ta mère a un flair.]';
     const unclosedSpeakerMatches = text.match(/\[speaker:[^\]]+\](?![^[]*\[\/speaker\])/g);
-    
+
     expect(unclosedSpeakerMatches).toEqual(['[speaker:Fenrir]']);
-    
+
     warnSpy.mockRestore();
   });
 });
