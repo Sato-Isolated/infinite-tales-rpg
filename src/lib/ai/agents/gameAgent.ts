@@ -344,6 +344,27 @@ export class GameAgent {
 		}
 		const playerActionTextForHistory = playerActionText;
 		let combinedText = playerActionText;
+		
+		// 🎭 QUOTED DIALOGUE PRESERVATION
+		// Detect if action.text contains quoted dialogue that should be preserved exactly
+		const actionText = action.text.trim();
+		const isQuotedDialogue = 
+			(actionText.startsWith('"') && actionText.endsWith('"')) ||
+			(actionText.startsWith("'") && actionText.endsWith("'")) ||
+			(actionText.startsWith('"') && actionText.endsWith('"'));
+		
+		if (isQuotedDialogue) {
+			console.log('🎭 Quoted dialogue detected:', actionText);
+			combinedText += '\n\n⚠️ CRITICAL DIALOGUE PRESERVATION INSTRUCTION:';
+			combinedText += '\nThe above action contains EXACT QUOTED DIALOGUE that must be preserved literally.';
+			combinedText += `\nThe character ${action.characterName} is speaking these EXACT words: ${actionText}`;
+			combinedText += '\nYou MUST use this exact text as the character\'s dialogue in your story response.';
+			combinedText += '\nDO NOT paraphrase, translate, or creatively interpret this dialogue.';
+			combinedText += '\nDO NOT add "creative flair" or alternative expressions.';
+			combinedText += '\nThe quoted text is the character\'s literal speech - use it exactly as provided.';
+			combinedText += '\nExample: If the quoted text is "Bon bon bon nous y voila", the character must say exactly "Bon bon bon nous y voila" in your story.';
+		}
+		
 		if (additionalStoryInput) combinedText += '\n' + additionalStoryInput;
 
 		if (relatedHistory.length > 0) {
@@ -457,7 +478,7 @@ export class GameAgent {
 			customCombatAgentInstruction,
 			gameSettings
 		);
-		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings, npcState));
+		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
 
 		console.log(combinedText);
 		const request: LLMRequest = {
