@@ -28,6 +28,7 @@
 	import AiGenerationSettings from '$lib/components/modals/settings/AiGenerationSettings.svelte';
 	import OutputFeaturesModal from '$lib/components/modals/settings/OutputFeaturesModal.svelte';
 	import SystemPromptsModal from '$lib/components/modals/settings/SystemPromptsModal.svelte';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
@@ -42,7 +43,10 @@
 	const historyMessagesState = useHybridLocalStorage('historyMessagesState', []);
 	const characterState = useHybridLocalStorage('characterState', initialCharacterState);
 	const inventoryState = useHybridLocalStorage('inventoryState', {});
-	const characterStatsState = useHybridLocalStorage('characterStatsState', initialCharacterStatsState);
+	const characterStatsState = useHybridLocalStorage(
+		'characterStatsState',
+		initialCharacterStatsState
+	);
 	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
 	const storyState = useHybridLocalStorage('storyState', initialStoryState);
 	const isGameEnded = useHybridLocalStorage('isGameEnded', false);
@@ -62,7 +66,10 @@
 		'relatedStoryHistoryState',
 		{ relatedDetails: [] }
 	);
-	const relatedActionHistoryState = useHybridLocalStorage<string[]>('relatedActionHistoryState', []);
+	const relatedActionHistoryState = useHybridLocalStorage<string[]>(
+		'relatedActionHistoryState',
+		[]
+	);
 	const eventEvaluationState = useHybridLocalStorage<EventEvaluation>(
 		'eventEvaluationState',
 		initialEventEvaluationState
@@ -91,6 +98,7 @@
 				apiKey: apiKeyState.value,
 				language: aiLanguage.value
 			},
+			getSafetyLevelFromStory(storyState.value),
 			aiConfigState.value?.useFallbackLlmState
 		);
 		storyAgent = new StoryAgent(llm);
@@ -150,13 +158,31 @@
 			}
 			if (newStoryState) {
 				storyState.value = newStoryState;
-				const characterAgent = new CharacterAgent(llm);
+				const characterLlm = LLMProvider.provideLLM(
+					{
+						temperature: 2,
+						apiKey: apiKeyState.value,
+						language: aiLanguage.value
+					},
+					getSafetyLevelFromStory(storyState.value),
+					aiConfigState.value?.useFallbackLlmState
+				);
+				const characterAgent = new CharacterAgent(characterLlm);
 				const newCharacterState = await characterAgent.generateCharacterDescription(
 					$state.snapshot(storyState.value)
 				);
 				if (newCharacterState) {
 					characterState.value = newCharacterState;
-					const characterStatsAgent = new CharacterStatsAgent(llm);
+					const characterStatsLlm = LLMProvider.provideLLM(
+						{
+							temperature: 2,
+							apiKey: apiKeyState.value,
+							language: aiLanguage.value
+						},
+						getSafetyLevelFromStory(storyState.value),
+						aiConfigState.value?.useFallbackLlmState
+					);
+					const characterStatsAgent = new CharacterStatsAgent(characterStatsLlm);
 					const newCharacterStatsState = await characterStatsAgent.generateCharacterStats(
 						storyState.value,
 						characterState.value,
@@ -419,9 +445,7 @@
 						<span class="mr-2 text-2xl">🎯</span>
 						Output Features
 					</h3>
-					<p class="text-base-content/70 mb-4 text-sm">
-						Toggle audio and other output features
-					</p>
+					<p class="text-base-content/70 mb-4 text-sm">Toggle audio and other output features</p>
 					<div class="card-actions justify-center">
 						<button
 							class="btn btn-outline btn-secondary"

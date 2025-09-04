@@ -10,6 +10,7 @@
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { GameSettings } from '$lib/ai/agents/gameAgent';
 	import type { AIConfig } from '$lib';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 
 	let showGameSettingsModal = $state<boolean>(false);
 	let showAiGameSettingsModal = $state<boolean>(false);
@@ -43,6 +44,7 @@
 				characterState.value,
 				gameSettingsState.value,
 				apiKeyState.value,
+				getSafetyLevelFromStory(storyState.value), // Use tale's content rating
 				aiLanguage.value,
 				aiConfigState.value?.useFallbackLlmState
 			);

@@ -18,6 +18,7 @@
 		addCharacterToPlayerCharactersIdToNamesMap,
 		getCharacterTechnicalId
 	} from '$lib/game/logic/characterLogic';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 
 	let isGeneratingState = $state(false);
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
@@ -46,6 +47,7 @@
 					apiKey: apiKeyState.value,
 					language: aiLanguage.value
 				},
+				getSafetyLevelFromStory(storyState.value), // Use tale's content rating
 				aiConfigState.value?.useFallbackLlmState
 			)
 		);

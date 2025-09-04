@@ -16,6 +16,10 @@
 	import { type CharacterDescription, initialCharacterState } from '$lib/ai/agents/characterAgent';
 	import type { AIConfig } from '$lib';
 	import { UndoManager } from '$lib/state/undoManager';
+	import {
+		getSafetyLevelFromStory,
+		CONTENT_RATING_DESCRIPTIONS
+	} from '$lib/ai/config/contentRatingToSafety';
 
 	let isGeneratingState = $state(false);
 	let isHydrated = $state(false);
@@ -42,6 +46,7 @@
 					apiKey: apiKeyState.value,
 					language: aiLanguage.value
 				},
+				getSafetyLevelFromStory(storyState.value), // Use tale's content rating
 				aiConfigState.value?.useFallbackLlmState
 			)
 		);
@@ -277,13 +282,119 @@
 						{/if}
 					</div>
 
-					<textarea
-						bind:value={storyState.value[stateValue]}
-						rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
-						oninput={(evt) => handleInput(evt, stateValue)}
-						placeholder={storyStateForPrompt[stateValue]}
-						class="textarea textarea-md mt-2 w-full"
-					></textarea>
+					{#if stateValue === 'content_rating'}
+						<!-- Special handling for content_rating - show as selector -->
+						<div class="mt-4">
+							<!-- Header with warning -->
+							<div class="bg-warning/10 border-warning/20 mb-6 rounded-xl border p-4">
+								<div class="flex items-center gap-3">
+									<span class="text-2xl">🛡️</span>
+									<div>
+										<h4 class="text-warning-content font-semibold">
+											Niveau de Sécurité du Contenu
+										</h4>
+										<p class="text-warning-content/80 mt-1 text-sm">
+											Ce paramètre contrôle les filtres de sécurité AI pour cette histoire
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Content rating options with improved design -->
+							<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+								{#each Object.entries(CONTENT_RATING_DESCRIPTIONS) as [rating, info]}
+									<label class="group cursor-pointer">
+										<div
+											class="from-base-100 to-base-200/50 hover:from-base-50 hover:to-base-100 relative overflow-hidden rounded-xl border-2 bg-gradient-to-br
+											transition-all duration-300 hover:scale-[1.02] hover:shadow-lg
+											{storyState.value[stateValue] === rating
+												? 'border-primary shadow-primary/25 from-primary/5 to-primary/10 bg-gradient-to-br shadow-lg'
+												: 'border-base-300 hover:border-primary/50'}"
+										>
+											<!-- Selection indicator -->
+											{#if storyState.value[stateValue] === rating}
+												<div class="absolute top-3 right-3">
+													<div
+														class="bg-primary flex h-6 w-6 items-center justify-center rounded-full"
+													>
+														<span class="text-primary-content text-sm">✓</span>
+													</div>
+												</div>
+											{/if}
+
+											<!-- Content -->
+											<div class="p-5">
+												<input
+													type="radio"
+													name="content-rating"
+													value={rating}
+													bind:group={storyState.value[stateValue]}
+													class="sr-only"
+												/>
+
+												<!-- Icon and title -->
+												<div class="mb-3 flex items-center gap-3">
+													<div class="text-3xl drop-shadow-sm filter">
+														{info.icon}
+													</div>
+													<div>
+														<h5
+															class="text-base-content group-hover:text-primary text-lg font-bold transition-colors"
+														>
+															{info.title}
+														</h5>
+														<div
+															class="text-base-content/60 text-xs font-medium tracking-wider uppercase"
+														>
+															{rating}
+														</div>
+													</div>
+												</div>
+
+												<!-- Description -->
+												<p class="text-base-content/70 text-sm leading-relaxed">
+													{info.description}
+												</p>
+
+												<!-- Visual indicator bar -->
+												<div class="bg-base-300/50 mt-4 h-1 overflow-hidden rounded-full">
+													<div
+														class="h-full rounded-full transition-all duration-500
+														{storyState.value[stateValue] === rating
+															? 'from-primary to-primary-focus w-full bg-gradient-to-r'
+															: 'w-0'}"
+													></div>
+												</div>
+											</div>
+										</div>
+									</label>
+								{/each}
+							</div>
+
+							<!-- Help text -->
+							<div class="bg-info/5 border-info/20 mt-6 rounded-xl border p-4">
+								<div class="flex items-start gap-3">
+									<span class="text-info mt-0.5 text-lg">💡</span>
+									<div class="text-info-content/80 text-sm">
+										<p class="mb-1 font-medium">Conseil :</p>
+										<p>
+											Vous pouvez modifier ce paramètre à tout moment lors de l'édition de votre
+											histoire. Chaque tale peut avoir son propre niveau de sécurité.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					{:else}
+						<!-- Default textarea for other fields -->
+						<textarea
+							bind:value={storyState.value[stateValue]}
+							rows={textAreaRowsDerived ? textAreaRowsDerived[stateValue] : 2}
+							oninput={(evt) => handleInput(evt, stateValue)}
+							placeholder={storyStateForPrompt[stateValue]}
+							class="textarea textarea-md mt-2 w-full"
+						></textarea>
+					{/if}
 				</fieldset>
 				<button
 					class="btn btn-accent btn-md m-auto mt-2 w-1/2 capitalize"

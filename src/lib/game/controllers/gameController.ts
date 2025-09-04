@@ -8,6 +8,7 @@ import {
 } from '$lib/ai/agents/gameAgent';
 import type { LLMMessage, SystemInstructionsState } from '$lib/ai/llm';
 import type { Story } from '$lib/ai/agents/storyAgent';
+import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
 import { saveSnapshotBeforeAction, validateUndoConsistency } from '$lib/state/gameActionHelper';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
@@ -187,7 +188,8 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.systemInstructionsState.value.generalSystemInstruction,
 			ctx.state.systemInstructionsState.value.combatAgentInstruction,
 			getLatestStoryMessagesFromHistory(ctx.state.historyMessagesState.value),
-			ctx.state.storyState.value
+			ctx.state.storyState.value,
+			getSafetyLevelFromStory(ctx.state.storyState.value)
 		);
 
 		gameLogic.applyGameActionState(
@@ -282,6 +284,9 @@ export function createGameController(ctx: ControllerCtx) {
 			allCombatDeterminedActionsAndStatsUpdate?: any;
 		}
 	) {
+		// Get safety level from the story's content rating
+		const safetyLevel = getSafetyLevelFromStory(ctx.state.storyState.value);
+
 		const { newState, updatedHistoryMessages } =
 			await ctx.agents.gameAgent.generateStoryProgression(
 				ctx.helpers.onStoryStreamUpdate,
@@ -299,7 +304,8 @@ export function createGameController(ctx: ControllerCtx) {
 				ctx.state.npcState.value,
 				relatedHistory,
 				ctx.state.gameSettingsState.value,
-				ctx.state.gameTimeState.value || null // Passer null si pas encore de temps défini
+				ctx.state.gameTimeState.value || null, // Passer null si pas encore de temps défini
+				safetyLevel // Pass the safety level from tale's content rating
 			);
 
 		if (!newState?.story) return;
@@ -417,6 +423,7 @@ export function createGameController(ctx: ControllerCtx) {
 
 			ctx.helpers.getRelatedHistoryForStory();
 			// Regenerate actions for next turn
+			const safetyLevel = getSafetyLevelFromStory(ctx.state.storyState.value);
 			const { thoughts, actions } = await ctx.agents.actionAgent.generateActions(
 				ctx.state.getCurrentGameActionState(),
 				ctx.state.historyMessagesState.value,
@@ -429,7 +436,8 @@ export function createGameController(ctx: ControllerCtx) {
 				relatedHistory,
 				ctx.state.gameSettingsState.value?.aiIntroducesSkills,
 				newState.is_character_restrained_explanation,
-				ctx.state.additionalActionInputState.value
+				ctx.state.additionalActionInputState.value,
+				safetyLevel
 			);
 			// Persist regenerated actions and thoughts so UI can render them
 			if (actions) {
@@ -453,6 +461,7 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.relatedStoryHistoryState.value,
 			ctx.state.customMemoriesState.value
 		);
+		const safetyLevel = getSafetyLevelFromStory(ctx.state.storyState.value);
 		const { thoughts, actions } = await ctx.agents.actionAgent.generateActions(
 			ctx.state.getCurrentGameActionState(),
 			ctx.state.historyMessagesState.value,
@@ -465,7 +474,8 @@ export function createGameController(ctx: ControllerCtx) {
 			relatedHistory,
 			ctx.state.gameSettingsState.value?.aiIntroducesSkills,
 			ctx.state.getCurrentGameActionState().is_character_restrained_explanation,
-			ctx.state.additionalActionInputState.value
+			ctx.state.additionalActionInputState.value,
+			safetyLevel
 		);
 		ctx.state.characterActionsState.value = actions || [];
 		if (typeof thoughts === 'string') {
@@ -630,7 +640,8 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.relatedActionHistoryState.value,
 			ctx.state.gameSettingsState.value?.aiIntroducesSkills,
 			ctx.state.getCurrentGameActionState().is_character_restrained_explanation,
-			ctx.state.additionalActionInputState.value
+			ctx.state.additionalActionInputState.value,
+			getSafetyLevelFromStory(ctx.state.storyState.value)
 		);
 		const merged = { ...generatedAction, ...action } as Action;
 		ctx.state.chosenActionState.value = merged;
@@ -736,7 +747,8 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.relatedActionHistoryState.value,
 			ctx.state.gameSettingsState.value?.aiIntroducesSkills,
 			ctx.state.getCurrentGameActionState().is_character_restrained_explanation,
-			ctx.state.additionalActionInputState.value
+			ctx.state.additionalActionInputState.value,
+			getSafetyLevelFromStory(ctx.state.storyState.value)
 		);
 		if (generatedAction) {
 			action = { ...action, ...generatedAction };

@@ -40,8 +40,10 @@ export const getThoughtsFromResponse = (response: GenerateContentResponse): stri
 	return thoughts;
 };
 
+import type { SafetyLevel } from '$lib/types/safetySettings';
+
 /**
- * Default configuration for Gemini JSON responses
+ * Optimized Gemini JSON generation configuration
  * Used by llmProvider.ts for default LLM config
  */
 export const defaultGeminiJsonConfig: GenerationConfig = {
@@ -59,15 +61,28 @@ export class GeminiProvider extends LLM {
 	genAI: GoogleGenAI;
 	fallbackLLM?: LLM;
 	private configBuilder: GeminiConfigBuilder;
+	private safetyLevel: SafetyLevel;
 
-	constructor(
-		llmConfig: LLMconfig,
-		fallbackLLM?: LLM
-	) {
+	constructor(llmConfig: LLMconfig, safetyLevel: SafetyLevel, fallbackLLM?: LLM) {
 		super(llmConfig);
 		this.fallbackLLM = fallbackLLM;
 		this.genAI = new GoogleGenAI({ apiKey: llmConfig.apiKey || '' });
 		this.configBuilder = new GeminiConfigBuilder();
+		this.safetyLevel = safetyLevel;
+	}
+
+	/**
+	 * Update the safety level for this provider instance and all fallback providers
+	 */
+	setSafetyLevel(level: SafetyLevel): void {
+		console.log('Setting safety level to:', level);
+		this.safetyLevel = level;
+
+		// Also update fallback LLM if it's a GeminiProvider
+		if (this.fallbackLLM instanceof GeminiProvider) {
+			console.log('Also updating fallback LLM safety level to:', level);
+			this.fallbackLLM.setSafetyLevel(level);
+		}
 	}
 
 	getDefaultTemperature(): number {
@@ -110,7 +125,11 @@ export class GeminiProvider extends LLM {
 		chunkSize: number = 50,
 		delay: number = 30
 	): Promise<void> {
-		console.log('🎬 Starting simulated streaming...', { textLength: text.length, chunkSize, delay });
+		console.log('🎬 Starting simulated streaming...', {
+			textLength: text.length,
+			chunkSize,
+			delay
+		});
 
 		for (let i = 0; i < text.length; i += chunkSize) {
 			const chunk = text.slice(0, i + chunkSize);
@@ -119,7 +138,7 @@ export class GeminiProvider extends LLM {
 
 			// Add small delay to simulate streaming
 			if (i + chunkSize < text.length) {
-				await new Promise(resolve => setTimeout(resolve, delay));
+				await new Promise((resolve) => setTimeout(resolve, delay));
 			}
 		}
 
@@ -171,7 +190,6 @@ export class GeminiProvider extends LLM {
 
 			console.log('✅ Simulated streaming complete, returning JSON object');
 			return result.content;
-
 		} catch (error) {
 			console.error('❌ generateContentStream error:', error);
 
@@ -181,6 +199,12 @@ export class GeminiProvider extends LLM {
 			// Try fallback LLM if available and error is not recoverable
 			if (this.fallbackLLM && !ErrorUtils.isRecoverable(error)) {
 				console.log('🔄 Using fallback LLM for non-recoverable error');
+				console.log('Primary safety level:', this.safetyLevel);
+				// Ensure fallback LLM uses the same safety level as primary
+				if (this.fallbackLLM instanceof GeminiProvider) {
+					this.fallbackLLM.setSafetyLevel(this.safetyLevel);
+					console.log('Fallback safety level set to:', this.safetyLevel);
+				}
 				return await this.fallbackLLM.generateContentStream(
 					request,
 					storyUpdateCallback,
@@ -202,7 +226,12 @@ export class GeminiProvider extends LLM {
 	async generateContent(
 		request: LLMRequest
 	): Promise<{ thoughts: string; content: object } | undefined> {
-		console.log('🔑 API Key check:', !!this.llmConfig.apiKey, 'Length:', this.llmConfig.apiKey?.length || 0);
+		console.log(
+			'🔑 API Key check:',
+			!!this.llmConfig.apiKey,
+			'Length:',
+			this.llmConfig.apiKey?.length || 0
+		);
 
 		if (!this.llmConfig.apiKey) {
 			console.error('❌ No API key provided');
@@ -218,7 +247,8 @@ export class GeminiProvider extends LLM {
 			if (request.temperature === 0 || this.llmConfig.temperature === 0) {
 				temperature = 0;
 			} else {
-				const requestedTemp = request.temperature || this.llmConfig.temperature || this.getDefaultTemperature();
+				const requestedTemp =
+					request.temperature || this.llmConfig.temperature || this.getDefaultTemperature();
 				temperature = Math.min(requestedTemp, this.getMaxTemperature());
 			}
 
@@ -232,14 +262,20 @@ export class GeminiProvider extends LLM {
 			if (Array.isArray(request.systemInstruction)) {
 				systemInstructionString = request.systemInstruction.join('\n');
 			} else {
-				systemInstructionString = request.systemInstruction || (typeof this.llmConfig.systemInstruction === 'string' ? this.llmConfig.systemInstruction : undefined);
+				systemInstructionString =
+					request.systemInstruction ||
+					(typeof this.llmConfig.systemInstruction === 'string'
+						? this.llmConfig.systemInstruction
+						: undefined);
 			}
 
 			const systemInstruction = this.buildSystemInstruction(systemInstructionString);
 
 			// Use consolidated configuration builder
-			this.configBuilder.reset()
-				.withTemperature(temperature, this.getMaxTemperature());
+			this.configBuilder
+				.reset()
+				.withTemperature(temperature, this.getMaxTemperature())
+				.withSafety(this.safetyLevel); // Use instance safety level
 
 			// Add structured output schema if provided
 			if (request.config?.responseSchema) {
@@ -276,6 +312,8 @@ export class GeminiProvider extends LLM {
 			console.log('🚀 About to call SDK generateContent with model:', modelToUse);
 			console.log('📡 API Key available:', !!this.llmConfig.apiKey);
 			console.log('⚙️ Config keys:', Object.keys(config));
+			console.log('🛡️ Safety settings in config:', JSON.stringify(config.safetySettings, null, 2));
+			console.log('🔧 Full config being sent:', JSON.stringify(config, null, 2));
 
 			const response = await this.genAI.models.generateContent({
 				model: modelToUse,
@@ -286,6 +324,25 @@ export class GeminiProvider extends LLM {
 			console.log('📨 SDK Response received:', !!response);
 			console.log('📝 Response text available:', !!response?.text);
 			console.log('📏 Response text length:', response?.text?.length || 0);
+
+			// 🚨 SAFETY DEBUGGING: Check for safety blocks
+			if (response.promptFeedback?.blockReason) {
+				console.error('🚫 PROMPT BLOCKED by safety filter!');
+				console.error('🔍 Block reason:', response.promptFeedback.blockReason);
+				console.error('🔍 Safety ratings:', response.promptFeedback.safetyRatings);
+				console.error('⚙️ Current safety settings:', JSON.stringify(config.safetySettings, null, 2));
+			}
+
+			if (response.candidates?.[0]?.finishReason === 'SAFETY') {
+				console.error('🚫 RESPONSE BLOCKED by safety filter!');
+				console.error('🔍 Finish reason:', response.candidates[0].finishReason);
+				console.error('🔍 Safety ratings:', response.candidates[0].safetyRatings);
+				console.error('⚙️ Current safety settings:', JSON.stringify(config.safetySettings, null, 2));
+			}
+
+			// Log safety settings being used for debugging
+			console.log('⚙️ Safety level used:', this.safetyLevel);
+			console.log('⚙️ Safety settings applied:', JSON.stringify(config.safetySettings, null, 2));
 
 			// Extract thoughts from response
 			const thoughts = getThoughtsFromResponse(response);
@@ -299,7 +356,7 @@ export class GeminiProvider extends LLM {
 				} catch (jsonError) {
 					console.error('❌ JSON parsing failed (unexpected with structured schema):', jsonError);
 					console.log('📝 Raw response text (first 500 chars):', response.text.substring(0, 500));
-					
+
 					// With structured schemas, JSON parsing failures should be rare
 					// Return empty object as safe fallback
 					content = {};
@@ -307,13 +364,19 @@ export class GeminiProvider extends LLM {
 			}
 
 			return { thoughts, content };
-
 		} catch (error) {
 			// Enhanced error handling with consolidated error handler
 			ErrorUtils.logError(error, 'generateContent');
 
 			// Try fallback LLM if available and error is not recoverable
 			if (this.fallbackLLM && !ErrorUtils.isRecoverable(error)) {
+				console.log('🔄 Using fallback LLM for non-recoverable error (generateContent)');
+				console.log('Primary safety level:', this.safetyLevel);
+				// Ensure fallback LLM uses the same safety level as primary
+				if (this.fallbackLLM instanceof GeminiProvider) {
+					this.fallbackLLM.setSafetyLevel(this.safetyLevel);
+					console.log('Fallback safety level set to:', this.safetyLevel);
+				}
 				return await this.fallbackLLM.generateContent(request);
 			}
 

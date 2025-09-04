@@ -28,6 +28,8 @@ import {
 	DIALOGUE_MEMORY_CHECK
 } from '$lib/ai/prompts/shared';
 import { systemBehaviour, jsonSystemInstructionForGameAgent, jsonSystemInstructionForPlayerQuestion } from '$lib/ai/prompts/system';
+import type { SafetyLevel } from '$lib/types/safetySettings';
+import { GeminiProvider } from '$lib/ai/geminiProvider';
 // Campaign removed: local helper to extract first numeric PLOT_ID occurrences
 function mapPlotStringToIds(input: string): number[] {
 	if (!input) return [];
@@ -310,6 +312,7 @@ export class GameAgent {
 	 * @param storyState
 	 * @param characterState
 	 * @param playerCharactersGameState
+	 * @param safetyLevel safety level to use for content generation (from tale's content rating)
 	 */
 	async generateStoryProgression(
 		storyUpdateCallback: (storyChunk: string, isComplete: boolean) => void,
@@ -327,8 +330,13 @@ export class GameAgent {
 		npcState: NPCState,
 		relatedHistory: string[],
 		gameSettings: GameSettings,
-		currentGameTime?: import('$lib/types/gameTime').GameTime | null
+		currentGameTime?: import('$lib/types/gameTime').GameTime | null,
+		safetyLevel?: SafetyLevel
 	): Promise<{ newState: GameActionState; updatedHistoryMessages: Array<LLMMessage> }> {
+		// Configure safety level on the provider if specified
+		if (safetyLevel && this.llm instanceof GeminiProvider) {
+			this.llm.setSafetyLevel(safetyLevel);
+		}
 		let playerActionText = action.characterName + ': ' + action.text;
 		const cost = parseInt(action.resource_cost?.cost as unknown as string) || 0;
 		if (cost > 0) {

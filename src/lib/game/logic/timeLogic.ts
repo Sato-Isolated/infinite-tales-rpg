@@ -4,6 +4,8 @@ import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
 import type { GameSettings } from '$lib/ai/agents/gameAgent';
+import type { SafetyLevel } from '$lib/types/safetySettings';
+import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
 
 // --- Time helpers (normalization & math) ---
 const DAY_NAMES = [
@@ -119,6 +121,7 @@ export async function generateStoryAppropriateTime(
 	characterState: CharacterDescription,
 	gameSettings: GameSettings,
 	apiKey: string,
+	safetyLevel: SafetyLevel,
 	language?: string,
 	useFallbackLlm?: boolean
 ): Promise<GameTime> {
@@ -127,7 +130,8 @@ export async function generateStoryAppropriateTime(
 		storyTheme: storyState.theme,
 		characterName: characterState.name,
 		apiKey: apiKey ? 'present' : 'missing',
-		language
+		language,
+		safetyLevel
 	});
 
 	try {
@@ -137,6 +141,7 @@ export async function generateStoryAppropriateTime(
 				apiKey: apiKey,
 				language: language
 			},
+			safetyLevel, // Use provided safety level parameter
 			useFallbackLlm
 		);
 

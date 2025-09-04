@@ -37,6 +37,7 @@
 	import * as combatLogic from '$lib/game/logic/combatLogic';
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
+	import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
 	import {
 		getCurrentCharacterGameState,
 		getRenderedGameUpdates
@@ -53,7 +54,7 @@
 		type CharacterDescription,
 		initialCharacterState
 	} from '$lib/ai/agents/characterAgent';
-		// Campaign removed
+	// Campaign removed
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/ui/loading/LoadingIcon.svelte';
 	import { getXPNeededForLevel } from '$lib/game/logic/levelLogic';
@@ -62,7 +63,7 @@
 	import ResourcesComponent from '$lib/components/ui/data/ResourcesComponent.svelte';
 
 	import { initializeMissingResources, refillResourcesFully } from '$lib/game/logic/resourceLogic';
-		// Campaign logic removed
+	// Campaign logic removed
 	import { getRelatedHistory } from '$lib/game/memory/memoryLogic';
 	import { getLatestStoryMessagesFromHistory } from '$lib/game/memory/messages';
 	import {
@@ -177,12 +178,12 @@
 	);
 	const customMemoriesState = useHybridLocalStorage<string>('customMemoriesState', '');
 	const customGMNotesState = useHybridLocalStorage<string>('customGMNotesState', '');
-		// currentChapterState removed
+	// currentChapterState removed
 
 	// Initialize conversation state manager for dialogue tracking
 	const conversationStateManager = new ConversationStateManager();
 
-		// campaignState removed
+	// campaignState removed
 
 	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
 
@@ -325,6 +326,7 @@
 				language: aiLanguage.value,
 				apiKey: apiKeyState.value
 			},
+			getSafetyLevelFromStory(storyState.value),
 			aiConfigState.value?.useFallbackLlmState
 		);
 		gameAgent = new GameAgent(llm);
@@ -343,7 +345,7 @@
 				summaryAgent,
 				actionAgent,
 				combatAgent,
-			// campaignAgent removed
+				// campaignAgent removed
 				eventAgent,
 				characterAgent,
 				characterStatsAgent
@@ -390,7 +392,7 @@
 			},
 			helpers: {
 				addAdditionalStoryInput,
-			// campaign helpers removed
+				// campaign helpers removed
 				openDiceRollDialog,
 				handleError,
 				resetStatesAfterActionProcessed,
@@ -664,7 +666,8 @@
 					getLatestStoryMessages(),
 					newNPCsIds.map((id) => id.uniqueTechnicalNameId),
 					characterStatsState.value,
-					systemInstructionsState.value.generalSystemInstruction
+					systemInstructionsState.value.generalSystemInstruction,
+					getSafetyLevelFromStory(storyState.value)
 				)
 				.then((newNPCState: NPCState) => {
 					if (newNPCState) {
@@ -791,7 +794,7 @@
 		modalManager.setItemForSuggestActions(undefined);
 	};
 
-		// getCurrentCampaignChapter removed
+	// getCurrentCampaignChapter removed
 
 	const generateActionFromCustomInput = async (action: Action) => {
 		await controller!.generateActionFromCustomInput(action);

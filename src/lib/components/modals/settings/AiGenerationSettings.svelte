@@ -66,6 +66,22 @@
 			</small>
 		</fieldset>
 
+		<!-- Safety Settings - Now Configured Per Tale -->
+		<fieldset class="mt-5 w-full">
+			<h4 class="mb-3 text-base font-semibold">Content Safety Level</h4>
+			<div class="bg-info/10 border-info/20 rounded-lg border p-4">
+				<p class="text-info flex items-center gap-2 text-sm font-medium">
+					<span class="text-lg">ℹ️</span>
+					Safety is now configured per tale
+				</p>
+				<p class="text-base-content/70 mt-2 text-sm">
+					Content safety levels are controlled by each tale's content rating (Safe, Mid, Adult,
+					Uncensored). This allows different tales to have different safety levels based on their
+					content. Edit your tale's content rating to change safety settings.
+				</p>
+			</div>
+		</fieldset>
+
 		<!-- Close Button -->
 		<div class="modal-action mt-6">
 			<button class="btn btn-info btn-md" onclick={onclose}>Close</button>

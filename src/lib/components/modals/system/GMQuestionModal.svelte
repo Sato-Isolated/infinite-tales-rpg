@@ -23,6 +23,7 @@
 	import type { AIConfig } from '$lib';
 	import { SummaryAgent } from '$lib/ai/agents/summaryAgent';
 	import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 	// campaign removed
 
 	let {
@@ -102,6 +103,7 @@
 				language: aiLanguage.value,
 				apiKey: apiKeyState.value
 			},
+			getSafetyLevelFromStory(storyState.value), // Use tale's content rating
 			aiConfigState.value?.useFallbackLlmState
 		);
 		gameAgent = new GameAgent(llm);

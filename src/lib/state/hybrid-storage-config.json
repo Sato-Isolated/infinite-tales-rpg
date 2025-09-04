@@ -17,7 +17,7 @@
     "relatedStoryHistoryState",
     "eventEvaluationState",
     "gameSettingsState",
-  "gameTimeState",
+    "gameTimeState",
     "skillsProgressionState",
     "characterTransformState",
     "aiConfigState",
@@ -39,8 +39,9 @@
     "additionalStoryInputState",
     "additionalActionInputState",
     "customGMNotesState",
-  "relatedActionHistoryState",
-    "apiKeyState"
+    "relatedActionHistoryState",
+    "apiKeyState",
+    "safetySettingsState"
   ],
   "sizeThreshold": 23086,
   "analysis": {

@@ -12,6 +12,8 @@ import {
 	type NPCStatsResponse,
 	type AbilitiesResponse
 } from '$lib/ai/config/ResponseSchemas';
+import type { SafetyLevel } from '$lib/types/safetySettings';
+import { GeminiProvider } from '$lib/ai/geminiProvider';
 
 export type SpellOrAbility = {
 	name: string;
@@ -114,6 +116,15 @@ export class CharacterStatsAgent {
 	constructor(llm: LLM) {
 		this.llm = llm;
 		this.ATTRIBUTE_MAX_VALUE = 10;
+	}
+
+	/**
+	 * Configure safety level on the provider if it's a GeminiProvider
+	 */
+	private configureSafetyLevel(safetyLevel?: SafetyLevel): void {
+		if (safetyLevel && this.llm instanceof GeminiProvider) {
+			this.llm.setSafetyLevel(safetyLevel);
+		}
 	}
 
 	async generateCharacterStats(
@@ -249,7 +260,8 @@ export class CharacterStatsAgent {
 		historyMessages: LLMMessage[],
 		npcsToGenerate: Array<string>,
 		characterStats: CharacterStats,
-		customSystemInstruction: string
+		customSystemInstruction: string,
+		safetyLevel: 'strict' | 'balanced' | 'permissive'
 	): Promise<NPCState> {
 		const latestHistoryTextOnly = historyMessages.map((m: LLMMessage) => m.content).join('\n');
 		const agent = [
@@ -272,6 +284,10 @@ export class CharacterStatsAgent {
 		const action =
 			'Generate the following NPCs. You must exactly reuse the uniqueTechnicalNameId given: ' +
 			stringifyPretty(npcsToGenerate);
+
+		// Configure provider with safety level before making request
+		this.configureSafetyLevel(safetyLevel);
+
 		const request: LLMRequest = {
 			userMessage: action,
 			systemInstruction: agent,

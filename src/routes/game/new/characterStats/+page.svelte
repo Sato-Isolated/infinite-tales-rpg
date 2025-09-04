@@ -18,6 +18,7 @@
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
 	import { defaultGameSettings, type GameSettings } from '$lib/ai/agents/gameAgent';
 	import type { AIConfig } from '$lib';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 	import AbilityEditor from '$lib/components/modals/character/AbilityEditor.svelte';
 
 	let isGeneratingState = $state(false);
@@ -51,6 +52,7 @@
 					apiKey: apiKeyState.value,
 					language: aiLanguage.value
 				},
+				getSafetyLevelFromStory(storyState.value), // Use tale's content rating
 				aiConfigState.value?.useFallbackLlmState
 			)
 		);

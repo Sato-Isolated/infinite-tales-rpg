@@ -13,12 +13,14 @@ import type { Story } from '$lib/ai/agents/storyAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
 import { actionRules } from '$lib/ai/prompts/system';
-import { 
-	SingleActionResponseSchema, 
+import {
+	SingleActionResponseSchema,
 	ActionsWithThoughtsResponseSchema,
 	type SingleActionResponse,
 	type ActionsWithThoughtsResponse
 } from '$lib/ai/config/ResponseSchemas';
+import type { SafetyLevel } from '$lib/types/safetySettings';
+import { GeminiProvider } from '$lib/ai/geminiProvider';
 
 export enum InterruptProbability {
 	NEVER = 'NEVER',
@@ -38,6 +40,15 @@ export class ActionAgent {
 
 	constructor(llm: LLM) {
 		this.llm = llm;
+	}
+
+	/**
+	 * Configure safety level on the provider if it's a GeminiProvider
+	 */
+	private configureSafetyLevel(safetyLevel?: SafetyLevel): void {
+		if (safetyLevel && this.llm instanceof GeminiProvider) {
+			this.llm.setSafetyLevel(safetyLevel);
+		}
 	}
 
 	/**
@@ -111,8 +122,12 @@ ACTION GENERATION RULES:
 		relatedHistory?: string[],
 		newSkillsAllowed: boolean = false,
 		restrainingState?: string,
-		additionalActionInputState?: string
+		additionalActionInputState?: string,
+		safetyLevel?: SafetyLevel
 	): Promise<Action> {
+		// Configure safety level
+		this.configureSafetyLevel(safetyLevel);
+
 		//remove knowledge of story secrets etc
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
@@ -198,8 +213,12 @@ ACTION GENERATION RULES:
 		relatedHistory?: string[],
 		newSkillsAllowed: boolean = false,
 		restrainingState?: string,
-		additionalActionInputState?: string
+		additionalActionInputState?: string,
+		safetyLevel?: SafetyLevel
 	): Promise<{ thoughts: string; actions: Array<Action> }> {
+		// Configure safety level
+		this.configureSafetyLevel(safetyLevel);
+
 		//remove knowledge of story secrets etc
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;

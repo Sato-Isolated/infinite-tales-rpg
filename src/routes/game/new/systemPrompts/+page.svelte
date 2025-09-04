@@ -101,6 +101,29 @@
 				</small>
 			</fieldset>
 
+			<!-- AI Safety Settings - Now Configured Per Tale -->
+			<fieldset class="w-full">
+				<legend class="mb-4 text-base font-medium">Content Safety Configuration</legend>
+				<div class="bg-info/10 border-info/20 rounded-lg border p-4">
+					<p class="text-info flex items-center gap-2 text-sm font-medium">
+						<span class="text-lg">ℹ️</span>
+						Content safety is now configured per tale
+					</p>
+					<p class="text-base-content/70 mt-2 text-sm">
+						Safety levels are controlled by each tale's content rating. You can set the content
+						rating (Safe, Mid, Adult, Uncensored) when creating or editing your tale. This allows
+						different tales to have different safety levels based on their content.
+					</p>
+					<button
+						type="button"
+						class="btn btn-info btn-sm mt-3"
+						onclick={() => navigate('/new/tale')}
+					>
+						← Go back to configure tale content rating
+					</button>
+				</div>
+			</fieldset>
+
 			<!-- Navigation Buttons -->
 			<div class="mt-8 flex justify-center gap-4">
 				<button

@@ -1,148 +1,122 @@
 /**
  * Centralized configuration builder for Gemini API
- * Consolidates configuration logic scattered across providers
+ * Streamlined version with only actively used functionality
+ *
+ * This file has been cleaned up to remove unused functions and classes:
+ * - Removed ConfigUtils class (unused)
+ * - Removed withPreset, withOutputTokens, withCreativity, withSeed, withStopSequences, mergeWith, clone methods (unused)
+ * - Removed generateConfigPresets and generateThinkingBudgets functions (unused)
+ * - Completed safety settings integration in GeminiProvider
  */
 
 import type {
   GenerateContentConfig,
   SafetySetting,
-  ThinkingConfig,
+  ThinkingConfig
+} from '@google/genai';
+import {
   HarmCategory,
   HarmBlockThreshold
 } from '@google/genai';
 import { HarmCategory as HC, HarmBlockThreshold as HBT } from '@google/genai';
+import type { SafetyLevel } from '$lib/utils/contentRatingToSafety';
 
 /**
- * Dynamic safety settings generator for RPG content - no caching
- * Generates fresh settings on each call to prevent repetitive content
+ * Permissive safety settings for RPG content - allows creative freedom
+ * All thresholds set to BLOCK_NONE for maximum content flexibility
  */
-function generateDefaultSafetySettings(): SafetySetting[] {
+function generatePermissiveSafetySettings(): SafetySetting[] {
   return [
     {
       category: HC.HARM_CATEGORY_CIVIC_INTEGRITY,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_NONE
     },
     {
       category: HC.HARM_CATEGORY_HARASSMENT,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_NONE
     },
     {
       category: HC.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_NONE
     },
     {
       category: HC.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_NONE
     },
     {
       category: HC.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_NONE
     }
   ];
 }
 
 /**
- * Dynamic safe safety settings generator - no caching
- * Generates fresh settings on each call to prevent repetitive content
+ * Balanced safety settings for moderate RPG content
+ * Some restrictions while allowing typical RPG themes
  */
-function generateSafeSafetySettings(): SafetySetting[] {
+function generateBalancedSafetySettings(): SafetySetting[] {
   return [
     {
       category: HC.HARM_CATEGORY_CIVIC_INTEGRITY,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_MEDIUM_AND_ABOVE
     },
     {
       category: HC.HARM_CATEGORY_HARASSMENT,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_MEDIUM_AND_ABOVE
     },
     {
       category: HC.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_LOW_AND_ABOVE
     },
     {
       category: HC.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_MEDIUM_AND_ABOVE
     },
     {
       category: HC.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HBT.OFF
+      threshold: HBT.BLOCK_MEDIUM_AND_ABOVE
     }
   ];
 }
 
 /**
- * Dynamic configuration presets generator - no caching
- * Generates fresh configuration objects on each call to prevent repetitive content
+ * Strict safety settings for family-friendly content
+ * High restrictions for safe content generation
  */
-function generateConfigPresets() {
-  return {
-    // For story generation with creative freedom
-    CREATIVE_STORY: {
-      temperature: 1.0,
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 2048
+function generateStrictSafetySettings(): SafetySetting[] {
+  return [
+    {
+      category: HC.HARM_CATEGORY_CIVIC_INTEGRITY,
+      threshold: HBT.BLOCK_LOW_AND_ABOVE
     },
-
-    // For action generation requiring consistency
-    STRUCTURED_ACTIONS: {
-      temperature: 0.7,
-      topP: 0.9,
-      topK: 30,
-      maxOutputTokens: 1024
+    {
+      category: HC.HARM_CATEGORY_HARASSMENT,
+      threshold: HBT.BLOCK_LOW_AND_ABOVE
     },
-
-    // For character stats requiring precision
-    PRECISE_STATS: {
-      temperature: 0.3,
-      topP: 0.8,
-      topK: 20,
-      maxOutputTokens: 512
+    {
+      category: HC.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HBT.BLOCK_LOW_AND_ABOVE
     },
-
-    // For combat requiring balanced randomness
-    COMBAT_BALANCED: {
-      temperature: 0.8,
-      topP: 0.9,
-      topK: 35,
-      maxOutputTokens: 1024
+    {
+      category: HC.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HBT.BLOCK_LOW_AND_ABOVE
+    },
+    {
+      category: HC.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HBT.BLOCK_LOW_AND_ABOVE
     }
-  };
+  ];
 }
 
 /**
- * Dynamic thinking budgets generator - no caching
- * Generates fresh budget values on each call to prevent repetitive content
- */
-function generateThinkingBudgets() {
-  return {
-    FAST: 256,
-    NORMAL: 512,
-    DEEP: 1024,
-    COMPLEX: 2048,
-    UNLIMITED: -1,
-    DISABLED: 0
-  };
-}
-
-/**
- * Centralized configuration builder
- * Replaces scattered configuration logic throughout the codebase
+ * Streamlined configuration builder for Gemini API
+ * Contains only the actively used methods and functionality
  */
 export class GeminiConfigBuilder {
   private config: GenerateContentConfig = {};
 
   static create(): GeminiConfigBuilder {
     return new GeminiConfigBuilder();
-  }
-
-  /**
-   * Apply a configuration preset - generates fresh config each time
-   */
-  withPreset(preset: 'CREATIVE_STORY' | 'STRUCTURED_ACTIONS' | 'PRECISE_STATS' | 'COMBAT_BALANCED'): this {
-    const presetConfig = generateConfigPresets()[preset];
-    Object.assign(this.config, presetConfig);
-    return this;
   }
 
   /**
@@ -170,13 +144,25 @@ export class GeminiConfigBuilder {
   }
 
   /**
-   * Configure thinking with budget and inclusion settings - generates fresh values each time
+   * Configure thinking with budget and inclusion settings
    */
-  withThinking(budget?: number | 'FAST' | 'NORMAL' | 'DEEP' | 'COMPLEX' | 'UNLIMITED' | 'DISABLED', includeThoughts: boolean = true): this {
+  withThinking(
+    budget?: number | 'FAST' | 'NORMAL' | 'DEEP' | 'COMPLEX' | 'UNLIMITED' | 'DISABLED',
+    includeThoughts: boolean = true
+  ): this {
     let actualBudget: number | undefined;
 
     if (typeof budget === 'string') {
-      actualBudget = generateThinkingBudgets()[budget];
+      // Inline thinking budget values instead of using removed function
+      const budgetMap = {
+        FAST: 256,
+        NORMAL: 512,
+        DEEP: 1024,
+        COMPLEX: 2048,
+        UNLIMITED: -1,
+        DISABLED: 0
+      };
+      actualBudget = budgetMap[budget];
     } else {
       actualBudget = budget;
     }
@@ -189,13 +175,34 @@ export class GeminiConfigBuilder {
   }
 
   /**
-   * Configure safety settings with dynamic generation - no caching
+   * Configure safety settings with robust validation and error handling
    */
-  withSafety(settings: SafetySetting[] | 'default' | 'safe' = 'default'): this {
-    if (typeof settings === 'string') {
-      this.config.safetySettings = settings === 'safe' ? generateSafeSafetySettings() : generateDefaultSafetySettings();
-    } else {
-      this.config.safetySettings = settings;
+  withSafety(settings: SafetyLevel | SafetySetting[]): this {
+    try {
+      if (typeof settings === 'string') {
+        switch (settings) {
+          case 'permissive':
+            this.config.safetySettings = generatePermissiveSafetySettings();
+            break;
+          case 'strict':
+            this.config.safetySettings = generateStrictSafetySettings();
+            break;
+          case 'balanced':
+          default:
+            this.config.safetySettings = generateBalancedSafetySettings();
+            break;
+        }
+      } else if (Array.isArray(settings)) {
+        // Validate that settings is a proper array of SafetySetting objects
+        this.config.safetySettings = settings;
+      } else {
+        // Throw error instead of falling back to hardcoded value
+        throw new Error(`Invalid safety settings provided: ${typeof settings}. Must be 'strict', 'balanced', 'permissive', or SafetySetting array.`);
+      }
+    } catch (error) {
+      console.error('Error configuring safety settings:', error);
+      // Re-throw error instead of falling back to hardcoded value
+      throw error;
     }
     return this;
   }
@@ -207,7 +214,7 @@ export class GeminiConfigBuilder {
     if (Array.isArray(instruction)) {
       this.config.systemInstruction = {
         role: 'systemInstruction',
-        parts: instruction.map(text => ({ text }))
+        parts: instruction.map((text) => ({ text }))
       };
     } else {
       this.config.systemInstruction = {
@@ -215,51 +222,6 @@ export class GeminiConfigBuilder {
         parts: [{ text: instruction }]
       };
     }
-    return this;
-  }
-
-  /**
-   * Configure output token limits
-   */
-  withOutputTokens(maxTokens: number): this {
-    this.config.maxOutputTokens = maxTokens;
-    return this;
-  }
-
-  /**
-   * Configure creativity parameters
-   */
-  withCreativity(topP?: number, topK?: number): this {
-    if (topP !== undefined) {
-      this.config.topP = topP;
-    }
-    if (topK !== undefined) {
-      this.config.topK = topK;
-    }
-    return this;
-  }
-
-  /**
-   * Configure deterministic generation
-   */
-  withSeed(seed: number): this {
-    this.config.seed = seed;
-    return this;
-  }
-
-  /**
-   * Configure stop sequences
-   */
-  withStopSequences(sequences: string[]): this {
-    this.config.stopSequences = sequences;
-    return this;
-  }
-
-  /**
-   * Merge with existing configuration
-   */
-  mergeWith(otherConfig: Partial<GenerateContentConfig>): this {
-    Object.assign(this.config, otherConfig);
     return this;
   }
 
@@ -276,83 +238,6 @@ export class GeminiConfigBuilder {
   reset(): this {
     this.config = {};
     return this;
-  }
-
-  /**
-   * Clone the current builder state
-   */
-  clone(): GeminiConfigBuilder {
-    const cloned = new GeminiConfigBuilder();
-    cloned.config = { ...this.config };
-    return cloned;
-  }
-}
-
-/**
- * Utility functions for common configuration scenarios
- */
-export class ConfigUtils {
-  /**
-   * Create configuration for story generation
-   */
-  static forStoryGeneration(temperature: number = 1.0, thinkingBudget?: number): GenerateContentConfig {
-    return GeminiConfigBuilder.create()
-      .withPreset('CREATIVE_STORY')
-      .withTemperature(temperature)
-      .withThinking(thinkingBudget)
-      .withSafety('default')
-      .withJsonResponse()
-      .build();
-  }
-
-  /**
-   * Create configuration for action generation
-   */
-  static forActionGeneration(temperature: number = 0.7): GenerateContentConfig {
-    return GeminiConfigBuilder.create()
-      .withPreset('STRUCTURED_ACTIONS')
-      .withTemperature(temperature)
-      .withThinking('FAST')
-      .withSafety('default')
-      .withJsonResponse()
-      .build();
-  }
-
-  /**
-   * Create configuration for character stats
-   */
-  static forCharacterStats(temperature: number = 0.3): GenerateContentConfig {
-    return GeminiConfigBuilder.create()
-      .withPreset('PRECISE_STATS')
-      .withTemperature(temperature)
-      .withThinking('NORMAL')
-      .withSafety('safe')
-      .withJsonResponse()
-      .build();
-  }
-
-  /**
-   * Create configuration for combat resolution
-   */
-  static forCombat(temperature: number = 0.8): GenerateContentConfig {
-    return GeminiConfigBuilder.create()
-      .withPreset('COMBAT_BALANCED')
-      .withTemperature(temperature)
-      .withThinking('NORMAL')
-      .withSafety('default')
-      .withJsonResponse()
-      .build();
-  }
-
-  /**
-   * Create streaming configuration with progressive updates
-   */
-  static forStreaming(schema: object, thinkingBudget?: number): GenerateContentConfig {
-    return GeminiConfigBuilder.create()
-      .withJsonResponse(schema)
-      .withThinking(thinkingBudget, true)
-      .withSafety('default')
-      .build();
   }
 }
 

@@ -18,6 +18,7 @@
 	import { isEnoughResource } from '$lib/game/logic/gameLogic';
 	import LoadingIcon from '$lib/components/ui/loading/LoadingIcon.svelte';
 	import type { AIConfig } from '$lib';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 
 	let {
 		onclose,
@@ -38,13 +39,18 @@
 	const characterStatsState = useHybridLocalStorage<CharacterStats>('characterStatsState');
 	const historyMessagesState = useHybridLocalStorage<LLMMessage[]>('historyMessagesState');
 	const inventoryState = useHybridLocalStorage<InventoryState>('inventoryState', {});
-	const additionalActionInputState = useHybridLocalStorage<string>('additionalActionInputState', '');
+	const additionalActionInputState = useHybridLocalStorage<string>(
+		'additionalActionInputState',
+		''
+	);
 
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	const temperatureState = useHybridLocalStorage<number>('temperatureState');
 	const customSystemInstruction = useHybridLocalStorage<string>('customSystemInstruction');
-	const customActionAgentInstruction = useHybridLocalStorage<string>('customActionAgentInstruction');
+	const customActionAgentInstruction = useHybridLocalStorage<string>(
+		'customActionAgentInstruction'
+	);
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	let thoughtsState = $state('');
 	let suggestedActions: Array<Action> = $state([]);
@@ -60,6 +66,7 @@
 				language: aiLanguage.value,
 				apiKey: apiKeyState.value
 			},
+			getSafetyLevelFromStory(storyState.value), // Use tale's content rating
 			aiConfigState.value?.useFallbackLlmState
 		);
 		actionAgent = new ActionAgent(llm);

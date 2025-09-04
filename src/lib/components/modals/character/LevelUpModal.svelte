@@ -14,6 +14,7 @@
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
 	import type { AIConfig } from '$lib';
 	import AbilityComponent from './AbilityComponent.svelte';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 
 	let {
 		onclose
@@ -41,6 +42,7 @@
 					apiKey: apiKeyState.value,
 					language: aiLanguage.value
 				},
+				getSafetyLevelFromStory(storyState.value), // Use tale's content rating
 				aiConfigState.value?.useFallbackLlmState
 			)
 		);

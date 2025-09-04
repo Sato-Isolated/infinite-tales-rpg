@@ -10,6 +10,8 @@ import { ActionDifficulty, getEmptyCriticalResourceKeys } from '$lib/game/logic/
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapStatsUpdates } from '$lib/ai/agents/mappers';
 import { CombatResponseSchema, type CombatResponse } from '$lib/ai/config/ResponseSchemas';
+import type { SafetyLevel } from '$lib/types/safetySettings';
+import { GeminiProvider } from '$lib/ai/geminiProvider';
 
 export type DiceRoll = {
 	result: any;
@@ -32,6 +34,15 @@ export class CombatAgent {
 		this.llm = llm;
 	}
 
+	/**
+	 * Configure safety level on the provider if it's a GeminiProvider
+	 */
+	private configureSafetyLevel(safetyLevel?: SafetyLevel): void {
+		if (safetyLevel && this.llm instanceof GeminiProvider) {
+			this.llm.setSafetyLevel(safetyLevel);
+		}
+	}
+
 	async generateActionsFromContext(
 		action: Action,
 		playerCharResources: ResourcesWithCurrentValue,
@@ -40,7 +51,8 @@ export class CombatAgent {
 		customSystemInstruction: string,
 		customCombatAgentInstruction: string,
 		historyMessages: Array<LLMMessage>,
-		storyState: Story
+		storyState: Story,
+		safetyLevel: 'strict' | 'balanced' | 'permissive'
 	): Promise<CombatResponse> {
 		const agent = [
 			"You are RPG combat agent, you decide which actions the NPCs take in response to the player character's action " +
@@ -73,6 +85,10 @@ export class CombatAgent {
 			'\n' +
 			stringifyPretty(npcsList);
 		console.log('combat', actionToSend);
+
+		// Configure provider with safety level before making request
+		this.configureSafetyLevel(safetyLevel);
+
 		const request: LLMRequest = {
 			userMessage: actionToSend,
 			historyMessages: historyMessages,

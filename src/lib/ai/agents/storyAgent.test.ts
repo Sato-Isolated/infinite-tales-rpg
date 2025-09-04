@@ -29,7 +29,7 @@ describe('StoryAgent', () => {
 		mockLLMInstance.generateContent.mockReset();
 
 		// Create a new StoryAgent instance for each test
-		storyAgent = new StoryAgent(LLMProvider.provideLLM({}));
+		storyAgent = new StoryAgent(LLMProvider.provideLLM({}, 'permissive'));
 	});
 
 	describe('generateRandomStorySettings', () => {
