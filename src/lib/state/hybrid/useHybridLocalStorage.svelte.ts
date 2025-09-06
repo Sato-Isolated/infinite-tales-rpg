@@ -320,21 +320,21 @@ export function useHybridLocalStorage<T>(
 	/**
 	 * Charge la valeur depuis l'emplacement configuré
 	 */
-	async function loadValue(): Promise<T | undefined> {
+	async function loadValue(): Promise<{ value: T | undefined; fromMemory: boolean }> {
 		// Vérifie d'abord le cache mémoire
 		if (!options.disableMemoryCache) {
 			const cached = memoryCache.get(key);
 			if (cached && cached.location === storageLocation) {
 				debugLog('⚡ Loaded from memory cache');
-				return cloneDeep(cached.value) as T;
+				return { value: cloneDeep(cached.value) as T, fromMemory: true };
 			}
 		}
 
 		// Charge depuis le stockage
 		if (storageLocation === 'fileSystem') {
-			return await loadFromMongoDB();
+			return { value: await loadFromMongoDB(), fromMemory: false };
 		} else {
-			return loadFromLocalStorage();
+			return { value: loadFromLocalStorage(), fromMemory: false };
 		}
 	}
 
@@ -446,14 +446,19 @@ export function useHybridLocalStorage<T>(
 		try {
 			isMounted = true;
 
-			const loadedValue = await loadValue();
+			const loaded = await loadValue();
 
-			if (loadedValue !== undefined) {
+			if (loaded.value !== undefined) {
 				// Il y a des données sauvegardées
-				value = loadedValue;
-				lastSavedValue = cloneDeep(loadedValue);
-				currentSize = calculateSize(loadedValue);
-				debugLog(`📦 Initialized with saved data for ${key}`);
+				value = loaded.value;
+				currentSize = calculateSize(loaded.value);
+				// Important: si la valeur provient du cache mémoire, ne pas
+				// considérer qu'elle a été sauvegardée afin de déclencher une
+				// sauvegarde effective côté stockage si nécessaire
+				if (!loaded.fromMemory) {
+					lastSavedValue = cloneDeep(loaded.value);
+				}
+				debugLog(`📦 Initialized with ${loaded.fromMemory ? 'memory-cached' : 'saved'} data for ${key}`);
 			} else if (initialValue !== undefined) {
 				// Pas de données sauvegardées, utiliser la valeur par défaut
 				value = cloneDeep(initialValue);
@@ -491,11 +496,33 @@ export function useHybridLocalStorage<T>(
 
 		set value(newValue: T) {
 			value = newValue;
+			// Mettre à jour immédiatement le cache mémoire pour éviter les races
+			// lors des navigations entre pages avant la fin des sauvegardes débouncées
+			if (!options.disableMemoryCache) {
+				const size = calculateSize(newValue);
+				memoryCache.set(key, {
+					value: cloneDeep(newValue),
+					timestamp: Date.now(),
+					location: storageLocation,
+					size
+				});
+			}
 		},
 
 		update(updater: (current: T) => T) {
 			if (value !== undefined) {
-				value = updater(value as T);
+				const updated = updater(value as T);
+				value = updated;
+				// Également propager au cache mémoire immédiatement
+				if (!options.disableMemoryCache) {
+					const size = calculateSize(updated);
+					memoryCache.set(key, {
+						value: cloneDeep(updated),
+						timestamp: Date.now(),
+						location: storageLocation,
+						size
+					});
+				}
 			}
 		},
 
@@ -531,11 +558,14 @@ export function useHybridLocalStorage<T>(
 
 		async forceReload() {
 			try {
-				const loadedValue = await loadValue();
-				if (loadedValue !== undefined) {
-					value = loadedValue;
-					lastSavedValue = cloneDeep(loadedValue);
-					currentSize = calculateSize(loadedValue);
+				const loaded = await loadValue();
+				if (loaded.value !== undefined) {
+					value = loaded.value;
+					// Ne marquer comme "dernier sauvegardé" que si la source n'est pas mémoire
+					if (!loaded.fromMemory) {
+						lastSavedValue = cloneDeep(loaded.value);
+					}
+					currentSize = calculateSize(loaded.value);
 				}
 			} catch (error) {
 				console.error(`Failed to force reload ${key}:`, error);

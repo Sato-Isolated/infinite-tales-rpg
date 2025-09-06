@@ -3,7 +3,7 @@ import { createGameController, type ControllerCtx } from './gameController';
 
 // Minimal helpers to build a ControllerCtx with spies/mocks
 function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
-	const noop = () => {};
+	const noop = () => { };
 	const getFalse = () => false;
 	const getUndefined = () => undefined as any;
 
@@ -15,7 +15,9 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
 					.fn()
 					.mockResolvedValue({ newState: undefined, updatedHistoryMessages: [] })
 			} as any,
-			summaryAgent: {} as any,
+			summaryAgent: {
+				retrieveRelatedHistory: vi.fn().mockResolvedValue({ relatedDetails: [] })
+			} as any,
 			actionAgent: {
 				generateSingleAction: vi.fn().mockResolvedValue({ text: 'mocked', is_possible: true })
 			} as any,
@@ -33,7 +35,13 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
 			storyChunkReset: vi.fn(),
 
 			playerCharacterId: 'pc1',
-			playerCharactersGameState: { pc1: { XP: 0 } } as any,
+			playerCharactersGameState: {
+				value: {
+					pc1: {
+						XP: { current_value: 0, max_value: 0, game_ends_when_zero: false }
+					}
+				}
+			} as any,
 			playerCharactersIdToNamesMapState: { value: {} as any },
 			npcState: { value: {} as any },
 			inventoryState: { value: {} as any },
@@ -45,7 +53,7 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
 					actionAgentInstruction: ''
 				} as any
 			},
-			storyState: { value: { title: 'tale' } as any },
+			storyState: { value: { title: 'tale', content_rating: 'safe' } as any },
 			historyMessagesState: { value: [] as any },
 			characterActionsState: { value: [] as any },
 			thoughtsState: { value: {} as any },
@@ -83,12 +91,12 @@ function makeCtx(overrides: Partial<ControllerCtx> = {} as any): ControllerCtx {
 			setItemForSuggestActions: vi.fn(),
 			setLevelUpState: vi.fn()
 		} as any,
-			helpers: {
+		helpers: {
 			addAdditionalStoryInput: vi.fn(async (_a: any, v: string) => v),
 			openDiceRollDialog: vi.fn(),
 			handleError: vi.fn(),
 			resetStatesAfterActionProcessed: vi.fn(),
-			checkGameEnded: vi.fn(async () => {}),
+			checkGameEnded: vi.fn(async () => { }),
 			getRelatedHistoryForStory: vi.fn(),
 			checkForNewNPCs: vi.fn(),
 			checkForLevelUp: vi.fn(),
@@ -156,5 +164,62 @@ describe('gameController smoke', () => {
 
 		expect(ctx.state.isAiGeneratingState.set).toHaveBeenCalledWith(true);
 		expect(ctx.helpers.handleError).not.toHaveBeenCalled();
+	});
+
+	it('generateActionFromCustomInput preserves user text verbatim over LLM', async () => {
+		// Arrange
+		const localCtx = makeCtx({
+			agents: {
+				actionAgent: ({
+					generateSingleAction: vi.fn().mockResolvedValue({
+						text: 'AI changed this text',
+						is_possible: true,
+						action_difficulty: 'EASY'
+					})
+				} as any)
+			}
+		} as any);
+		const controller = createGameController(localCtx);
+
+		const userText = 'Open the locked chest silently';
+
+		// Act
+		await controller.generateActionFromCustomInput({
+			characterName: 'Hero',
+			text: userText,
+			is_custom_action: true
+		} as any);
+
+		// Assert
+		expect(localCtx.state.chosenActionState.value.text).toBe(userText);
+	});
+
+	it('handleTargetedSpellsOrAbility preserves user text with targets verbatim', async () => {
+		// Arrange
+		const localCtx = makeCtx({
+			agents: {
+				actionAgent: ({
+					generateSingleAction: vi.fn().mockResolvedValue({
+						text: 'AI different',
+						is_possible: true
+					})
+				} as any)
+			}
+		} as any);
+		const controller = createGameController(localCtx);
+
+		const baseText = 'Cast healing word';
+		const targets = ['Ally-1', 'Ally-2'];
+
+		// Act
+		await controller.handleTargetedSpellsOrAbility({
+			characterName: 'Cleric',
+			text: baseText
+		} as any, targets);
+
+		// Assert
+		const chosen = localCtx.state.chosenActionState.value;
+		expect(chosen.text.startsWith(baseText)).toBe(true);
+		expect(chosen.text).toContain('Targets: Ally-1, Ally-2');
 	});
 });

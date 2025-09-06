@@ -164,7 +164,8 @@ ACTION GENERATION RULES:
 		let userMessage =
 			'The player wants to perform following action, you must use these exact words as action text: ' +
 			action.text +
-			'\nDetermine the difficulty and resource cost with considering their personality, skills, items, story summary and following game state\n' +
+			"\nDo NOT paraphrase, translate or reword the action text. If you must return a 'text' field, copy it EXACTLY as provided, character-for-character.\n" +
+			'Determine the difficulty and resource cost with considering their personality, skills, items, story summary and following game state\n' +
 			stringifyPretty(currentGameStateMapped);
 
 		if (restrainingState) {

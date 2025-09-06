@@ -28,7 +28,7 @@
 	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 
 	const taleSettingsClicked = () => {
-		navigate('/new/tale');
+		navigate('/settings/tale');
 	};
 
 	const regenerateGameTime = async () => {

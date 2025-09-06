@@ -135,36 +135,35 @@ export class CharacterStatsAgent {
 		transformInto?: string
 	): Promise<CharacterStats> {
 		const agentInstruction = [
-			'You are RPG character stats agent, generating the starting stats for a character according to game system, adventure and character description.\n' +
-			'Attributes and skills should be determined based on character description.\n' +
-			'Scale the attributes, skills and abilities according to the level. A low level character has attributes and skills -1 to 1.\n' +
-			'If there is a HP resource or deviation, it must be greater than 20.\n'
+			'# Role\nYou are an expert RPG character stats designer. Create balanced, flavorful stats that match the character and the world. Prefer concise, grounded numbers over generic or inflated values.\n',
+			'# Goals\n- Stats must strongly reflect the character’s biography, class/archetype, and the story’s tone.\n- Ensure internal consistency: resources ↔ abilities, attributes ↔ skills, level ↔ overall power.\n- Produce engaging but gameable numbers (not all 0s or all max).\n',
+			'# Output Contract (JSON schema hints)\nYou MUST follow the response schema provided by the tool. Important structure reminders: \n- resources: array of { key: string; max_value: number; start_value: number; game_ends_when_zero: boolean }\n  • key should be lowercase snake_case (e.g., "hp", "mp", "stamina").\n  • start_value ≤ max_value; integers; max_value typically 20–200 depending on genre.\n- attributes: array of { name: string; value: number }\n  • integer values; low-level range typically −1..1 (occasionally up to 3 for standout strengths).\n- skills: array of { name: string; value: number }\n  • integer values; same scale idea as attributes; keep consistent with level.\n- spells_and_abilities: array of { name, effect, resource_cost: { resource_key, cost } }\n  • If an ability consumes a resource, resource_key MUST match an existing resources[].key.\n  • If free to use, set cost = 0 and resource_key can be omitted or null/undefined.\n',
+			'# Balancing & Scaling Rules\n- Use the given level to scale all numbers. At level 1: attributes/skills ≈ −1..1; a single standout can be 2 or 3 max.\n- Do NOT min-max everything; include 1–2 clear strengths, a few neutrals, and 1 small weakness tied to backstory.\n- Resources should suit the archetype (e.g., warriors more HP/stamina; mages more MP; rogues more stamina/energy).\n- If HP (or equivalent) exists, set max_value > 20.\n- Ability effects must reference the character theme and clearly state what they do (damage, control, utility, support).\n',
+			'# Quality Checklist (enforce before finalizing)\n- [ ] All arrays follow the schema.\n- [ ] resource_cost.resource_key exists in resources or cost = 0.\n- [ ] start_value ≤ max_value for every resource.\n- [ ] Attribute/skill names are consistent with the character and setting.\n- [ ] No duplicate names; numbers are integers; no NaN/Infinity.\n- [ ] Avoid modern copyrighted names and ensure safe content.\n'
 		];
 		if (statsOverwrites) {
 			let statsPrompt =
-				'You must reuse the EXISTING STATS exactly as given, e.g. EXISTING STAT of 150 must stay as 150; fill in other values if needed.';
+				'# Overwrites\nYou MUST preserve the EXACT values of provided fields. If a value is given (e.g., 150), keep it 150. Fill only missing pieces.\n';
 			if (isAdaptiveOverwrite) {
 				statsPrompt =
-					'Adapt and refine the EXISTING STATS, especially spells and abilities, based on the Character description.\n';
+					'# Adaptive Overwrite\nRefine EXISTING STATS to better match the character and world, especially spells and abilities.\nPreserve strong numbers unless they clearly contradict the character/story; adjust minimally and justify implicitly via names/effects.\n';
 			}
 			if (transformInto) {
 				statsPrompt =
-					'Determine if following transformation completely changes or just adapts the character; ' +
-					'If complete transformation ignore the EXISTING STATS and generate all new, else just adapt the EXISTING STATS;\nTransform into:\n' +
-					transformInto;
+					'# Transformation\nDecide if the transformation is complete or partial.\n- If complete: ignore EXISTING STATS and generate a coherent new set.\n- If partial: adapt EXISTING STATS with minimal necessary changes.\nTransform into: ' + transformInto + '\n';
 			}
 			statsPrompt += '\nEXISTING STATS:\n' + stringifyPretty(statsOverwrites);
 			agentInstruction.push(statsPrompt);
 		}
 		agentInstruction.push(
-			'You are generating character stats according to game system requirements. Respond with a structured JSON object containing all required character data.'
+			'# Final instruction\nGenerate character stats strictly matching the provided JSON schema. Do not include commentary outside the JSON.'
 		);
 		if (!statsOverwrites?.level) {
 			statsOverwrites = { ...statsOverwrites, level: 1 };
 		}
 		const request: LLMRequest = {
 			userMessage:
-				'Create the character according to the descriptions.\nScale the stats and abilities according to the level.\n',
+				'Create balanced, character-faithful stats now. Output JSON only.',
 			historyMessages: [
 				{
 					role: 'user',
@@ -194,9 +193,39 @@ export class CharacterStatsAgent {
 		return ability;
 	};
 
-	mapStats = (stats: CharacterStats): CharacterStats => {
-		stats.spells_and_abilities = stats.spells_and_abilities.map(this.mapAbility);
-		return stats;
+	mapStats = (resp: CharacterStatsResponse): CharacterStats => {
+		// Defensive defaults and conversion from array-based schema to object maps
+		const level = resp?.level ?? 1;
+		const resourcesArr = Array.isArray(resp?.resources) ? resp.resources : [];
+		const attributesArr = Array.isArray(resp?.attributes) ? resp.attributes : [];
+		const skillsArr = Array.isArray(resp?.skills) ? resp.skills : [];
+		const abilitiesArr = Array.isArray(resp?.spells_and_abilities) ? resp.spells_and_abilities : [];
+
+		const resources = resourcesArr.reduce<Record<string, { max_value: number; start_value: number; game_ends_when_zero: boolean }>>((acc, r) => {
+			if (!r || typeof r.key !== 'string') return acc;
+			acc[r.key] = {
+				max_value: Number.isFinite(r.max_value) ? r.max_value : 0,
+				start_value: Number.isFinite(r.start_value) ? r.start_value : 0,
+				game_ends_when_zero: !!r.game_ends_when_zero
+			};
+			return acc;
+		}, {});
+
+		const attributes = attributesArr.reduce<Record<string, number>>((acc, a) => {
+			if (!a || typeof a.name !== 'string') return acc;
+			acc[a.name] = Number.isFinite(a.value) ? a.value : 0;
+			return acc;
+		}, {});
+
+		const skills = skillsArr.reduce<Record<string, number>>((acc, s) => {
+			if (!s || typeof s.name !== 'string') return acc;
+			acc[s.name] = Number.isFinite(s.value) ? s.value : 0;
+			return acc;
+		}, {});
+
+		const spells_and_abilities = abilitiesArr.map(this.mapAbility);
+
+		return { level, resources, attributes, skills, spells_and_abilities };
 	};
 
 	async levelUpCharacter(
@@ -249,10 +278,20 @@ export class CharacterStatsAgent {
 			}
 		};
 		console.log(stringifyPretty(request));
-		const aiLevelUp = (await this.llm.generateContent(request))?.content as LevelUpResponse;
-		aiLevelUp.ability = this.mapAbility(aiLevelUp.ability);
-		aiLevelUp.character_name = characterState.name;
-		return aiLevelUp;
+		const resp = (await this.llm.generateContent(request))?.content as LevelUpResponse;
+		const mapped: AiLevelUp = {
+			character_name: characterState.name,
+			level_up_explanation: resp?.level_up_explanation ?? '',
+			attribute: resp?.attribute ?? '',
+			formerAbilityName: resp?.formerAbilityName,
+			ability: this.mapAbility(resp?.ability as Ability),
+			resources: (Array.isArray(resp?.resources) ? resp.resources : []).reduce<Record<string, number>>((acc, r) => {
+				if (!r || typeof r.key !== 'string') return acc;
+				acc[r.key] = Number.isFinite(r.value) ? r.value : 0;
+				return acc;
+			}, {})
+		};
+		return mapped;
 	}
 
 	async generateNPCStats(

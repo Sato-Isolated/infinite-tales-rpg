@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import { downloadLocalStorageAsJson, importJsonFromFile } from '$lib/util.svelte';
+	import { downloadHybridStorageAsJson, importJsonFromFile } from '$lib/util.svelte';
 	import type { Snippet } from 'svelte';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
 	import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
@@ -84,7 +84,27 @@
 			}
 		});
 	};
+
+	async function handleExport() {
+		// Flush pending debounced saves to ensure Mongo/localStorage has latest
+		try {
+			await Promise.all([
+				storyState.forceSave(),
+				characterState.forceSave(),
+				characterStatsState.forceSave(),
+				systemInstructionsState.forceSave(),
+				difficultyState.forceSave(),
+				useKarmicDice.forceSave(),
+				useDynamicCombat.forceSave(),
+				relatedStoryHistoryState.forceSave(),
+				relatedActionHistoryState.forceSave()
+			]);
+		} catch (e) {
+			console.warn('Some values could not be flushed before export, proceeding anyway:', e);
+		}
+		await downloadHybridStorageAsJson();
+	}
 </script>
 
-{@render exportButton(downloadLocalStorageAsJson)}
+{@render exportButton(handleExport)}
 {@render importButton(importSettings)}

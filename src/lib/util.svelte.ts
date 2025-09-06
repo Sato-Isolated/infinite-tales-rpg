@@ -1,4 +1,6 @@
 import { errorState } from './state/errorState.svelte';
+import { hybridStorageConfig } from './state/hybrid/config';
+import { mongoStorageManager } from './state/hybrid/mongoStorageManager';
 import isPlainObject from 'lodash.isplainobject';
 // Type-only import to avoid loading pdfjs in Node test environment
 import type * as pdfjs from 'pdfjs-dist';
@@ -171,6 +173,86 @@ export const downloadLocalStorageAsJson = (): void => {
 		dlAnchorElem.remove();
 	} catch (error) {
 		console.error('Failed to download localStorage:', error);
+		handleError('Failed to export game data. Please try again.');
+	}
+};
+
+/**
+ * Export both MongoDB-backed (fileSystem) keys and localStorage keys to JSON
+ * Falls back to localStorage when MongoDB is not available.
+ */
+export const downloadHybridStorageAsJson = async (): Promise<void> => {
+	try {
+		const excludedKeys = new Set(['apiKeyState']); // Sensitive keys to exclude
+
+		// Aggregate keys from config + any extra keys currently in localStorage
+		const fsKeys = hybridStorageConfig.fileSystemKeys || [];
+		const lsKeys = hybridStorageConfig.localStorageKeys || [];
+		const lsRuntimeKeys: string[] = [];
+		try {
+			for (let i = 0; i < localStorage.length; i++) {
+				const k = localStorage.key(i);
+				if (k) lsRuntimeKeys.push(k);
+			}
+		} catch {
+			// ignore if not available
+		}
+		const allKeys = Array.from(new Set([...fsKeys, ...lsKeys, ...lsRuntimeKeys])).filter(
+			(k) => !excludedKeys.has(k)
+		);
+
+		// Try initialize Mongo API (safe no-op if unavailable)
+		const info = mongoStorageManager.getInfo();
+		try {
+			await info.initialize();
+		} catch {
+			// Non-blocking; will fallback to localStorage
+		}
+
+		const result: Record<string, unknown> = {};
+
+		for (const key of allKeys) {
+			let value: unknown = undefined;
+
+			// Prefer Mongo for fileSystem keys when supported
+			if (fsKeys.includes(key) && info.isSupported) {
+				try {
+					const loaded = await info.load(key);
+					if (loaded !== null && loaded !== undefined) {
+						value = loaded;
+					}
+				} catch {
+					// ignore and fallback
+				}
+			}
+
+			// Fallback to localStorage when needed or for ls-only keys
+			if (value === undefined) {
+				try {
+					const raw = localStorage.getItem(key);
+					if (raw !== null) {
+						value = JSON.parse(raw);
+					}
+				} catch (e) {
+					console.warn(`Skipping invalid or unavailable key "${key}" during hybrid export:`, e);
+				}
+			}
+
+			if (value !== undefined) {
+				result[key] = value;
+			}
+		}
+
+		const json = encodeURIComponent(JSON.stringify(result, null, 2));
+		const dataStr = 'data:application/json;charset=utf-8,' + json;
+
+		const dlAnchorElem = document.createElement('a');
+		dlAnchorElem.setAttribute('href', dataStr);
+		dlAnchorElem.setAttribute('download', 'infinite-tales-rpg.json');
+		dlAnchorElem.click();
+		dlAnchorElem.remove();
+	} catch (error) {
+		console.error('Failed to export hybrid storage:', error);
 		handleError('Failed to export game data. Please try again.');
 	}
 };

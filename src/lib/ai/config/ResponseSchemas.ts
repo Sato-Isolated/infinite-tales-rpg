@@ -321,24 +321,39 @@ export const CharacterStatsResponseSchema = {
   properties: {
     level: { type: 'number' as const },
     resources: {
-      type: 'object' as const,
-      additionalProperties: {
+      type: 'array' as const,
+      items: {
         type: 'object' as const,
         properties: {
+          key: { type: 'string' as const },
           max_value: { type: 'number' as const },
           start_value: { type: 'number' as const },
           game_ends_when_zero: { type: 'boolean' as const }
         },
-        required: ['max_value', 'start_value', 'game_ends_when_zero']
+        required: ['key', 'max_value', 'start_value', 'game_ends_when_zero']
       }
     },
     attributes: {
-      type: 'object' as const,
-      additionalProperties: { type: 'number' as const }
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          name: { type: 'string' as const },
+          value: { type: 'number' as const }
+        },
+        required: ['name', 'value']
+      }
     },
     skills: {
-      type: 'object' as const,
-      additionalProperties: { type: 'number' as const }
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          name: { type: 'string' as const },
+          value: { type: 'number' as const }
+        },
+        required: ['name', 'value']
+      }
     },
     spells_and_abilities: {
       type: 'array' as const,
@@ -365,15 +380,14 @@ export const CharacterStatsResponseSchema = {
 
 export interface CharacterStatsResponse {
   level: number;
-  resources: {
-    [resourceKey: string]: {
-      max_value: number;
-      start_value: number;
-      game_ends_when_zero: boolean;
-    };
-  };
-  attributes: { [stat: string]: number };
-  skills: { [stat: string]: number };
+  resources: Array<{
+    key: string;
+    max_value: number;
+    start_value: number;
+    game_ends_when_zero: boolean;
+  }>;
+  attributes: Array<{ name: string; value: number }>;
+  skills: Array<{ name: string; value: number }>;
   spells_and_abilities: Array<{
     name: string;
     effect: string;
@@ -409,8 +423,15 @@ export const LevelUpResponseSchema = {
       required: ['name', 'effect', 'resource_cost']
     },
     resources: {
-      type: 'object' as const,
-      additionalProperties: { type: 'number' as const }
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          key: { type: 'string' as const },
+          value: { type: 'number' as const }
+        },
+        required: ['key', 'value']
+      }
     }
   },
   required: ['character_name', 'level_up_explanation', 'attribute', 'ability', 'resources']
@@ -429,7 +450,7 @@ export interface LevelUpResponse {
       cost: number;
     };
   };
-  resources: { [resourceKey: string]: number };
+  resources: Array<{ key: string; value: number }>;
 }
 
 // NPC Stats Response Schema
@@ -458,7 +479,7 @@ export const NPCStatsResponseSchema = {
             required: ['current_hp', 'current_mp']
           },
           class: { type: 'string' as const },
-          rank_enum_english: { 
+          rank_enum_english: {
             type: 'string' as const,
             enum: ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary']
           },
@@ -763,7 +784,7 @@ export interface AbilitiesResponse extends Array<{
     resource_key: string | undefined;
     cost: number;
   };
-}> {}
+}> { }
 
 // Single Action Response Schema for ActionAgent
 export const SingleActionResponseSchema = {
@@ -773,8 +794,8 @@ export const SingleActionResponseSchema = {
     text: { type: 'string' as const },
     related_attribute: { type: 'string' as const, nullable: true },
     related_skill: { type: 'string' as const, nullable: true },
-    action_difficulty: { 
-      type: 'string' as const, 
+    action_difficulty: {
+      type: 'string' as const,
       nullable: true,
       enum: ['simple', 'medium', 'difficult', 'very_difficult']
     },
@@ -783,8 +804,8 @@ export const SingleActionResponseSchema = {
     plausibility: { type: 'string' as const, nullable: true },
     difficulty_explanation: { type: 'string' as const, nullable: true },
     type: { type: 'string' as const, nullable: true },
-    narration_details: { 
-      type: 'object' as const, 
+    narration_details: {
+      type: 'object' as const,
       nullable: true,
       properties: {
         reasoning: { type: 'string' as const },
@@ -793,8 +814,8 @@ export const SingleActionResponseSchema = {
       required: ['reasoning', 'enum_english']
     },
     actionSideEffects: { type: 'string' as const, nullable: true },
-    enemyEncounterExplanation: { 
-      type: 'object' as const, 
+    enemyEncounterExplanation: {
+      type: 'object' as const,
       nullable: true,
       properties: {
         reasoning: { type: 'string' as const },
@@ -824,7 +845,7 @@ export const SingleActionResponseSchema = {
       type: 'object' as const,
       nullable: true,
       properties: {
-        modifier: { 
+        modifier: {
           type: 'string' as const,
           enum: ['none', 'bonus', 'malus']
         },
@@ -886,8 +907,8 @@ export const ActionsWithThoughtsResponseSchema = {
           text: { type: 'string' as const },
           related_attribute: { type: 'string' as const, nullable: true },
           related_skill: { type: 'string' as const, nullable: true },
-          action_difficulty: { 
-            type: 'string' as const, 
+          action_difficulty: {
+            type: 'string' as const,
             nullable: true,
             enum: ['simple', 'medium', 'difficult', 'very_difficult']
           },
@@ -901,7 +922,7 @@ export const ActionsWithThoughtsResponseSchema = {
             nullable: true,
             properties: {
               reasoning: { type: 'string' as const },
-              enum_english: { 
+              enum_english: {
                 type: 'string' as const,
                 enum: ['LOW', 'MEDIUM', 'HIGH']
               }
@@ -914,7 +935,7 @@ export const ActionsWithThoughtsResponseSchema = {
             nullable: true,
             properties: {
               reasoning: { type: 'string' as const },
-              enum_english: { 
+              enum_english: {
                 type: 'string' as const,
                 enum: ['LOW', 'MEDIUM', 'HIGH']
               }
@@ -943,7 +964,7 @@ export const ActionsWithThoughtsResponseSchema = {
             type: 'object' as const,
             nullable: true,
             properties: {
-              modifier: { 
+              modifier: {
                 type: 'string' as const,
                 enum: ['none', 'bonus', 'malus']
               },
@@ -1066,7 +1087,7 @@ export const GameAgentResponseSchema = {
         properties: {
           sourceName: { type: 'string' as const, nullable: true },
           targetName: { type: 'string' as const },
-          value: { 
+          value: {
             type: 'object' as const,
             properties: {
               result: { type: 'number' as const },
@@ -1235,11 +1256,11 @@ export const GameTimeResponseSchema = {
     year: { type: 'number' as const },
     hour: { type: 'number' as const },
     minute: { type: 'number' as const },
-    timeOfDay: { 
+    timeOfDay: {
       type: 'string' as const,
       enum: ['dawn', 'morning', 'midday', 'afternoon', 'evening', 'night', 'deep_night']
     },
-    season: { 
+    season: {
       type: 'string' as const,
       enum: ['spring', 'summer', 'autumn', 'winter']
     },

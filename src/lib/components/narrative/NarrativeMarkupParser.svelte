@@ -71,7 +71,7 @@
 		);
 
 		// 7. Line breaks: [br]
-		parsed = parsed.replace(/\[br\]/gs, '<div class="divider my-2"></div>');
+		parsed = parsed.replace(/\[br\]/gs, '<div class="divider">~</div>');
 
 		// Remove unknown tags silently (error-tolerant approach)
 		// This prevents broken rendering if AI uses unexpected tags

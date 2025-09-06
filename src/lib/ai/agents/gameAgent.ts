@@ -344,27 +344,31 @@ export class GameAgent {
 		}
 		const playerActionTextForHistory = playerActionText;
 		let combinedText = playerActionText;
-		
-		// 🎭 QUOTED DIALOGUE PRESERVATION
-		// Detect if action.text contains quoted dialogue that should be preserved exactly
+
+		// 🎭 QUOTED DIALOGUE PRESERVATION (robust detection)
+		// Detect any quoted segments within the action text that must be reproduced verbatim in the story
 		const actionText = action.text.trim();
-		const isQuotedDialogue = 
-			(actionText.startsWith('"') && actionText.endsWith('"')) ||
-			(actionText.startsWith("'") && actionText.endsWith("'")) ||
-			(actionText.startsWith('"') && actionText.endsWith('"'));
-		
-		if (isQuotedDialogue) {
-			console.log('🎭 Quoted dialogue detected:', actionText);
+		const doubleQuoteMatches = Array.from(actionText.matchAll(/"([^"\n]+)"/g));
+		const guillemetsMatches = Array.from(actionText.matchAll(/«\s*([^»\n]+)\s*»/g));
+		// Intentionally skip single quotes to avoid false positives with contractions (e.g., c'est)
+		const quotedSegments = [...doubleQuoteMatches, ...guillemetsMatches]
+			.map((m) => (m[1] || '').trim())
+			.filter((s) => s.length > 0);
+
+		if (quotedSegments.length > 0) {
+			console.log('🎭 Quoted dialogue segments detected:', quotedSegments);
 			combinedText += '\n\n⚠️ CRITICAL DIALOGUE PRESERVATION INSTRUCTION:';
-			combinedText += '\nThe above action contains EXACT QUOTED DIALOGUE that must be preserved literally.';
-			combinedText += `\nThe character ${action.characterName} is speaking these EXACT words: ${actionText}`;
-			combinedText += '\nYou MUST use this exact text as the character\'s dialogue in your story response.';
-			combinedText += '\nDO NOT paraphrase, translate, or creatively interpret this dialogue.';
-			combinedText += '\nDO NOT add "creative flair" or alternative expressions.';
-			combinedText += '\nThe quoted text is the character\'s literal speech - use it exactly as provided.';
-			combinedText += '\nExample: If the quoted text is "Bon bon bon nous y voila", the character must say exactly "Bon bon bon nous y voila" in your story.';
+			combinedText += `\nThe player provided ${quotedSegments.length} quoted dialogue segment(s). You MUST include each segment verbatim (character-for-character) in your story.`;
+			combinedText += '\n- Do NOT paraphrase, translate, or alter punctuation/casing/spaces for these segments.';
+			combinedText += `\n- Attribute the quotes as spoken by ${action.characterName} unless the action explicitly names a different speaker.`;
+			combinedText += '\n- Prefer rendering using the markup [speaker:NAME]TEXT[/speaker] so the UI styles dialogue; otherwise include the quotes directly.';
+			combinedText += '\n- If the player indicates whispering/murmuring, keep it subtle but still use the exact quoted words.';
+			combinedText += '\nQuoted segments to include verbatim:';
+			quotedSegments.forEach((q, i) => {
+				combinedText += `\n  ${i + 1}) "${q}"`;
+			});
 		}
-		
+
 		if (additionalStoryInput) combinedText += '\n' + additionalStoryInput;
 
 		if (relatedHistory.length > 0) {
@@ -505,6 +509,27 @@ export class GameAgent {
 		}
 
 		console.log('GameAgent: Successfully generated new state, building history messages...');
+
+		// 🔒 Post-generation enforcement: ensure verbatim quoted segments appear in the story
+		try {
+			if (quotedSegments.length > 0 && typeof newState.story === 'string') {
+				let storyText = newState.story || '';
+				let injected = false;
+				for (const q of quotedSegments) {
+					// Check presence of the exact inner text (without quotes) to keep detection robust across markup
+					if (!storyText.includes(q)) {
+						const injectedLine = `[speaker:${action.characterName}]${q}[/speaker]\n`;
+						storyText = injectedLine + storyText;
+						injected = true;
+					}
+				}
+				if (injected) {
+					newState.story = storyText;
+				}
+			}
+		} catch (e) {
+			console.warn('Dialogue preservation enforcement failed (non-fatal):', e);
+		}
 		const { userMessage, modelMessage } = this.buildHistoryMessages(
 			playerActionTextForHistory,
 			newState,

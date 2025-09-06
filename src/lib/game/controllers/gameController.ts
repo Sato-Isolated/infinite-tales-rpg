@@ -725,6 +725,7 @@ export function createGameController(ctx: ControllerCtx) {
 		if (targets?.length > 0 && !targets.some((t) => t === undefined)) {
 			targetAddition = `\n\nTargets: ${targets.join(', ')}\n`;
 		}
+		// Append targets to the player's original text BEFORE calling the agent
 		action.text += targetAddition;
 		const { getRelatedHistory } = await import('../memory/memoryLogic');
 		ctx.state.relatedActionHistoryState.value = await getRelatedHistory(
@@ -751,7 +752,9 @@ export function createGameController(ctx: ControllerCtx) {
 			getSafetyLevelFromStory(ctx.state.storyState.value)
 		);
 		if (generatedAction) {
-			action = { ...action, ...generatedAction };
+			// Preserve VERBATIM player text (including appended targets):
+			// Ensure any AI-provided text never overwrites the player's intent.
+			action = { ...generatedAction, ...action };
 		}
 		action.is_custom_action = true;
 		ctx.state.chosenActionState.value = action;

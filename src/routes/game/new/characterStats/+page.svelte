@@ -44,22 +44,40 @@
 
 	let characterStatsStateOverwrites = $state(cloneDeep(initialCharacterStatsState));
 
-	onMount(() => {
+	// Ready state (API key + core context available)
+	const isReady = $derived(Boolean(apiKeyState.value && storyState.value && characterState.value));
+
+	// Reinitialize the agent reactively when API key or language/safety changes (non-SSR effect)
+	$effect(() => {
+		// Track dependencies
+		const key = apiKeyState.value;
+		const lang = aiLanguage.value;
+		const safety = getSafetyLevelFromStory(storyState.value);
+		const useFallback = aiConfigState.value?.useFallbackLlmState;
+
+		if (!key) {
+			return; // wait until the key is present
+		}
 		characterStatsAgent = new CharacterStatsAgent(
 			LLMProvider.provideLLM(
 				{
 					temperature: 2,
-					apiKey: apiKeyState.value,
-					language: aiLanguage.value
+					apiKey: key,
+					language: lang
 				},
-				getSafetyLevelFromStory(storyState.value), // Use tale's content rating
-				aiConfigState.value?.useFallbackLlmState
+				safety, // Use tale's content rating
+				useFallback
 			)
 		);
 	});
 
 	const onRandomize = async () => {
 		isGeneratingState = true;
+		if (!apiKeyState.value || !storyState.value || !characterState.value) {
+			alert('Missing API key, story, or character configuration (Settings → AI)');
+			isGeneratingState = false;
+			return;
+		}
 		const filteredOverwrites = removeEmptyValues($state.snapshot(characterStatsStateOverwrites));
 		const newState = await characterStatsAgent.generateCharacterStats(
 			$state.snapshot(storyState.value),
@@ -76,6 +94,11 @@
 
 	const onRandomizeAttributes = async () => {
 		isGeneratingState = true;
+		if (!apiKeyState.value || !storyState.value || !characterState.value) {
+			alert('Missing API key, story, or character configuration (Settings → AI)');
+			isGeneratingState = false;
+			return;
+		}
 		const currentCharacterStats = $state.snapshot(characterStatsState.value);
 
 		// Clear all Attributes to regenerate them
@@ -103,6 +126,11 @@
 
 	const onRandomizeSkills = async () => {
 		isGeneratingState = true;
+		if (!apiKeyState.value || !storyState.value || !characterState.value) {
+			alert('Missing API key, story, or character configuration (Settings → AI)');
+			isGeneratingState = false;
+			return;
+		}
 		const currentCharacterStats = $state.snapshot(characterStatsState.value);
 
 		// Clear all skills to regenerate them
@@ -130,6 +158,11 @@
 
 	const onRandomizeResources = async () => {
 		isGeneratingState = true;
+		if (!apiKeyState.value || !storyState.value || !characterState.value) {
+			alert('Missing API key, story, or character configuration (Settings → AI)');
+			isGeneratingState = false;
+			return;
+		}
 		const currentCharacterStats = $state.snapshot(characterStatsState.value);
 
 		// Clear all resources to regenerate them
@@ -157,6 +190,11 @@
 
 	const onRandomizeAbility = async (abilityIndex: number) => {
 		isGeneratingState = true;
+		if (!apiKeyState.value || !storyState.value || !characterState.value) {
+			alert('Missing API key, story, or character configuration (Settings → AI)');
+			isGeneratingState = false;
+			return;
+		}
 		// Prepare input with current state
 		const currentCharacterStats = $state.snapshot(characterStatsState.value);
 		let overwrittenAbility = removeEmptyValues(
@@ -181,6 +219,11 @@
 
 	const onRandomizeAllAbilities = async () => {
 		isGeneratingState = true;
+		if (!apiKeyState.value || !storyState.value || !characterState.value) {
+			alert('Missing API key, story, or character configuration (Settings → AI)');
+			isGeneratingState = false;
+			return;
+		}
 		const currentCharacterStats = $state.snapshot(characterStatsState.value);
 
 		// Clear all abilities to regenerate them
@@ -416,7 +459,7 @@
 						e.preventDefault();
 						onRandomizeResources();
 					}}
-					disabled={isGeneratingState}
+					disabled={isGeneratingState || !isReady}
 				>
 					Randomize Resources
 				</button>
@@ -490,7 +533,7 @@
 						e.preventDefault();
 						onRandomizeAttributes();
 					}}
-					disabled={isGeneratingState}
+					disabled={isGeneratingState || !isReady}
 				>
 					Randomize Attributes
 				</button>
@@ -572,7 +615,7 @@
 						e.preventDefault();
 						onRandomizeSkills();
 					}}
-					disabled={isGeneratingState}
+					disabled={isGeneratingState || !isReady}
 				>
 					Randomize Skills
 				</button>
@@ -625,7 +668,7 @@
 						e.preventDefault();
 						onRandomizeAllAbilities();
 					}}
-					disabled={isGeneratingState}
+					disabled={isGeneratingState || !isReady}
 				>
 					Randomize Abilities
 				</button>
@@ -641,7 +684,7 @@
 			<button
 				class="btn btn-accent btn-md m-auto w-1/2"
 				onclick={onRandomize}
-				disabled={isGeneratingState}
+				disabled={isGeneratingState || !isReady}
 			>
 				Randomize All
 			</button>
@@ -658,4 +701,9 @@
 			Start Your Tale
 		</button>
 	</div>
+	{#if !isReady}
+		<p class="text-warning mt-2 text-center text-sm">
+			Enter your API key in Settings → AI to enable randomization.
+		</p>
+	{/if}
 {/snippet}

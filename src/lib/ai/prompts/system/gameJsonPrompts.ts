@@ -21,7 +21,7 @@ Progress the story based on the action's success or failure with appropriate con
 • \`[speaker:Name]dialogue[/speaker]\` → When someone speaks out loud
 • \`[character]Name[/character]\` → To highlight an important character
 • \`[highlight]text[/highlight]\` → For crucial information
-• \`[br]\` → Line break to improve text flow
+• \`[br]\` → use this tag to indicate a breaking point for large blocks of text
 
 **Style Tags (Use occasionally):**
 • \`[location]place[/location]\` → Important locations
