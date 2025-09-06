@@ -16,7 +16,7 @@
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
 	import ErrorDialog from '$lib/components/modals/system/ErrorModal.svelte';
 	import ImpossibleActionModal from '$lib/components/modals/gameplay/ImpossibleActionModal.svelte';
-	import GMQuestionModal from '$lib/components/modals/system/GMQuestionModal.svelte';
+	import GMQuestionModal from '$lib/components/gm/EnhancedGMModal.svelte';
 	import CharacterChangedConfirmationModal from '$lib/components/modals/character/CharacterChangedConfirmationModal.svelte';
 	import NewAbilitiesConfirmatonModal from '$lib/components/modals/character/NewAbilitiesConfirmationModal.svelte';
 	import UseSpellsAbilitiesModal from '$lib/components/modals/gameplay/UseSpellsAbilitiesModal.svelte';
@@ -106,7 +106,7 @@
 {#if modalManager.hasGMQuestion}
 	<GMQuestionModal
 		onclose={handleGMQuestionClosed}
-		question={modalManager.gmQuestionState}
+		initialQuestion={modalManager.gmQuestionState}
 		{playerCharactersGameState}
 	/>
 {/if}

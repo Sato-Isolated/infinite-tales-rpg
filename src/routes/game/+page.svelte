@@ -1083,6 +1083,15 @@
 						<div class="mb-2 flex items-center gap-2">
 							<span class="text-base">✍️</span>
 							<h3 class="text-sm font-semibold">Write Custom Action</h3>
+							<div class="divider divider-horizontal"></div>
+							<button 
+								class="btn btn-outline btn-secondary btn-xs gap-1"
+								onclick={() => modalManager.setGMQuestion('')}
+								title="Open Game Master assistant directly"
+							>
+								<span class="text-xs">🧙</span>
+								Ask GM
+							</button>
 						</div>
 						<ActionInputForm
 							bind:this={actionInputFormComponent}

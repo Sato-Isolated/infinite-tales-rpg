@@ -1306,6 +1306,75 @@ export interface GameTimeResponse {
   explanation?: string;
 }
 
+// Enhanced Game Master Answer Response Schema (for player questions)
+export const GameMasterAnswerResponseSchema = {
+  type: 'object' as const,
+  properties: {
+    answerToPlayer: {
+      type: 'string' as const,
+      description: 'Direct answer to the player\'s question, written out-of-character'
+    },
+    answerType: {
+      type: 'string' as const,
+      enum: ['rule_clarification', 'world_lore', 'tactical_advice', 'current_situation', 'character_info', 'general'],
+      description: 'Category of the question being answered'
+    },
+    confidence: {
+      type: 'number' as const,
+      minimum: 0,
+      maximum: 100,
+      description: 'Confidence level of the answer (0-100)'
+    },
+    rules_considered: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'List of relevant Game Master rules that apply to this question'
+    },
+    game_state_considered: {
+      type: 'string' as const,
+      description: 'Analysis of how current game state relates to the question'
+    },
+    relatedQuestions: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'Suggestions for related questions the player might want to ask'
+    },
+    sources: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'References to rules, lore, or game elements mentioned in the answer'
+    },
+    followUpSuggestions: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'Optional follow-up actions or questions the player might consider'
+    },
+    requiresClarification: {
+      type: 'boolean' as const,
+      description: 'Whether the question was ambiguous and might need clarification'
+    },
+    suggestedActions: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description: 'Optional game actions the player could take based on this information'
+    }
+  },
+  required: ['answerToPlayer', 'answerType', 'confidence', 'rules_considered', 'game_state_considered', 'relatedQuestions', 'sources']
+};
+
+export interface GameMasterAnswerResponse {
+  answerToPlayer: string;
+  answerType: 'rule_clarification' | 'world_lore' | 'tactical_advice' | 'current_situation' | 'character_info' | 'general';
+  confidence: number;
+  rules_considered: string[];
+  game_state_considered: string;
+  relatedQuestions: string[];
+  sources: string[];
+  followUpSuggestions?: string[];
+  requiresClarification?: boolean;
+  suggestedActions?: string[];
+}
+
 /**
  * Get the appropriate response schema for an agent type
  */
@@ -1314,6 +1383,7 @@ export function getResponseSchemaForAgent(agentType: string): any {
     story: StoryResponseSchema,
     storyGeneration: StoryGenerationResponseSchema,
     gameAgent: GameAgentResponseSchema,
+    gameMasterAnswer: GameMasterAnswerResponseSchema,
     action: ActionResponseSchema,
     singleAction: SingleActionResponseSchema,
     actionsWithThoughts: ActionsWithThoughtsResponseSchema,

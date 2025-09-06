@@ -28,3 +28,6 @@ test-results/.last-run.json
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md

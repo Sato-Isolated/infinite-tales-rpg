@@ -16,8 +16,10 @@ import type { DiceSimulationMode } from '$lib/utils/webglDetection';
 import {
 	GameTimeResponseSchema,
 	GameAgentResponseSchema,
+	GameMasterAnswerResponseSchema,
 	type GameTimeResponse,
-	type GameAgentResponse
+	type GameAgentResponse,
+	type GameMasterAnswerResponse
 } from '$lib/ai/config/ResponseSchemas';
 import {
 	PAST_STORY_PLOT_RULE,
@@ -232,8 +234,15 @@ export type GameActionState = {
 };
 export type GameMasterAnswer = {
 	answerToPlayer: string;
+	answerType: 'rule_clarification' | 'world_lore' | 'tactical_advice' | 'current_situation' | 'character_info' | 'general';
+	confidence: number;
 	rules_considered: Array<string>;
 	game_state_considered: string;
+	relatedQuestions: string[];
+	sources: string[];
+	followUpSuggestions?: string[];
+	requiresClarification?: boolean;
+	suggestedActions?: string[];
 };
 
 export class GameAgent {
@@ -555,38 +564,60 @@ export class GameAgent {
 		customGmNotes?: string,
 		is_character_restrained_explanation?: string
 	): Promise<{ thoughts?: string; answer: GameMasterAnswer }> {
+		// Enhanced fallback response generator
+		const createFallbackResponse = (error?: string): { thoughts?: string; answer: GameMasterAnswer } => {
+			return {
+				thoughts: undefined,
+				answer: {
+					answerToPlayer: error 
+						? `I encountered an issue while processing your question: ${error}. Please try rephrasing your question or check your API configuration.`
+						: "I apologize, but I'm unable to provide an answer to your question at the moment. This could be due to a technical issue or connectivity problem. Please try asking your question again.",
+					answerType: 'general' as const,
+					confidence: 0,
+					rules_considered: [error ? `System Error: ${error}` : "System Error: Unable to process request"],
+					game_state_considered: "Unable to analyze current game state due to technical difficulties.",
+					relatedQuestions: ["Try asking a simpler question", "Check your API configuration"],
+					sources: ["System Error Log"]
+				}
+			};
+		};
+
 		const gameAgent = [
-			'You are Reviewer Agent, your task is to answer a players question.\n' +
-			'You can refer to the internal state, rules and previous messages that the Game Master has considered',
+			'You are an intelligent Game Master Assistant designed to help players understand the game world, rules, and current situation.\n' +
+			'Analyze the question type and provide helpful, contextual responses with appropriate confidence levels.',
 			this.generateEnrichedNPCContext(npcState, characterState?.name || "CHARACTER")
 		];
+		
 		if (customGmNotes) {
 			gameAgent.push(
-				'The following are custom gm notes considered to be rules.' + '\n' + customGmNotes
+				'Custom GM Notes (considered as additional rules):\n' + customGmNotes
 			);
 		}
+		
 		if (thoughtsState.storyThoughts) {
 			gameAgent.push(
-				'The following are thoughts of the Game Master regarding how to progress the story.' +
-				'\n' +
+				'Game Master\'s Current Thoughts about Story Progression:\n' +
 				JSON.stringify(thoughtsState)
 			);
 		}
+		
 		if (relatedHistory.length > 0) {
-			gameAgent.push('History Rules:\n' + PAST_STORY_PLOT_RULE + relatedHistory.join('\n'));
-			gameAgent.push('Dialogue Consistency:\n' + DIALOGUE_CONSISTENCY_PROMPT);
+			gameAgent.push('Historical Context:\n' + PAST_STORY_PLOT_RULE + relatedHistory.join('\n'));
+			gameAgent.push('Dialogue Consistency Rules:\n' + DIALOGUE_CONSISTENCY_PROMPT);
 		}
+		
 		if (is_character_restrained_explanation) {
 			gameAgent.push(
-				`Character is restrained: ${is_character_restrained_explanation}; consider the implications in your response.`
+				`Current Character Constraint: ${is_character_restrained_explanation} - Consider this in your response.`
 			);
 		}
+		
 		gameAgent.push(jsonSystemInstructionForPlayerQuestion);
+
 		const userMessage =
-			'Most important! Answer outside of character, do not describe the story, but give an explanation to this question:\n' +
-			question +
-			"\n\nIn your answer, identify the relevant Game Master's rules that are related to the question:\n" +
-			"Game Master's rules:\n" +
+			'IMPORTANT: Answer this player question out-of-character as a helpful Game Master assistant.\n\n' +
+			'PLAYER QUESTION: ' + question + '\n\n' +
+			'GAME MASTER RULES AND CONTEXT:\n' +
 			this.getGameAgentSystemInstructionsFromStates(
 				storyState,
 				characterState,
@@ -598,16 +629,76 @@ export class GameAgent {
 				customSystemInstruction.combatAgentInstruction,
 				gameSettings
 			).join('\n');
+		
 		const request: LLMRequest = {
 			userMessage: userMessage,
 			historyMessages: historyMessages,
-			systemInstruction: gameAgent
+			systemInstruction: gameAgent,
+			config: {
+				responseSchema: GameMasterAnswerResponseSchema
+			}
 		};
-		const response = await this.llm.generateContent(request);
-		return {
-			thoughts: response?.thoughts,
-			answer: response?.content as GameMasterAnswer
-		};
+
+		// Enhanced retry logic with multiple attempts
+		const maxRetries = 3;
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				const response = await this.llm.generateContent(request);
+				
+				if (!response || !response.content) {
+					console.warn(`⚠️ GameAgent.generateAnswerForPlayerQuestion: No response from LLM (attempt ${attempt}/${maxRetries})`);
+					if (attempt === maxRetries) {
+						return createFallbackResponse("No response received from AI after multiple attempts");
+					}
+					continue;
+				}
+
+				// Validate and enhance the response
+				const parsedResponse = response.content as GameMasterAnswerResponse;
+				
+				// Check required fields and provide intelligent defaults
+				const enhancedResponse: GameMasterAnswerResponse = {
+					answerToPlayer: parsedResponse.answerToPlayer || "I'm having trouble formulating a complete answer to your question.",
+					answerType: parsedResponse.answerType || 'general',
+					confidence: parsedResponse.confidence ?? 50,
+					rules_considered: parsedResponse.rules_considered || ["No specific rules identified"],
+					game_state_considered: parsedResponse.game_state_considered || "Current game state not fully analyzed",
+					relatedQuestions: parsedResponse.relatedQuestions || [],
+					sources: parsedResponse.sources || [],
+					followUpSuggestions: parsedResponse.followUpSuggestions,
+					requiresClarification: parsedResponse.requiresClarification,
+					suggestedActions: parsedResponse.suggestedActions
+				};
+
+				// Quality check - ensure we have a meaningful answer
+				if (enhancedResponse.answerToPlayer.length < 10) {
+					console.warn(`⚠️ GameAgent.generateAnswerForPlayerQuestion: Answer too short (attempt ${attempt}/${maxRetries})`);
+					if (attempt === maxRetries) {
+						return createFallbackResponse("Received incomplete response");
+					}
+					continue;
+				}
+
+				console.log(`✅ GameAgent.generateAnswerForPlayerQuestion: Success on attempt ${attempt}`);
+				return {
+					thoughts: response.thoughts,
+					answer: enhancedResponse
+				};
+
+			} catch (error) {
+				console.error(`❌ GameAgent.generateAnswerForPlayerQuestion: Error on attempt ${attempt}/${maxRetries}:`, error);
+				
+				if (attempt === maxRetries) {
+					return createFallbackResponse(error instanceof Error ? error.message : 'Unknown error');
+				}
+				
+				// Wait briefly before retry
+				await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+			}
+		}
+
+		// This should never be reached, but TypeScript safety
+		return createFallbackResponse("Unexpected error in retry logic");
 	}
 
 	private getGameAgentSystemInstructionsFromStates(
