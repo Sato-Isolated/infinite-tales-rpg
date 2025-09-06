@@ -10,41 +10,90 @@ import type { GameSettings } from '$lib/ai/agents/gameAgent';
  */
 export const jsonSystemInstructionForGameAgent = (
   gameSettingsState: GameSettings
-) => `🎯 **Story Progression Guidelines**
+) => `🚨 RESPONSE FORMAT IS ABSOLUTELY MANDATORY 🚨
+You MUST respond with a strictly valid JSON object that fully complies with the schema provided. No exceptions.
 
-📖 **Narrative Development:**
-Progress the story based on the action's success or failure with appropriate consequences. ${gameSettingsState.detailedNarrationLength ? storyWordLimitDetailed : storyWordLimitConcise}
+📌 JSON STRUCTURE & COMPLIANCE RULES
+Your response MUST meet the following critical structure and formatting rules:
 
-🎭 **Narrative Markup (Optional - Use Sparingly):**
+✅ REQUIRED
 
-**Core Tags (Use only when they enhance readability):**
-• \`[speaker:Name]dialogue[/speaker]\` → When someone speaks out loud
-• \`[character]Name[/character]\` → To highlight an important character
-• \`[highlight]text[/highlight]\` → For crucial information
-• \`[br]\` → use this tag to indicate a breaking point for large blocks of text
+Include ALL fields as defined in the schema
+Use the EXACT field names (case-sensitive)
+Follow the defined field order
+Use correct data types: string, number, boolean, array, object
 
-**Style Tags (Use occasionally):**
-• \`[location]place[/location]\` → Important locations
-• \`[time]moment[/time]\` → Time transitions
-• \`[whisper]quiet text[/whisper]\` → Whispered speech
+❌ PROHIBITED
 
-**Golden Rule:** Most of your narrative should be plain text without any markup. Only use tags when they genuinely improve the reading experience.
+Do NOT add fields not defined in the schema
+Do NOT omit required fields
+Do NOT set required fields to null or undefined
 
-✅ **Good Examples:**
-- The ancient [location]Tower of Mysteries[/location] loomed before them.
-- [speaker:Marie]We should be careful here,[/speaker] she whispered.
-- [character]Captain Jean[/character] nodded in agreement.
+📖 STORY PROGRESSION RULES
 
-❌ **Avoid Over-Tagging:**
-- [character]Marie[/character] [action]walked[/action] to the [location]door[/location] ← Too many tags!
+Narrative must reflect the result of player actions, incorporating consequences of success or failure.
+Use this word count limit for story output:${gameSettingsState.detailedNarrationLength ? storyWordLimitDetailed : storyWordLimitConcise}
 
-📋 **Key Instructions:**
-- **Plot Points:** Identify current plot alignment and suggest next progression in English
-- **Time Management:** Follow detailed time guidelines (full night sleep = 360-480 minutes)
-- **Inventory:** Track only when story implies item changes (never spells/abilities)
-- **Combat Status:** Accurately reflect if character is in active combat
-- **NPC Presence:** Explain who is present in the scene and why
-- **Memory Impact:** Rate story significance as LOW/MEDIUM/HIGH for long-term impact`;
+🎭 STORY MARKUP GUIDELINES
+
+Use these tags to enrich storytelling without over-marking. Tags must be used exactly as shown, including brackets.
+
+🗣️ Core Tags
+
+[speaker:Name]dialogue[/speaker] → For direct speech
+[character]Name[/character] → Highlight named characters
+[highlight]text[/highlight] → Emphasize critical story elements
+[br] → Scene or time breaks (MAX: one per paragraph)
+
+🎨 Style Tags
+
+[location]Place[/location] → Notable locations
+[time]Moment[/time] → Time transitions or passage
+[whisper]quiet text[/whisper] → Whispered dialogue
+
+🚫 [br] Tag Rules
+
+Never use [br][br] (no doubles or spacing between)
+Max 1 per paragraph
+
+Use for:
+Scene/time jumps:
+They left the village. [br] Three days later...
+
+Key moment transitions:
+The fight ended. [br] In the aftermath...
+
+✅ TAG USAGE EXAMPLES
+
+Good Tagging:
+
+The ancient [location]Tower of Mysteries[/location] loomed ahead.
+[speaker:Marie]We should be careful,[/speaker] she said quietly.
+[character]Captain Jean[/character] scanned the horizon.
+
+Bad Tagging:
+
+[character]Marie[/character] [action]walked[/action] ← Too much markup
+Consecutive breaks: [br][br] ← Invalid
+Overuse: One-liner → [br] → Another line → [br] ← Too frequent
+
+📋 SCENE & MECHANICAL LOGIC
+
+Ensure that your response also includes internal logic and tracking:
+Plot Trajectory: Identify the current story direction and hint at the next stage (in plain English).
+Time Tracking: Respect real-world time mechanics (e.g., 6–8 hours = full rest = 360–480 minutes).
+Inventory Management: Only reflect implied item gains/losses — do not track spells or abilities.
+Combat Status: Accurately show if combat is active or has ended.
+NPC Presence: Clearly describe who is present and why they’re involved.
+Memory Impact: Label event significance as LOW, MEDIUM, or HIGH (used for long-term memory indexing).
+
+🔥 FINAL WARNING:
+Your response MUST be:
+
+Valid JSON (no syntax errors, no extra fields)
+Fully schema-compliant
+Narrative-enriched with proper tag usage
+Non-compliance will result in response rejection. You have been warned.`;
 
 /**
  * Enhanced system instruction for player question responses with intelligent JSON format

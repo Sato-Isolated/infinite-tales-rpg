@@ -101,7 +101,15 @@ export function sanitizeNarrativeMarkup(
     text += unclosedTags.join('');
   }
 
-  // 7. Strip unknown tags but keep inner text
+  // 7. Fix duplicate [br] tags - prevent consecutive [br] usage
+  // Replace multiple consecutive [br] tags with a single one
+  text = text.replace(/(\[br\]\s*){2,}/g, '[br]');
+  
+  // Also handle [br] with whitespace between them
+  text = text.replace(/\[br\](\s*\[br\])+/g, '[br]');
+
+  // 8. Strip unknown tags but keep inner text
+  // 8. Strip unknown tags but keep inner text
   text = text.replace(/\[([a-zA-Z]+)(?::[^\]]+)?\](.*?)\[\/\1\]/gs, (match, tagName, content) => {
     if (VALID_MARKUP_TAGS.has(tagName.toLowerCase())) {
       return match; // Keep valid tags

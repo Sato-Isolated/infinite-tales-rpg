@@ -491,7 +491,9 @@ export class GameAgent {
 			customCombatAgentInstruction,
 			gameSettings
 		);
-		gameAgent.push(jsonSystemInstructionForGameAgent(gameSettings));
+
+		// Insert JSON formatting instructions at the beginning for maximum priority
+		gameAgent.unshift(jsonSystemInstructionForGameAgent(gameSettings));
 
 		console.log(combinedText);
 		const request: LLMRequest = {
@@ -569,7 +571,7 @@ export class GameAgent {
 			return {
 				thoughts: undefined,
 				answer: {
-					answerToPlayer: error 
+					answerToPlayer: error
 						? `I encountered an issue while processing your question: ${error}. Please try rephrasing your question or check your API configuration.`
 						: "I apologize, but I'm unable to provide an answer to your question at the moment. This could be due to a technical issue or connectivity problem. Please try asking your question again.",
 					answerType: 'general' as const,
@@ -587,31 +589,31 @@ export class GameAgent {
 			'Analyze the question type and provide helpful, contextual responses with appropriate confidence levels.',
 			this.generateEnrichedNPCContext(npcState, characterState?.name || "CHARACTER")
 		];
-		
+
 		if (customGmNotes) {
 			gameAgent.push(
 				'Custom GM Notes (considered as additional rules):\n' + customGmNotes
 			);
 		}
-		
+
 		if (thoughtsState.storyThoughts) {
 			gameAgent.push(
 				'Game Master\'s Current Thoughts about Story Progression:\n' +
 				JSON.stringify(thoughtsState)
 			);
 		}
-		
+
 		if (relatedHistory.length > 0) {
 			gameAgent.push('Historical Context:\n' + PAST_STORY_PLOT_RULE + relatedHistory.join('\n'));
 			gameAgent.push('Dialogue Consistency Rules:\n' + DIALOGUE_CONSISTENCY_PROMPT);
 		}
-		
+
 		if (is_character_restrained_explanation) {
 			gameAgent.push(
 				`Current Character Constraint: ${is_character_restrained_explanation} - Consider this in your response.`
 			);
 		}
-		
+
 		gameAgent.push(jsonSystemInstructionForPlayerQuestion);
 
 		const userMessage =
@@ -629,7 +631,7 @@ export class GameAgent {
 				customSystemInstruction.combatAgentInstruction,
 				gameSettings
 			).join('\n');
-		
+
 		const request: LLMRequest = {
 			userMessage: userMessage,
 			historyMessages: historyMessages,
@@ -644,7 +646,7 @@ export class GameAgent {
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
 				const response = await this.llm.generateContent(request);
-				
+
 				if (!response || !response.content) {
 					console.warn(`⚠️ GameAgent.generateAnswerForPlayerQuestion: No response from LLM (attempt ${attempt}/${maxRetries})`);
 					if (attempt === maxRetries) {
@@ -655,7 +657,7 @@ export class GameAgent {
 
 				// Validate and enhance the response
 				const parsedResponse = response.content as GameMasterAnswerResponse;
-				
+
 				// Check required fields and provide intelligent defaults
 				const enhancedResponse: GameMasterAnswerResponse = {
 					answerToPlayer: parsedResponse.answerToPlayer || "I'm having trouble formulating a complete answer to your question.",
@@ -687,11 +689,11 @@ export class GameAgent {
 
 			} catch (error) {
 				console.error(`❌ GameAgent.generateAnswerForPlayerQuestion: Error on attempt ${attempt}/${maxRetries}:`, error);
-				
+
 				if (attempt === maxRetries) {
 					return createFallbackResponse(error instanceof Error ? error.message : 'Unknown error');
 				}
-				
+
 				// Wait briefly before retry
 				await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
 			}
@@ -713,25 +715,38 @@ export class GameAgent {
 		gameSettings: GameSettings
 	) {
 		const gameAgent = [
+			'=== CORE BEHAVIOR INSTRUCTIONS ===',
 			systemBehaviour(gameSettings),
+			'',
+			'=== CURRENT STORY STATE ===',
 			stringifyPretty(storyState),
-			'The following is a description of the player character, always refer to it when considering appearance, reasoning, motives etc.' +
-			'\n' +
+			'',
+			'=== CHARACTER DESCRIPTION ===',
+			'The following is a description of the player character, always refer to it when considering appearance, reasoning, motives etc.',
 			stringifyPretty(characterState),
-			"The following are the character's CURRENT resources, consider it in your response\n" +
+			'',
+			'=== CHARACTER RESOURCES ===',
+			"The following are the character's CURRENT resources, consider it in your response",
 			stringifyPretty(Object.values(playerCharactersGameState)),
-			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.\n" +
+			'',
+			'=== CHARACTER INVENTORY ===',
+			"The following is the character's inventory, check items for relevant passive effects relevant for the story progression or effects that are triggered every action.",
 			stringifyPretty(inventoryState),
+			'',
+			'=== NPC CONTEXT ===',
 			this.generateEnrichedNPCContext(npcState, characterState?.name || "CHARACTER")
 		];
 
 		if (customSystemInstruction) {
+			gameAgent.push('', '=== OVERRIDE INSTRUCTIONS (HIGHEST PRIORITY) ===');
 			gameAgent.push('Following instructions overrule all others: ' + customSystemInstruction);
 		}
 		if (customStoryAgentInstruction) {
+			gameAgent.push('', '=== STORY AGENT OVERRIDES ===');
 			gameAgent.push('Following instructions overrule all others: ' + customStoryAgentInstruction);
 		}
 		if (customCombatAgentInstruction) {
+			gameAgent.push('', '=== COMBAT AGENT OVERRIDES ===');
 			gameAgent.push('Following instructions overrule all others: ' + customCombatAgentInstruction);
 		}
 		return gameAgent;

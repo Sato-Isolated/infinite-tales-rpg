@@ -260,7 +260,8 @@ export class GeminiProvider extends LLM {
 			// Handle system instruction (can be string, string[], or undefined)
 			let systemInstructionString: string | undefined;
 			if (Array.isArray(request.systemInstruction)) {
-				systemInstructionString = request.systemInstruction.join('\n');
+				// Use double newlines for better section separation
+				systemInstructionString = request.systemInstruction.join('\n\n');
 			} else {
 				systemInstructionString =
 					request.systemInstruction ||

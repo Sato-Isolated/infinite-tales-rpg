@@ -109,12 +109,15 @@ export function generateMarkupReferenceGuide(npcState?: NPCState): string {
 
 ### 7. Break Tag
 **Usage:** [br]
-**Purpose:** Line break (self-closing tag)
-**Example:** Text line one[br]Text line two
+**Purpose:** Major scene transitions and time jumps ONLY
+**Example:** They left the village. [br] Three days later, they reached the mountains.
+**IMPORTANT:** Maximum ONE [br] per paragraph. NEVER use consecutive [br] tags.
 
 ## Important Notes:
 - Use simple character names in [character] tags, no UUIDs needed
 - All tags are case-sensitive and should be lowercase
+- [br] tags should be used sparingly - only for major story transitions
+- NEVER use multiple [br] tags together: ❌ [br][br] or [br] [br]
 - Unknown tags will be removed automatically
 - System auto-closes unclosed tags for better AI reliability`;
 
