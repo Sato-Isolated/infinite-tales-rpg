@@ -29,7 +29,7 @@ export const getRelatedHistory = async (
 	);
 
 	// Retrieve related history from summary agent
-	if (action && action.text != 'Continue The Tale') {
+	if (action && (action.text || '').trim().toLowerCase() !== 'continue the tale') {
 		relatedHistoryWithRelevance.relatedDetails.push(
 			...(await summaryAgent.retrieveRelatedHistory(action.text, gameActions || [])).relatedDetails
 		);

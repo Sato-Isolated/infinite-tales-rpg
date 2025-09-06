@@ -216,10 +216,15 @@ export function createGameController(ctx: ControllerCtx) {
 	}
 
 	async function getCombatAndNPCState(action: Action) {
+		const isContinue = (action?.text || '').trim().toLowerCase() === 'continue the tale';
 		const currentGameActionState = ctx.state.getCurrentGameActionState();
 		let additionalStoryInput = '';
 		let allCombatDeterminedActionsAndStatsUpdate: any | undefined;
-		if (!ctx.state.isGameEnded.value && currentGameActionState.is_character_in_combat) {
+		if (
+			!isContinue &&
+			!ctx.state.isGameEnded.value &&
+			currentGameActionState.is_character_in_combat
+		) {
 			if (ctx.state.useDynamicCombat.value) {
 				const combatObject = await getActionPromptForCombat(action);
 				additionalStoryInput += combatObject.additionalStoryInput;
@@ -233,6 +238,7 @@ export function createGameController(ctx: ControllerCtx) {
 
 	async function prepareAdditionalStoryInput(action: Action, initialAdditionalStoryInput: string) {
 		const currentGameActionState = ctx.state.getCurrentGameActionState();
+		const isContinue = (action?.text || '').trim().toLowerCase() === 'continue the tale';
 		let additionalStoryInput = initialAdditionalStoryInput || '';
 		const combatAndNPCState = await getCombatAndNPCState(action);
 		additionalStoryInput += combatAndNPCState.additionalStoryInput;
@@ -255,17 +261,19 @@ export function createGameController(ctx: ControllerCtx) {
 			additionalStoryInput += GameAgent.getPromptForGameMasterNotes([ctx.state.customGMNotesState.value]);
 		}
 
-		if (action.type?.toLowerCase() === 'crafting') {
+		if (!isContinue && action.type?.toLowerCase() === 'crafting') {
 			additionalStoryInput += GameAgent.getCraftingPrompt();
 		}
 		// Side-effects additions informed by latest dice roll result (if any)
-		additionalStoryInput = gameLogic.addAdditionsFromActionSideeffects(
-			action,
-			additionalStoryInput,
-			ctx.state.gameSettingsState.value.randomEventsHandling,
-			currentGameActionState.is_character_in_combat,
-			(ctx.helpers.getCurrentDiceRollResult() ?? 'regular_success') as DiceRollResult
-		);
+		if (!isContinue) {
+			additionalStoryInput = gameLogic.addAdditionsFromActionSideeffects(
+				action,
+				additionalStoryInput,
+				ctx.state.gameSettingsState.value.randomEventsHandling,
+				currentGameActionState.is_character_in_combat,
+				(ctx.helpers.getCurrentDiceRollResult() ?? 'regular_success') as DiceRollResult
+			);
+		}
 		if (!additionalStoryInput.includes('sudo')) {
 			additionalStoryInput +=
 				'\n\nBefore responding always review the system instructions and apply the given rules.';
@@ -568,6 +576,20 @@ export function createGameController(ctx: ControllerCtx) {
 			const gameActions = ctx.state.gameActionsState.value;
 			if (gameActions.length % 10 === 0) {
 				validateUndoConsistency();
+			}
+
+			// Normalize special neutral Continue action to avoid carrying over previous context
+			const isContinue = (action?.text || '').trim().toLowerCase() === 'continue the tale';
+			if (isContinue) {
+				// Clear any leftover user additions and related action history so the AI truly "continues"
+				ctx.state.additionalStoryInputState.value = '';
+				ctx.state.additionalActionInputState.value = '';
+				ctx.state.relatedActionHistoryState.value = [];
+				// Ensure action does not accidentally inherit fields from elsewhere
+				action = {
+					characterName: ctx.state.characterState.value.name,
+					text: 'Continue The Tale'
+				};
 			}
 
 			if (rollDice) {
