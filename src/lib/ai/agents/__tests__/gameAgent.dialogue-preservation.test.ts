@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { GameAgent, type Action } from '../gameAgent';
+import { GameAgent } from '../gameAgent';
+import type { Action } from '$lib/types/action';
 
 // Minimal fake LLM that attempts to paraphrase, to verify our enforcement injects the exact quote
 class FakeLLM {

@@ -2,28 +2,12 @@ import type { LLM, LLMMessage, LLMRequest } from '../llm';
 import type { GameActionState } from './gameAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { stringifyPretty } from '$lib/util.svelte';
-import { 
-  DialogueTrackingResponseSchema, 
+import {
+  DialogueTrackingResponseSchema,
   ConversationSummaryResponseSchema,
   type DialogueTrackingResponse,
-  type ConversationSummaryResponse 
+  type ConversationSummaryResponse
 } from '$lib/ai/config/ResponseSchemas';
-
-/**
- * Dialogue tracking result for detecting conversation similarities
- */
-export interface DialogueTrackingResult {
-  /** Whether the current conversation is similar to a previous one */
-  is_similar_conversation: boolean;
-  /** Similarity score from 0.0 to 1.0 */
-  similarity_score: number;
-  /** Explanation of the similarity or differences */
-  similarity_explanation: string;
-  /** Reference to the previous similar conversation if any */
-  previous_conversation_reference?: string;
-  /** Suggested alternative dialogue approach to avoid repetition */
-  alternative_approach_suggestion?: string;
-}
 
 /**
  * Conversation summary for tracking dialogue history
@@ -72,7 +56,7 @@ export class DialogueTrackingAgent {
     plannedConversation: string,
     conversationHistory: ConversationSummary[],
     currentParticipants: string[]
-  ): Promise<DialogueTrackingResult> {
+  ): Promise<DialogueTrackingResponse> {
     if (conversationHistory.length === 0) {
       return {
         is_similar_conversation: false,
@@ -288,7 +272,7 @@ export class DialogueTrackingAgent {
   /**
    * Get fallback result when similarity check fails
    */
-  private getFallbackSimilarityResult(): DialogueTrackingResult {
+  private getFallbackSimilarityResult(): DialogueTrackingResponse {
     return {
       is_similar_conversation: false,
       similarity_score: 0.0,

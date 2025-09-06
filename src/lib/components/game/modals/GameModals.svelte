@@ -7,7 +7,7 @@
 	} from '$lib/ai/agents/gameAgent';
 	import type { Ability, CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 	import type { EventEvaluation } from '$lib/ai/agents/eventAgent';
-	import type { Action } from '$lib/ai/agents/gameAgent';
+	import type { Action } from '$lib/types/action';
 	import { errorState } from '$lib/state/errorState.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import { getCurrentCharacterGameState } from '$lib/game/state/gameStateUtils';

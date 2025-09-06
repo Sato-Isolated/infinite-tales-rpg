@@ -1,6 +1,6 @@
+import type { Action } from '$lib/types/action';
 import {
 	GameAgent,
-	type Action,
 	type GameActionState,
 	type InventoryState,
 	type PlayerCharactersGameState,

@@ -1,4 +1,4 @@
-import type { Action } from '$lib/ai/agents/gameAgent';
+import type { Action } from '$lib/types/action';
 import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent';
 import {
 	getRequiredSkillProgression,

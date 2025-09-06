@@ -2,8 +2,8 @@
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 	import { beforeNavigate } from '$app/navigation';
+	import type { Action } from '$lib/types/action';
 	import {
-		type Action,
 		defaultGameSettings,
 		type GameActionState,
 		GameAgent,
@@ -1084,7 +1084,7 @@
 							<span class="text-base">✍️</span>
 							<h3 class="text-sm font-semibold">Write Custom Action</h3>
 							<div class="divider divider-horizontal"></div>
-							<button 
+							<button
 								class="btn btn-outline btn-secondary btn-xs gap-1"
 								onclick={() => modalManager.setGMQuestion('')}
 								title="Open Game Master assistant directly"

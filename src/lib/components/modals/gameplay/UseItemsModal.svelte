@@ -1,6 +1,6 @@
 <script lang="ts">
+	import type { Action } from '$lib/types/action';
 	import {
-		type Action,
 		GameAgent,
 		type InventoryState,
 		type Item,

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import DiceBox from '@3d-dice/dice-box';
 	import * as diceRollLogic from '$lib/game/logic/diceRollLogic';
-	import type { Action, GameSettings } from '$lib/ai/agents/gameAgent';
+	import type { Action } from '$lib/types/action';
+	import type { GameSettings } from '$lib/ai/agents/gameAgent';
 	import {
 		detectWebGLCapabilities,
 		determineDiceSimulationMode,

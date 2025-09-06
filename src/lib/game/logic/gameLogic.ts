@@ -1,13 +1,13 @@
-import {
-	type Action,
-	type GameActionState,
-	type InventoryState,
-	type InventoryUpdate,
-	type PlayerCharactersGameState,
-	type PlayerCharactersIdToNamesMap,
-	type RandomEventsHandling,
-	type ResourcesWithCurrentValue,
-	type Targets
+import type { Action } from '$lib/types/action';
+import type {
+	GameActionState,
+	InventoryState,
+	InventoryUpdate,
+	PlayerCharactersGameState,
+	PlayerCharactersIdToNamesMap,
+	RandomEventsHandling,
+	ResourcesWithCurrentValue,
+	Targets
 } from '$lib/ai/agents/gameAgent';
 import { SLOW_STORY_PROMPT } from '$lib/ai/prompts/shared';
 import type { StatsUpdate } from '$lib/ai/agents/combatAgent';

@@ -7,8 +7,8 @@
 	import type { LLMMessage } from '$lib/ai/llm';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
+	import type { Action } from '$lib/types/action';
 	import type {
-		Action,
 		GameActionState,
 		InventoryState,
 		ItemWithId,

@@ -3,11 +3,11 @@ import { ActionDifficulty } from '$lib/game/logic/gameLogic';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
-import {
-	type Action,
-	type GameActionState,
-	type InventoryState,
-	type Item
+import type { Action } from '$lib/types/action';
+import type {
+	GameActionState,
+	InventoryState,
+	Item
 } from '$lib/ai/agents/gameAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { GEMINI_MODELS } from '../geminiProvider';

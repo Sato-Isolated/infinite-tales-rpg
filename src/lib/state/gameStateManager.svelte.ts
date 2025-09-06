@@ -5,8 +5,8 @@
  */
 
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+import type { Action } from '$lib/types/action';
 import type {
-	Action,
 	GameActionState,
 	InventoryState,
 	PlayerCharactersGameState,

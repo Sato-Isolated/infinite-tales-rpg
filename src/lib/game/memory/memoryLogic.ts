@@ -1,6 +1,6 @@
 import type { GameActionState } from '$lib/ai/agents/gameAgent';
 import type { SummaryAgent, RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
-import type { Action } from '$lib/ai/agents/gameAgent';
+import type { Action } from '$lib/types/action';
 
 /**
  * Enhanced memory retrieval with dialogue-aware filtering

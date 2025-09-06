@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Action } from '$lib/ai/agents/gameAgent';
+	import type { Action } from '$lib/types/action';
 
 	let {
 		onclose,

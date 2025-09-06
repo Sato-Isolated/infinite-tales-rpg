@@ -1,6 +1,7 @@
 import { stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
 import type { GameTime } from '$lib/types/gameTime';
 import { ActionDifficulty } from '$lib/game/logic/gameLogic';
+import type { Action, DiceRollDifficulty, ReasonedEnum, ReasonedLevelEnum } from '$lib/types/action';
 import { type StatsUpdate } from '$lib/ai/agents/combatAgent';
 import type { LLM, LLMMessage, LLMRequest, SystemInstructionsState } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
@@ -143,39 +144,6 @@ export type InventoryUpdate = {
 export type InventoryState = { [item_id: string]: Item };
 export type ItemWithId = Item & { item_id: string };
 export type Item = { description: string; effect: string };
-export type DiceRollDifficulty = {
-	action_difficulty?: ActionDifficulty;
-	dice_roll?: {
-		modifier: 'none' | 'bonus' | 'malus';
-		modifier_value: number;
-		modifier_explanation: string;
-	};
-};
-
-export type ReasonedEnum = {
-	reasoning: string;
-	enum_english: string;
-};
-export type Action = {
-	characterName: string;
-	text: string;
-	related_attribute?: string;
-	related_skill?: string;
-	action_difficulty?: ActionDifficulty;
-	is_custom_action?: boolean;
-	is_possible?: boolean;
-	plausibility?: string;
-	difficulty_explanation?: string;
-	type?: string;
-	narration_details?: object;
-	actionSideEffects?: string;
-	enemyEncounterExplanation?: object;
-	is_interruptible?: ReasonedEnum;
-	resource_cost?: {
-		resource_key: string | undefined;
-		cost: number;
-	};
-} & DiceRollDifficulty;
 
 export type ResourcesWithCurrentValue = {
 	[resourceKey: string]: { max_value: number; current_value: number; game_ends_when_zero: boolean };

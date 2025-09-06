@@ -1,4 +1,5 @@
-import type { Action, Item } from '$lib/ai/agents/gameAgent';
+import type { Action } from '$lib/types/action';
+import type { Item } from '$lib/ai/agents/gameAgent';
 import type { CharacterChangedInto } from '$lib/ai/agents/eventAgent';
 import type { Ability, AiLevelUp } from '$lib/ai/agents/characterStatsAgent';
 import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';

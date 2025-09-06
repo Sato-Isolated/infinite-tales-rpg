@@ -5,7 +5,7 @@ import isPlainObject from 'lodash.isplainobject';
 // Type-only import to avoid loading pdfjs in Node test environment
 import type * as pdfjs from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
-import type { Action } from '$lib/ai/agents/gameAgent';
+import type { Action } from '$lib/types/action';
 import type { NpcID } from '$lib/ai/agents/characterStatsAgent';
 
 export type ThoughtsState = {

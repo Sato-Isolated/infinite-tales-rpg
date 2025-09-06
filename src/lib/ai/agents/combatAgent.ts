@@ -1,7 +1,7 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
+import type { Action } from '$lib/types/action';
 import type {
-	Action,
 	InventoryState,
 	PlayerCharactersGameState,
 	ResourcesWithCurrentValue

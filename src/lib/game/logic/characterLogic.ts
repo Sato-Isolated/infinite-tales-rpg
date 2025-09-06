@@ -2,7 +2,8 @@ import type { CharacterChangedInto } from '$lib/ai/agents/eventAgent';
 import { CharacterAgent, type CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { CharacterStats, CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import type { Action, PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
+import type { Action } from '$lib/types/action';
+import type { PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
 import type { DiceRollResult } from './diceRollLogic';
 import { ActionDifficulty } from './gameLogic';
 
