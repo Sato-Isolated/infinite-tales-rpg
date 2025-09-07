@@ -4,10 +4,7 @@
 	import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { AIConfig } from '$lib';
-	import type {
-		PlayerCharactersGameState,
-		PlayerCharactersIdToNamesMap
-	} from '$lib/ai/agents/gameAgent';
+	import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 	import { getRequiredSkillProgression } from '$lib/game/logic/characterLogic';
 	import { getCurrentCharacterGameState } from '$lib/game/state/gameStateUtils';
 

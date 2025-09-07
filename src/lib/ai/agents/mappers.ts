@@ -1,4 +1,4 @@
-import type { GameActionState } from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
 import type { DiceRoll, StatsUpdate } from '$lib/ai/agents/combatAgent';
 import Dice from 'dice-notation-js';
 

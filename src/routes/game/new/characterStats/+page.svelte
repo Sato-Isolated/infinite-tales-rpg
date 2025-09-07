@@ -16,7 +16,7 @@
 	import cloneDeep from 'lodash.clonedeep';
 	import isEqual from 'fast-deep-equal';
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
-	import { defaultGameSettings, type GameSettings } from '$lib/ai/agents/gameAgent';
+	import { defaultGameSettings, type GameSettings } from '$lib/types/gameSettings';
 	import type { AIConfig } from '$lib';
 	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 	import AbilityEditor from '$lib/components/modals/character/AbilityEditor.svelte';

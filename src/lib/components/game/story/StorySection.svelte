@@ -5,7 +5,7 @@
 		type StoryProgressionWithImageProps
 	} from '$lib/components/game/story/StoryProgressionWithImage.svelte';
 	import * as gameLogic from '$lib/game/logic/gameLogic';
-	import type { GameActionState } from '$lib/ai/agents/gameAgent';
+	import type { GameActionState } from '$lib/types/actions';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import type { RenderedGameUpdate } from '$lib/game/logic/gameLogic';
 

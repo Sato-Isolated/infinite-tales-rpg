@@ -2,7 +2,7 @@
 	import DiceBox from '@3d-dice/dice-box';
 	import * as diceRollLogic from '$lib/game/logic/diceRollLogic';
 	import type { Action } from '$lib/types/action';
-	import type { GameSettings } from '$lib/ai/agents/gameAgent';
+	import type { GameSettings } from '$lib/types/gameSettings';
 	import {
 		detectWebGLCapabilities,
 		determineDiceSimulationMode,
@@ -19,7 +19,7 @@
 		type CharacterStats,
 		initialCharacterStatsState
 	} from '$lib/ai/agents/characterStatsAgent';
-	import { defaultGameSettings } from '$lib/ai/agents/gameAgent';
+	import { defaultGameSettings } from '$lib/types/gameSettings';
 
 	let { diceRollDialog = $bindable(), action, resetState }: Props = $props();
 

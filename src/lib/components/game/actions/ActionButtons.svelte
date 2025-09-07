@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Action } from '$lib/types/action';
-	import type { GameActionState, InventoryState } from '$lib/ai/agents/gameAgent';
+	import type { GameActionState } from '$lib/types/actions';
+	import type { InventoryState } from '$lib/types/inventory';
 	import { getTextForActionButton } from '$lib/util.svelte';
 	import { mustRollDice, isEnoughResource } from '$lib/game/logic/gameLogic';
 	import RegenerateActionsButton from './RegenerateActionsButton.svelte';

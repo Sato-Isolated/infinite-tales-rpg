@@ -1,6 +1,6 @@
 import { SLOW_STORY_PROMPT } from '../shared';
 import { storyWordLimitConcise, storyWordLimitDetailed } from '../shared/narrativePrompts';
-import type { GameSettings } from '$lib/ai/agents/gameAgent';
+import type { GameSettings } from '$lib/types/gameSettings';
 
 /**
  * Main system behavior prompt for the Game Master

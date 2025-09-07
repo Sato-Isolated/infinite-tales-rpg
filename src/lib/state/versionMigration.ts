@@ -1,8 +1,5 @@
-import {
-	defaultGameSettings,
-	type GameActionState,
-	type GameSettings
-} from '$lib/ai/agents/gameAgent';
+import { defaultGameSettings, type GameSettings } from '$lib/types/gameSettings';
+import type { GameActionState } from '$lib/types/actions';
 
 export const migrateIfApplicable = (key: string, state: unknown) => {
 	if (!state) return state;

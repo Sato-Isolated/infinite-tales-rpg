@@ -1,7 +1,10 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
-import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
 import { CharacterDescriptionResponseSchema, type CharacterDescriptionResponse } from '$lib/ai/config/ResponseSchemas';
+import {
+	buildCharacterDescriptionAgentInstructions,
+	buildCharacterGenerationUserMessage
+} from '$lib/ai/agents/characterAgentPrompts';
 
 export type CharacterDescription = {
 	name: string;
@@ -39,27 +42,15 @@ export class CharacterAgent {
 		characterOverwrites: Partial<CharacterDescription> | undefined = undefined,
 		transformInto?: string
 	): Promise<CharacterDescription> {
-		const agentInstruction = [
-			'You are RPG character agent, describing a single character according to game system, adventure and character description.\n' +
-				TROPES_CLICHE_PROMPT
-		];
-		if (transformInto) {
-			agentInstruction.push(
-				'Determine if following transformation completely changes or just adapts the character; ' +
-					'Describe how the character changed based on already existing values;\nTransform into:\n' +
-					transformInto
-			);
-		}
-		agentInstruction.push(
-			'Generate structured character description with all required fields.'
-		);
+		const agentInstruction = buildCharacterDescriptionAgentInstructions(transformInto);
 
 		const preset = {
 			...storyState,
 			...characterOverwrites
 		};
+
 		const request: LLMRequest = {
-			userMessage: 'Create the character: ' + stringifyPretty(preset),
+			userMessage: buildCharacterGenerationUserMessage(preset),
 			systemInstruction: agentInstruction,
 			config: {
 				responseSchema: CharacterDescriptionResponseSchema

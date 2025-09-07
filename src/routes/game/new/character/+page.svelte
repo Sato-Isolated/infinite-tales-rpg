@@ -13,7 +13,7 @@
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { initialStoryState, type Story } from '$lib/ai/agents/storyAgent';
 	import type { AIConfig } from '$lib';
-	import type { PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
+	import type { PlayerCharactersIdToNamesMap } from '$lib/types/players';
 	import {
 		addCharacterToPlayerCharactersIdToNamesMap,
 		getCharacterTechnicalId

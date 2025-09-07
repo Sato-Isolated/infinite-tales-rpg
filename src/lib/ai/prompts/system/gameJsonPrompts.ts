@@ -1,5 +1,5 @@
 import { storyWordLimitConcise, storyWordLimitDetailed } from '../shared/narrativePrompts';
-import type { GameSettings } from '$lib/ai/agents/gameAgent';
+import type { GameSettings } from '$lib/types/gameSettings';
 
 /**
  * JSON system instruction for game agent responses

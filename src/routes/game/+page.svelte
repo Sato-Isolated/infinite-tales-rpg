@@ -3,17 +3,12 @@
 	import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 	import { beforeNavigate } from '$app/navigation';
 	import type { Action } from '$lib/types/action';
-	import {
-		defaultGameSettings,
-		type GameActionState,
-		GameAgent,
-		type GameMasterAnswer,
-		type GameSettings,
-		type InventoryState,
-		type Item,
-		type PlayerCharactersGameState,
-		type PlayerCharactersIdToNamesMap
-	} from '$lib/ai/agents/gameAgent';
+	import { GameAgent } from '$lib/ai/agents/gameAgent';
+	import type { GameActionState, GameMasterAnswer } from '$lib/types/actions';
+	import { defaultGameSettings, type GameSettings } from '$lib/types/gameSettings';
+	import type { InventoryState, Item } from '$lib/types/inventory';
+	import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
+	import { getStartingPrompt, getGameEndedPrompt } from '$lib/ai/agents/gameAgentPrompts';
 	import { onMount, tick } from 'svelte';
 	import {
 		handleError,
@@ -468,7 +463,7 @@
 			console.log('🎮 Starting new game - no existing story found');
 			await controller!.sendAction({
 				characterName: characterState.value.name,
-				text: GameAgent.getStartingPrompt()
+				text: getStartingPrompt()
 			});
 			if (gameActionsState.value.length > 0) {
 				const { updatedGameActionsState, updatedPlayerCharactersGameState } = refillResourcesFully(
@@ -639,7 +634,7 @@
 			isGameEnded.value = true;
 			await controller!.sendAction({
 				characterName: characterState.value.name,
-				text: GameAgent.getGameEndedPrompt(emptyResourceKeys)
+				text: getGameEndedPrompt(emptyResourceKeys)
 			});
 		}
 	}

@@ -6,12 +6,9 @@
 
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import type { Action } from '$lib/types/action';
-import type {
-	GameActionState,
-	InventoryState,
-	PlayerCharactersGameState,
-	PlayerCharactersIdToNamesMap
-} from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
+import type { InventoryState } from '$lib/types/inventory';
+import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';

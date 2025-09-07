@@ -1,14 +1,10 @@
-import { shuffleArray, stringifyPretty } from '$lib/util.svelte';
-import { ActionDifficulty } from '$lib/game/logic/gameLogic';
+import { shuffleArray } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Action } from '$lib/types/action';
-import type {
-	GameActionState,
-	InventoryState,
-	Item
-} from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
+import type { InventoryState, Item } from '$lib/types/inventory';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
@@ -21,14 +17,18 @@ import {
 } from '$lib/ai/config/ResponseSchemas';
 import type { SafetyLevel } from '$lib/types/safetySettings';
 import { GeminiProvider } from '$lib/ai/geminiProvider';
+import {
+	getRestrainingStatePromptTemplate,
+	buildSingleActionAgentInstructions,
+	buildActionsGeneratorAgentInstructions,
+	buildItemActionsAgentInstructions,
+	buildSingleActionUserMessage,
+	buildActionsGeneratorUserMessage,
+	buildItemActionsUserMessage,
+	InterruptProbability
+} from '$lib/ai/agents/actionAgentPrompts';
 
-export enum InterruptProbability {
-	NEVER = 'NEVER',
-	LOW = 'LOW',
-	MEDIUM = 'MEDIUM',
-	HIGH = 'HIGH',
-	ALWAYS = 'ALWAYS'
-}
+export { InterruptProbability };
 
 export class ActionAgent {
 	llm: LLM;
@@ -52,37 +52,11 @@ export class ActionAgent {
 	}
 
 	/**
-	 * Get action generation instructions (separate from JSON template)
-	 */
-	private getActionInstructions = (
-		attributes: string[],
-		skills: string[],
-		newSkillsAllowed: boolean
-	): string => {
-		const newSkillRule = newSkillsAllowed
-			? `Choose or create a single skill that is more specific than the related_attribute but broad enough for multiple actions (e.g. 'Melee Combat' instead of 'Strength'). Use an exact same spelled EXISTING SKILL if applicable; otherwise, add a fitting new one.`
-			: `Choose an exact same spelled single skill from EXISTING SKILLS or null if none fits; Never create a new skill;`;
-
-		return `
-ACTION GENERATION RULES:
-- related_attribute: Must be an exact same spelled attribute from: ${attributes.join(', ')} - never create new Attributes!
-- related_skill: ${newSkillRule} EXISTING SKILLS: ${skills.join(', ')}
-- resource_cost: Set to null if no cost, otherwise use object with resource_key and cost
-- narration_details: Use object format with reasoning and enum_english (LOW|MEDIUM|HIGH). LOW if it involves few steps or can be done quickly; MEDIUM|HIGH if it involves thorough planning or decisions
-- enemyEncounterExplanation: Use object format with reasoning and enum_english (LOW|MEDIUM|HIGH). Brief reasoning for the probability of an enemy encounter; if probable describe enemy details; LOW probability if an encounter recently happened
-- is_interruptible: Use object format with reasoning and enum_english (${Object.keys(InterruptProbability).join('|')}). Brief reasoning for the probability that this action is interrupted; e.g. travel in dangerous environment is HIGH
-- dice_roll: Use dice roll prompt format with modifier details
-`;
-	};
-
-
-
-	/**
 	 * Optimized restraining state prompt generation
 	 * Improved performance with string template caching
 	 */
 	getRestrainingStatePrompt = (restraining_state: string): string =>
-		`The character is currently affected by a restraining state: ${restraining_state}. Only suggest actions that are possible while under this effect.`;
+		getRestrainingStatePromptTemplate(restraining_state);
 
 	/**
 	 * Optimized method to add restraining state to agent
@@ -133,57 +107,26 @@ ACTION GENERATION RULES:
 		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
 
-		const agent = [
-			`You are RPG action agent, you are given a RPG story and one action the player wants to perform; Determine difficulty, resource cost etc. for this action; Consider the story, currently_present_npcs and character stats.
-				Action Rules:
-				- Review the character's spells_and_abilities and inventory for passive attributes that could alter the dice_roll
-				- For puzzles, the player —not the character— must solve them. Offer a set of possible actions, including both correct and incorrect choices.
-				- Any action is allowed to target anything per game rules.`,
-			'The suggested action must fit to the setting of the story:' +
-			'\n' +
-			stringifyPretty(storySettingsMapped),
-			'dice_roll can be modified by following description of the character, e.g. acting smart or with force, ...' +
-			'\n' +
-			stringifyPretty(characterDescription),
-			'dice_roll can be modified by items from the inventory:' +
-			'\n' +
-			stringifyPretty(inventoryState),
-			'dice_roll modifier can be applied based on high or low resources:' +
-			'\n' +
-			stringifyPretty(characterStats.resources),
-			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)
-		];
-		this.addRestrainingStateToAgent(agent, restrainingState);
-		if (customSystemInstruction) {
-			agent.push('Following instructions overrule all others: ' + customSystemInstruction);
-		}
-		if (customActionAgentInstruction) {
-			agent.push('Following instructions overrule all others: ' + customActionAgentInstruction);
-		}
-
-		let userMessage =
-			'The player wants to perform following action, you must use these exact words as action text: ' +
-			action.text +
-			"\nDo NOT paraphrase, translate or reword the action text. If you must return a 'text' field, copy it EXACTLY as provided, character-for-character.\n" +
-			'Determine the difficulty and resource cost with considering their personality, skills, items, story summary and following game state\n' +
-			stringifyPretty(currentGameStateMapped);
-
-		if (restrainingState) {
-			userMessage += '\n' + this.getRestrainingStatePrompt(restrainingState) + '\n';
-		}
-
-		userMessage = this.addAdditionalActionInputToUserMessage(
-			userMessage,
-			additionalActionInputState
+		const agent = buildSingleActionAgentInstructions(
+			storySettingsMapped,
+			characterDescription,
+			inventoryState,
+			characterStats.resources,
+			Object.keys(characterStats.attributes),
+			Object.keys(characterStats.skills),
+			newSkillsAllowed,
+			customSystemInstruction,
+			customActionAgentInstruction
 		);
+		this.addRestrainingStateToAgent(agent, restrainingState);
 
-		if (relatedHistory && relatedHistory.length > 0) {
-			userMessage +=
-				'\n\nFollowing is related past story plot, check if the action is possible in this context, it must be plausible in this moment and not just hypothetically;\n' +
-				'If no history detail directly contradicts the action, it is possible.\n' +
-				'Avoid actions that would lead to repeating dialogues or conversations that have already occurred.\n' +
-				relatedHistory.join('\n');
-		}
+		let userMessage = buildSingleActionUserMessage(
+			action.text,
+			currentGameStateMapped,
+			restrainingState,
+			additionalActionInputState,
+			relatedHistory
+		);
 		console.log('actions prompt: ', userMessage);
 		const request: LLMRequest = {
 			userMessage,
@@ -225,54 +168,27 @@ ACTION GENERATION RULES:
 		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
-		const agent = [
-			'You are RPG action agent, you are given a RPG story and then suggest actions the player character can take, considering the story, currently_present_npcs and character stats.',
+		const agent = buildActionsGeneratorAgentInstructions(
 			actionRules,
-			'The suggested actions must fit to the setting of the story:' +
-			'\n' +
-			stringifyPretty(storySettingsMapped),
-			'Suggest actions according to the following description of the character temper, e.g. acting smart or with force, ...' +
-			'\n' +
-			stringifyPretty(characterDescription),
-			'As an action, the character can make use of items from the inventory:' +
-			'\n' +
-			stringifyPretty(inventoryState),
-			'dice_roll modifier can be applied based on high or low resources:' +
-			'\n' +
-			stringifyPretty(characterStats.resources),
-			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)
-		];
+			storySettingsMapped,
+			characterDescription,
+			inventoryState,
+			characterStats.resources,
+			Object.keys(characterStats.attributes),
+			Object.keys(characterStats.skills),
+			newSkillsAllowed,
+			relatedHistory,
+			customSystemInstruction,
+			customActionAgentInstruction
+		);
 
 		this.addRestrainingStateToAgent(agent, restrainingState);
-		if (relatedHistory && relatedHistory.length > 0) {
-			agent.push(
-				'The actions must be plausible with PAST STORY PLOT;\n' +
-				'Never suggest actions to investigate PAST STORY PLOT as they are already known;\n' +
-				'Avoid suggesting actions that would lead to repeating dialogues or conversations that have already occurred;\n' +
-				//make sure custom player history takes precedence
-				'If PAST STORY PLOT contradict each other, the earliest takes precedence, and the later conflicting detail must be ignored;\nPAST STORY PLOT:\n' +
-				relatedHistory.join('\n')
-			);
-		}
-		if (customSystemInstruction) {
-			agent.push('Following instructions overrule all others: ' + customSystemInstruction);
-		}
-		if (customActionAgentInstruction) {
-			agent.push('Following instructions overrule all others: ' + customActionAgentInstruction);
-		}
-		let userMessage =
-			'Suggest specific actions the CHARACTER can take, considering their personality, skills and items.\n' +
-			'Each action must clearly outline-solid what the character does and how they do it. \n The actions must be directly related to the current story: ' +
-			stringifyPretty(currentGameStateMapped) +
-			'\nThe actions must be plausible in the current situation, e.g. before investigating, a tense situation must be resolved.';
-		if (currentGameState.is_character_in_combat) {
-			userMessage += CombatAgent.getCombatPromptAddition();
-		}
-		if (restrainingState) {
-			userMessage += '\n' + this.getRestrainingStatePrompt(restrainingState) + '\n';
-		}
-		userMessage = this.addAdditionalActionInputToUserMessage(
-			userMessage,
+
+		let userMessage = buildActionsGeneratorUserMessage(
+			currentGameStateMapped,
+			currentGameState.is_character_in_combat,
+			CombatAgent.getCombatPromptAddition(),
+			restrainingState,
 			additionalActionInputState
 		);
 
@@ -368,42 +284,24 @@ ACTION GENERATION RULES:
 		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
-		const agent = [
-			'You are RPG action agent, you are given an item description and then suggest the actions the player character can take with that item, considering the story, currently_present_npcs and character stats.',
+		const agent = buildItemActionsAgentInstructions(
 			actionRules,
-			'The suggested actions must fit to the setting of the story:' +
-			'\n' +
-			stringifyPretty(storySettingsMapped),
-			'Suggest actions according to the following description of the character temper, e.g. acting smart or with force, ...' +
-			'\n' +
-			stringifyPretty(characterDescription),
-			'As an action, the character could also combine the item with other items from the inventory:' +
-			'\n' +
-			stringifyPretty(inventoryState),
-			'dice_roll modifier can be applied based on high or low resources:' +
-			'\n' +
-			stringifyPretty(characterStats.resources),
-			this.getActionInstructions(Object.keys(characterStats.attributes), Object.keys(characterStats.skills), newSkillsAllowed)
-		];
+			storySettingsMapped,
+			characterDescription,
+			inventoryState,
+			characterStats.resources,
+			Object.keys(characterStats.attributes),
+			Object.keys(characterStats.skills),
+			newSkillsAllowed,
+			customSystemInstruction,
+			customActionAgentInstruction
+		);
 		this.addRestrainingStateToAgent(agent, restrainingState);
-		if (customSystemInstruction) {
-			agent.push('Following instructions overrule all others: ' + customSystemInstruction);
-		}
-		if (customActionAgentInstruction) {
-			agent.push('Following instructions overrule all others: ' + customActionAgentInstruction);
-		}
-		let userMessage =
-			'Suggest specific actions the CHARACTER can take with the item:\n' +
-			stringifyPretty(item) +
-			'\nEach action must clearly outline-solid what the character does and how they do it. \n The actions must be directly related to the current story: ' +
-			stringifyPretty(currentGameStateMapped) +
-			'\nThe actions must be plausible in the current situation, e.g. before investigating, a combat or tense situation must be resolved.';
 
-		if (restrainingState) {
-			userMessage += '\n' + this.getRestrainingStatePrompt(restrainingState) + '\n';
-		}
-		userMessage = this.addAdditionalActionInputToUserMessage(
-			userMessage,
+		let userMessage = buildItemActionsUserMessage(
+			item,
+			currentGameStateMapped,
+			restrainingState,
 			additionalActionInputState
 		);
 

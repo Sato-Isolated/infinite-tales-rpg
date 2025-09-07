@@ -1,4 +1,4 @@
-import type { GameSettings } from '$lib/ai/agents/gameAgent';
+import type { GameSettings } from '$lib/types/gameSettings';
 import { SLOW_STORY_PROMPT } from '../shared';
 
 /**

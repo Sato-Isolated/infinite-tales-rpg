@@ -2,7 +2,8 @@
 	import TargetModal from './TargetModal.svelte';
 	import { type Ability, CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 	import type { Action } from '$lib/types/action';
-	import type { ResourcesWithCurrentValue, Targets } from '$lib/ai/agents/gameAgent';
+	import type { ResourcesWithCurrentValue } from '$lib/types/resources';
+	import type { Targets } from '$lib/types/actions';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';
 

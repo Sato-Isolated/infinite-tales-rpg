@@ -1,4 +1,4 @@
-import type { GameActionState } from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
 import type { SummaryAgent, RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
 import type { Action } from '$lib/types/action';
 

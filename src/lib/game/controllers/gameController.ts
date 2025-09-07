@@ -1,11 +1,10 @@
 import type { Action } from '$lib/types/action';
-import {
-	GameAgent,
-	type GameActionState,
-	type InventoryState,
-	type PlayerCharactersGameState,
-	type PlayerCharactersIdToNamesMap
-} from '$lib/ai/agents/gameAgent';
+import { GameAgent } from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
+import type { InventoryState } from '$lib/types/inventory';
+import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
+import { getLevelUpCostObject } from '$lib/game/resourceUtils';
+import { getPromptForGameMasterNotes, getCraftingPrompt } from '$lib/ai/agents/gameAgentPrompts';
 import type { LLMMessage, SystemInstructionsState } from '$lib/ai/llm';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
@@ -258,11 +257,11 @@ export function createGameController(ctx: ControllerCtx) {
 		);
 
 		if (ctx.state.customGMNotesState.value) {
-			additionalStoryInput += GameAgent.getPromptForGameMasterNotes([ctx.state.customGMNotesState.value]);
+			additionalStoryInput += getPromptForGameMasterNotes([ctx.state.customGMNotesState.value]);
 		}
 
 		if (!isContinue && action.type?.toLowerCase() === 'crafting') {
-			additionalStoryInput += GameAgent.getCraftingPrompt();
+			additionalStoryInput += getCraftingPrompt();
 		}
 		// Side-effects additions informed by latest dice roll result (if any)
 		if (!isContinue) {
@@ -853,7 +852,7 @@ export function createGameController(ctx: ControllerCtx) {
 			console.error('No XP requirement found for level', level);
 			return false;
 		}
-		const buyLevelUpObject = GameAgent.getLevelUpCostObject(xpNeededForLevel, playerName, level);
+		const buyLevelUpObject = getLevelUpCostObject(xpNeededForLevel, playerName, level);
 		// Ensure character state exists before accessing XP
 		if (ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId]?.XP) {
 			ctx.state.playerCharactersGameState.value[ctx.state.playerCharacterId].XP.current_value -=

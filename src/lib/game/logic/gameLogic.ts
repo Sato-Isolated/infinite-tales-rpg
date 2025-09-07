@@ -1,14 +1,9 @@
 import type { Action } from '$lib/types/action';
-import type {
-	GameActionState,
-	InventoryState,
-	InventoryUpdate,
-	PlayerCharactersGameState,
-	PlayerCharactersIdToNamesMap,
-	RandomEventsHandling,
-	ResourcesWithCurrentValue,
-	Targets
-} from '$lib/ai/agents/gameAgent';
+import type { GameActionState, Targets } from '$lib/types/actions';
+import type { RandomEventsHandling } from '$lib/types/gameSettings';
+import type { InventoryState, InventoryUpdate } from '$lib/types/inventory';
+import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
+import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 import { SLOW_STORY_PROMPT } from '$lib/ai/prompts/shared';
 import type { StatsUpdate } from '$lib/ai/agents/combatAgent';
 import type { NpcID, NPCState, NPCStats } from '$lib/ai/agents/characterStatsAgent';

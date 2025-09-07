@@ -8,12 +8,9 @@
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
 	import type { Action } from '$lib/types/action';
-	import type {
-		GameActionState,
-		InventoryState,
-		ItemWithId,
-		ResourcesWithCurrentValue
-	} from '$lib/ai/agents/gameAgent';
+	import type { GameActionState } from '$lib/types/actions';
+	import type { InventoryState, ItemWithId } from '$lib/types/inventory';
+	import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 	import { getTextForActionButton } from '$lib/util.svelte';
 	import { isEnoughResource } from '$lib/game/logic/gameLogic';
 	import LoadingIcon from '$lib/components/ui/loading/LoadingIcon.svelte';

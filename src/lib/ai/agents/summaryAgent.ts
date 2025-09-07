@@ -1,12 +1,12 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
-import type { GameActionState } from './gameAgent';
+import type { GameActionState } from '$lib/types/actions';
 import { GEMINI_MODELS } from '../geminiProvider';
-import { 
-  SummaryResponseSchema, 
-  RelatedHistoryResponseSchema,
-  type SummaryResponse, 
-  type RelatedHistoryResponse 
+import {
+	SummaryResponseSchema,
+	RelatedHistoryResponseSchema,
+	type SummaryResponse,
+	type RelatedHistoryResponse
 } from '$lib/ai/config/ResponseSchemas';
 
 export type RelatedStoryHistory = {

@@ -1,10 +1,9 @@
 import type { Resources } from '$lib/ai/agents/characterStatsAgent';
-import {
-	GameAgent,
-	type GameActionState,
-	type PlayerCharactersGameState,
-	type ResourcesWithCurrentValue
-} from '$lib/ai/agents/gameAgent';
+import { GameAgent } from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
+import type { ResourcesWithCurrentValue } from '$lib/types/resources';
+import type { PlayerCharactersGameState } from '$lib/types/players';
+import { getRefillValue, getRefillResourcesUpdateObject } from '$lib/game/resourceUtils';
 
 /**
  * Type guard to safely check if an object has resource-like properties
@@ -62,8 +61,8 @@ export function refillResourcesFully(
 		throw new Error(`Player with ID ${playerId} not found in game state`);
 	}
 
-	// First: compute the update log via GameAgent using the provided values
-	const statsUpdate = GameAgent.getRefillResourcesUpdateObject(
+	// First: compute the update log via utility function using the provided values
+	const statsUpdate = getRefillResourcesUpdateObject(
 		maxResources,
 		currentPlayerResources,
 		playerCharacterName
@@ -74,13 +73,13 @@ export function refillResourcesFully(
 	const lastIndex = updatedGameActionsState.length - 1;
 	if (lastIndex >= 0 && updatedGameActionsState[lastIndex]) {
 		const currentAction = updatedGameActionsState[lastIndex];
-		const existingStatsUpdate = Array.isArray(currentAction.stats_update) 
-			? currentAction.stats_update 
+		const existingStatsUpdate = Array.isArray(currentAction.stats_update)
+			? currentAction.stats_update
 			: [];
-		const newStatsUpdate = Array.isArray(statsUpdate.stats_update) 
-			? statsUpdate.stats_update 
+		const newStatsUpdate = Array.isArray(statsUpdate.stats_update)
+			? statsUpdate.stats_update
 			: [];
-		
+
 		updatedGameActionsState[lastIndex] = {
 			...currentAction,
 			stats_update: [
@@ -96,7 +95,7 @@ export function refillResourcesFully(
 	for (const [resourceKey, resourceData] of Object.entries(maxResources)) {
 		if (!resourceData) continue;
 
-		const refillValue = GameAgent.getRefillValue(resourceData);
+		const refillValue = getRefillValue(resourceData);
 		const currentValue = getCurrentResourceValue(playerCharactersGameState, playerId, resourceKey);
 
 		newResources[resourceKey] = {
@@ -164,7 +163,7 @@ export function initializeMissingResources(
 		for (const [resourceKey, resourceData] of Object.entries(missingResources)) {
 			if (!resourceData) continue;
 
-			const refillValue = GameAgent.getRefillValue(resourceData);
+			const refillValue = getRefillValue(resourceData);
 			filledResources[resourceKey] = {
 				...resourceData,
 				current_value: refillValue

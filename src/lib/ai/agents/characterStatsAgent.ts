@@ -14,6 +14,20 @@ import {
 } from '$lib/ai/config/ResponseSchemas';
 import type { SafetyLevel } from '$lib/types/safetySettings';
 import { GeminiProvider } from '$lib/ai/geminiProvider';
+import { GEMINI_MODELS } from '../geminiProvider';
+import {
+	buildCharacterStatsAgentInstructions,
+	buildCharacterStatsHistoryMessages,
+	buildLevelUpAgentInstructions,
+	buildLevelUpHistoryMessages,
+	buildLevelUpUserMessage,
+	buildNPCAgentInstructions,
+	buildNPCUserMessage,
+	buildAbilitiesAgentInstructions,
+	buildAbilitiesHistoryMessages,
+	buildAbilitiesPartialPrompt,
+	CHARACTER_STATS_USER_MESSAGE
+} from './characterStatsAgentPrompts';
 
 export type SpellOrAbility = {
 	name: string;
@@ -23,9 +37,6 @@ export type SpellOrAbility = {
 		cost: number;
 	};
 };
-
-import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
-import { GEMINI_MODELS } from '../geminiProvider';
 
 export type Ability = {
 	name: string;
@@ -142,38 +153,15 @@ export class CharacterStatsAgent {
 			'# Quality Checklist (enforce before finalizing)\n- [ ] All arrays follow the schema.\n- [ ] resource_cost.resource_key exists in resources or cost = 0.\n- [ ] start_value ≤ max_value for every resource.\n- [ ] Attribute/skill names are consistent with the character and setting.\n- [ ] No duplicate names; numbers are integers; no NaN/Infinity.\n- [ ] Avoid modern copyrighted names and ensure safe content.\n'
 		];
 		if (statsOverwrites) {
-			let statsPrompt =
-				'# Overwrites\nYou MUST preserve the EXACT values of provided fields. If a value is given (e.g., 150), keep it 150. Fill only missing pieces.\n';
-			if (isAdaptiveOverwrite) {
-				statsPrompt =
-					'# Adaptive Overwrite\nRefine EXISTING STATS to better match the character and world, especially spells and abilities.\nPreserve strong numbers unless they clearly contradict the character/story; adjust minimally and justify implicitly via names/effects.\n';
-			}
-			if (transformInto) {
-				statsPrompt =
-					'# Transformation\nDecide if the transformation is complete or partial.\n- If complete: ignore EXISTING STATS and generate a coherent new set.\n- If partial: adapt EXISTING STATS with minimal necessary changes.\nTransform into: ' + transformInto + '\n';
-			}
-			statsPrompt += '\nEXISTING STATS:\n' + stringifyPretty(statsOverwrites);
-			agentInstruction.push(statsPrompt);
+			// Logic moved to buildCharacterStatsAgentInstructions
 		}
-		agentInstruction.push(
-			'# Final instruction\nGenerate character stats strictly matching the provided JSON schema. Do not include commentary outside the JSON.'
-		);
+		// Final instruction moved to buildCharacterStatsAgentInstructions
 		if (!statsOverwrites?.level) {
 			statsOverwrites = { ...statsOverwrites, level: 1 };
 		}
 		const request: LLMRequest = {
-			userMessage:
-				'Create balanced, character-faithful stats now. Output JSON only.',
-			historyMessages: [
-				{
-					role: 'user',
-					content: 'Description of the story: ' + stringifyPretty(storyState)
-				},
-				{
-					role: 'user',
-					content: 'Description of the character: ' + stringifyPretty(characterState)
-				}
-			],
+			userMessage: CHARACTER_STATS_USER_MESSAGE,
+			historyMessages: buildCharacterStatsHistoryMessages(storyState, characterState),
 			systemInstruction: agentInstruction,
 			config: {
 				responseSchema: CharacterStatsResponseSchema
@@ -249,29 +237,14 @@ export class CharacterStatsAgent {
 				{} as { [stat: string]: number }
 			);
 
-		const agentInstruction = [
-			'You are RPG character stats agent, leveling up a character according to game system, adventure and character description.\n' +
-			'Name one existing attribute to be increased, you must reuse the exact attribute name. ' +
-			'Also invent a new ability or increase one ability by one level granting an improved effect or more damage. Describe what improved from the last ability level.\n' +
-			'In addition, all resources are to be meaningfully increased according to GAME rules',
-			'Current character stats:\n' + stringifyPretty(characterStatsMapped),
-			'The level up must be based on the story progression, in which area the player acted well:\n' +
-			latestHistoryTextOnly,
-			'Generate structured level up data according to the character progress.'
-		];
+		const agentInstruction = buildLevelUpAgentInstructions(
+			characterStatsMapped,
+			latestHistoryTextOnly
+		);
 
 		const request: LLMRequest = {
-			userMessage: 'Character has leveled up to level: ' + (characterStats.level + 1),
-			historyMessages: [
-				{
-					role: 'user',
-					content: 'Description of the story: ' + stringifyPretty(storyState)
-				},
-				{
-					role: 'user',
-					content: 'Description of the character: ' + stringifyPretty(characterState)
-				}
-			],
+			userMessage: buildLevelUpUserMessage(characterStats.level + 1),
+			historyMessages: buildLevelUpHistoryMessages(storyState, characterState),
 			systemInstruction: agentInstruction,
 			config: {
 				responseSchema: LevelUpResponseSchema
@@ -303,26 +276,13 @@ export class CharacterStatsAgent {
 		safetyLevel: 'strict' | 'balanced' | 'permissive'
 	): Promise<NPCState> {
 		const latestHistoryTextOnly = historyMessages.map((m: LLMMessage) => m.content).join('\n');
-		const agent = [
-			'You are RPG NPC stats agent, generating the stats for NPCs according to game system, adventure and story progression.',
-			'Description of the adventure: ' + stringifyPretty(storyState),
-			'Latest story progression:\n' + latestHistoryTextOnly,
-			'Scale the stats and abilities according to the player character level: ' +
-			characterStats.level +
-			'\n',
-			'IMPORTANT: Generate meaningful relationships between NPCs and with the player character based on the story context.',
-			'Family relationships must be logical and consistent (sister/brother, parent/child, etc.).',
-			'Include personality traits and speech patterns that make each NPC unique and memorable.',
-			'Background notes should explain WHY each NPC behaves the way they do.',
-			TROPES_CLICHE_PROMPT,
-			'Generate structured NPC data with all required fields for each NPC.'
-		];
-		if (customSystemInstruction) {
-			agent.push('Following instructions overrule all others: ' + customSystemInstruction);
-		}
-		const action =
-			'Generate the following NPCs. You must exactly reuse the uniqueTechnicalNameId given: ' +
-			stringifyPretty(npcsToGenerate);
+		const agent = buildNPCAgentInstructions(
+			storyState,
+			latestHistoryTextOnly,
+			characterStats.level,
+			customSystemInstruction
+		);
+		const action = buildNPCUserMessage(npcsToGenerate);
 
 		// Configure provider with safety level before making request
 		this.configureSafetyLevel(safetyLevel);
@@ -354,34 +314,12 @@ export class CharacterStatsAgent {
 		characterStats: CharacterStats,
 		abilities: Partial<Ability>[]
 	): Promise<Ability[]> {
-		const usePartialAsBasePrompt =
-			'Important instruction! You must reuse the following description of abilities and fill in blank fields! ' +
-			'Abilities that contradict a theme (e.g. ice spells for a fire mage) are explicitly allowed, a character can learn abilities from different fields. Do not modify them to fit! ' +
-			stringifyPretty(abilities) +
-			'\n';
-		const agentInstruction = [
-			'You are RPG character ability agent, generating new abilities without restrictions on thematic consistency. Generate them according to game system, adventure and character description.\n' +
-			'Scale the ability according to the level',
-			usePartialAsBasePrompt,
-			'Generate structured abilities array with all required fields.'
-		];
+		const usePartialAsBasePrompt = buildAbilitiesPartialPrompt(abilities);
+		const agentInstruction = buildAbilitiesAgentInstructions(abilities);
 
 		const request: LLMRequest = {
 			userMessage: usePartialAsBasePrompt,
-			historyMessages: [
-				{
-					role: 'user',
-					content: 'Description of the story: ' + stringifyPretty(storyState)
-				},
-				{
-					role: 'user',
-					content: 'Description of the character: ' + stringifyPretty(characterState)
-				},
-				{
-					role: 'user',
-					content: 'Stats of the character: ' + stringifyPretty(characterStats)
-				}
-			],
+			historyMessages: buildAbilitiesHistoryMessages(storyState, characterState, characterStats),
 			systemInstruction: agentInstruction,
 			config: {
 				responseSchema: AbilitiesResponseSchema

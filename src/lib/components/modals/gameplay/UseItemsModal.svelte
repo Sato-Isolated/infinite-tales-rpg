@@ -1,11 +1,7 @@
 <script lang="ts">
 	import type { Action } from '$lib/types/action';
-	import {
-		GameAgent,
-		type InventoryState,
-		type Item,
-		type ItemWithId
-	} from '$lib/ai/agents/gameAgent';
+	import { GameAgent } from '$lib/ai/agents/gameAgent';
+	import type { InventoryState, Item, ItemWithId } from '$lib/types/inventory';
 	import { formatItemId } from '$lib/game/logic/gameLogic';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import type { AIConfig } from '$lib';

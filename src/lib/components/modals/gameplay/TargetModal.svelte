@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Action } from '$lib/types/action';
-	import type { Targets } from '$lib/ai/agents/gameAgent';
+	import type { Targets } from '$lib/types/actions';
 	import { getNPCDisplayName } from '$lib/util.svelte';
 
 	let {

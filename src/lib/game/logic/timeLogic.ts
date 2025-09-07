@@ -1,9 +1,8 @@
-import { generateInitialGameTime } from '$lib/ai/agents/gameAgent';
 import { LLMProvider } from '$lib/ai/llmProvider';
-import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
+import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
-import type { GameSettings } from '$lib/ai/agents/gameAgent';
+import type { GameSettings } from '$lib/types/gameSettings';
 import type { SafetyLevel } from '$lib/types/safetySettings';
 import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
 
@@ -146,9 +145,10 @@ export async function generateStoryAppropriateTime(
 		);
 
 		console.log('LLM provider created, calling generateInitialGameTime...');
-		const result = await generateInitialGameTime(llm, storyState, characterState, gameSettings);
-		console.log('generateInitialGameTime returned:', result);
-		return result;
+		// TODO: Re-implement generateInitialGameTime function
+		// const result = await generateInitialGameTime(llm, storyState, characterState, gameSettings);
+		console.log('generateInitialGameTime temporarily disabled, using default time');
+		return createDefaultTime();
 	} catch (error) {
 		console.error('Failed to generate story-appropriate time, falling back to default:', error);
 		return createDefaultTime();

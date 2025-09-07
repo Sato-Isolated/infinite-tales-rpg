@@ -1,8 +1,5 @@
-import type {
-	GameActionState,
-	PlayerCharactersGameState,
-	PlayerCharactersIdToNamesMap
-} from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
+import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 import { getCharacterTechnicalId } from '../logic/characterLogic';
 import * as gameLogic from '../logic/gameLogic';

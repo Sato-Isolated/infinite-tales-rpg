@@ -15,7 +15,9 @@
  * - Bounded memory usage prevents storage bloat
  */
 
-import type { GameActionState, InventoryState, PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
+import type { GameActionState } from '$lib/types/actions';
+import type { InventoryState } from '$lib/types/inventory';
+import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
@@ -58,7 +60,7 @@ export class UndoManager {
    */
   private static readonly CRITICAL_STATE_KEYS = [
     'gameActionsState',
-    'characterState', 
+    'characterState',
     'characterStatsState',
     'inventoryState',
     'npcState',
@@ -68,12 +70,12 @@ export class UndoManager {
     'customMemoriesState',
     'customGMNotesState',
     'chosenActionState',
-    'additionalStoryInputState', 
+    'additionalStoryInputState',
     'additionalActionInputState',
     'skillsProgressionState',
     'eventEvaluationState',
     'characterTransformState',
-  'levelUpState',
+    'levelUpState',
     'gameTimeState',
     'isGameEnded'
   ] as const;
@@ -111,7 +113,7 @@ export class UndoManager {
       // Enhanced logging to track snapshot timing
       const undoStack = this._loadUndoStack();
       const lastSnapshot = undoStack[undoStack.length - 1];
-      
+
       // Prevent duplicate snapshots for the same action
       if (undoStack.length > 0 && undoStack[0].gameActionId === currentActionId) {
         console.log(`Skipping duplicate snapshot for action ${currentActionId}`);
@@ -182,45 +184,45 @@ export class UndoManager {
       // Need at least stepsBack + 1 snapshots to undo stepsBack steps
       if (undoStack.length <= stepsBack) {
         console.log(`Cannot undo ${stepsBack} step(s) - only ${undoStack.length} snapshot(s) available`);
-        
+
         // If we have any snapshots, offer to go to the oldest available
         if (undoStack.length > 0) {
           const oldestSnapshot = undoStack[0];
           console.log(`Alternative: Can restore to oldest available snapshot (action ${oldestSnapshot.gameActionId})`);
-          
+
           // For better UX, restore to the oldest snapshot if user requested more steps than available
           return this.recoverToPoint(oldestSnapshot.gameActionId);
         }
-        
+
         return false;
       }
 
       // Calculate target index (with index 0 = most recent)
       // To go back stepsBack steps, we want index stepsBack
       const targetIndex = stepsBack;
-      
+
       // Make sure the target index exists
       if (targetIndex >= undoStack.length) {
         console.log(`Cannot undo ${stepsBack} step(s) - only ${undoStack.length} snapshot(s) available`);
-        
+
         // If we have any snapshots, offer to go to the oldest available
         if (undoStack.length > 0) {
           const oldestSnapshot = undoStack[undoStack.length - 1];
           console.log(`Alternative: Can restore to oldest available snapshot (action ${oldestSnapshot.gameActionId})`);
-          
+
           // For better UX, restore to the oldest snapshot if user requested more steps than available
           return this.recoverToPoint(oldestSnapshot.gameActionId);
         }
-        
+
         return false;
       }
-      
+
       const targetSnapshot = undoStack[targetIndex];
-      
+
       // Enhanced logging for debugging
       const currentGameActions = this._getLocalStorageItem<GameActionState[]>('gameActionsState', []);
       const currentActionId = currentGameActions.length > 0 ? currentGameActions[currentGameActions.length - 1].id : 0;
-      
+
       console.log(`Undo request: ${stepsBack} step(s) back from current action ${currentActionId}`);
       console.log(`Target snapshot: action ${targetSnapshot.gameActionId} (${targetSnapshot.description})`);
       console.log(`Available snapshots: ${undoStack.map(s => s.gameActionId).join(', ')}`);
@@ -324,7 +326,7 @@ export class UndoManager {
    */
   static getRecoveryPoints(): RecoveryPoint[] {
     const undoStack = this._loadUndoStack();
-    
+
     return undoStack
       .map(snapshot => ({
         id: snapshot.gameActionId,
@@ -333,7 +335,7 @@ export class UndoManager {
         isSnapshot: true,
         canRecover: true
       }));
-      // No need to reverse since index 0 is already most recent
+    // No need to reverse since index 0 is already most recent
   }
 
   /**
@@ -362,7 +364,7 @@ export class UndoManager {
       if (typeof localStorage === 'undefined') {
         return [];
       }
-      
+
       const stack = localStorage.getItem(this.UNDO_STACK_KEY);
       if (!stack) {
         return [];
@@ -375,8 +377,8 @@ export class UndoManager {
       }
 
       // Validate snapshot structure
-      const validated = parsed.filter(item => 
-        item && 
+      const validated = parsed.filter(item =>
+        item &&
         typeof item.timestamp === 'number' &&
         typeof item.gameActionId === 'number' &&
         typeof item.description === 'string' &&
@@ -403,39 +405,39 @@ export class UndoManager {
       if (typeof localStorage === 'undefined') {
         return false;
       }
-      
+
       const data = JSON.stringify(stack);
-      
+
       // Check storage size before writing
       this._checkAndCleanupStorage(data.length);
-      
+
       // Write to temp key first (atomic preparation)
       localStorage.setItem(this.UNDO_STACK_TEMP_KEY, data);
-      
+
       // Swap to real key (atomic commit)
       localStorage.setItem(this.UNDO_STACK_KEY, data);
-      
+
       // Clean up temp key
       localStorage.removeItem(this.UNDO_STACK_TEMP_KEY);
-      
+
       return true;
     } catch (error) {
       console.error('Failed to save undo stack atomically:', error);
-      
+
       // Handle QuotaExceededError specifically
       if (error instanceof Error && error.name === 'QuotaExceededError') {
         console.warn('Storage quota exceeded, attempting cleanup and retry...');
-        
+
         // Aggressive cleanup: reduce snapshots and retry
         const reducedStack = stack.slice(0, Math.max(1, Math.floor(stack.length / 2)));
         console.log(`Reduced stack from ${stack.length} to ${reducedStack.length} snapshots`);
-        
+
         try {
           const reducedData = JSON.stringify(reducedStack);
           localStorage.setItem(this.UNDO_STACK_TEMP_KEY, reducedData);
           localStorage.setItem(this.UNDO_STACK_KEY, reducedData);
           localStorage.removeItem(this.UNDO_STACK_TEMP_KEY);
-          
+
           console.log('✅ Successfully saved reduced snapshot stack after quota cleanup');
           return true;
         } catch (retryError) {
@@ -445,7 +447,7 @@ export class UndoManager {
           return false;
         }
       }
-      
+
       // Try to clean up temp key even if save failed
       try {
         if (typeof localStorage !== 'undefined') {
@@ -454,7 +456,7 @@ export class UndoManager {
       } catch (cleanupError) {
         console.error('Failed to clean up temp key:', cleanupError);
       }
-      
+
       return false;
     }
   }
@@ -467,19 +469,19 @@ export class UndoManager {
       // Estimate current localStorage usage
       const currentUsage = this._estimateStorageUsage();
       const estimatedNewUsage = currentUsage + newDataSize;
-      
+
       // localStorage quota is typically 5-10MB, we'll be conservative and cleanup at 3MB
       const STORAGE_WARNING_THRESHOLD = 3 * 1024 * 1024; // 3MB
-      
+
       if (estimatedNewUsage > STORAGE_WARNING_THRESHOLD) {
         console.warn(`Storage usage approaching limits (${Math.round(estimatedNewUsage / 1024 / 1024)}MB), cleaning up old snapshots...`);
-        
+
         // Load current stack and reduce it aggressively
         const currentStack = this._loadUndoStack();
         if (currentStack.length > 2) {
           const reducedStack = currentStack.slice(0, 2); // Keep only 2 most recent
           console.log(`Preemptively reduced snapshots from ${currentStack.length} to ${reducedStack.length}`);
-          
+
           // Save reduced stack directly
           localStorage.setItem(this.UNDO_STACK_KEY, JSON.stringify(reducedStack));
         }
@@ -497,7 +499,7 @@ export class UndoManager {
       if (typeof localStorage === 'undefined') {
         return 0;
       }
-      
+
       let totalSize = 0;
       for (let key in localStorage) {
         if (localStorage.hasOwnProperty(key)) {
@@ -532,7 +534,7 @@ export class UndoManager {
    */
   private static _restoreSnapshot(snapshot: UndoSnapshot): void {
     console.log(`Restoring snapshot from ${new Date(snapshot.timestamp).toLocaleString()}`);
-    
+
     // Restore all captured states
     Object.entries(snapshot.states).forEach(([key, value]) => {
       try {
@@ -556,7 +558,7 @@ export class UndoManager {
     if (typeof localStorage === 'undefined') {
       return;
     }
-    
+
     this.VOLATILE_STATE_KEYS.forEach(key => {
       try {
         // Reset to empty/default values rather than removing completely
@@ -589,7 +591,7 @@ export class UndoManager {
       if (typeof localStorage === 'undefined') {
         return defaultValue;
       }
-      
+
       const item = localStorage.getItem(key);
       return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
@@ -640,10 +642,10 @@ export class UndoManager {
   /**
    * Diagnose potential undo consistency issues
    */
-  static diagnoseUndoConsistency(): { 
-    issues: string[], 
-    snapshotGaps: number[], 
-    recommendations: string[] 
+  static diagnoseUndoConsistency(): {
+    issues: string[],
+    snapshotGaps: number[],
+    recommendations: string[]
   } {
     const undoStack = this._loadUndoStack();
     const gameActions = this._getLocalStorageItem<GameActionState[]>('gameActionsState', []);
@@ -659,7 +661,7 @@ export class UndoManager {
     if (undoStack.length > 0 && gameActions.length > 0) {
       const latestSnapshot = undoStack[0]; // Index 0 = most recent
       const lastAction = gameActions[gameActions.length - 1];
-      
+
       if (latestSnapshot.gameActionId < lastAction.id - 1) {
         const gap = lastAction.id - latestSnapshot.gameActionId;
         issues.push(`Snapshot gap detected: latest snapshot is for action ${latestSnapshot.gameActionId}, but current action is ${lastAction.id}`);

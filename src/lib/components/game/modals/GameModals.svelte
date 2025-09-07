@@ -1,10 +1,8 @@
 <script lang="ts">
 	import type { ModalManager } from '$lib/game/ui/modalManager.svelte';
-	import type {
-		GameActionState,
-		PlayerCharactersGameState,
-		InventoryState
-	} from '$lib/ai/agents/gameAgent';
+	import type { GameActionState } from '$lib/types/actions';
+	import type { InventoryState } from '$lib/types/inventory';
+	import type { PlayerCharactersGameState } from '$lib/types/players';
 	import type { Ability, CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 	import type { EventEvaluation } from '$lib/ai/agents/eventAgent';
 	import type { Action } from '$lib/types/action';
