@@ -83,6 +83,9 @@ To develop **Infinite Tales RPG**, you'll need to set up a few things:
 
 - Deep equality: We replaced deprecated `lodash.isequal` with `fast-deep-equal` for browser-safe, small, and fast deep comparisons.
 
+Developer notes:
+- See our AI assistant guide in `.github/copilot-instructions.md` for repo-specific coding rules and quick links.
+
 ## 🎉 Acknowledgements
 
 - Many thanks to the developers of Svelte, Tailwind CSS, and DaisyUI for their amazing tools.

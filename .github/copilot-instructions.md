@@ -1,174 +1,162 @@
 ## Infinite Tales RPG – Copilot Project Instructions
 
-These instructions guide AI assistants (GitHub Copilot, Chat models) to produce code consistent with this repository. Keep responses concise but complete. Always start complex answers with a short pseudocode / plan, then implement.
+These instructions guide AI assistants (GitHub Copilot, chat models) to write code consistent with this repo. Keep answers concise but complete. For non-trivial requests: start with a short plan/pseudocode, then implement.
 
 ---
 
-### 1. Base Standards (Keep & Enforce)
+### 1. Base standards
 
-Simplicity • Readability • Maintainability • Testability • Reusability • Reasonable Performance.
-Use early returns. Use Tailwind + DaisyUI only for styling (no inline style attributes, no raw CSS unless @apply in rare shared utility layers). Prefer `class:active={isActive}` style toggles over ternaries when possible.
-
-Accessibility: interactive elements need semantic tags or `role`, `aria-label`, keyboard focus (`tabindex="0"` if non-native). Handlers are prefixed with `handle` (e.g., `handleClick`).
-
-Svelte 5 runes: import from `svelte` and use `$state`, `$derived`, `$effect`. Do not use legacy `$:` reactive labels.
-
----
-
-### 2. Tech Stack
-
-SvelteKit 2 (Svelte 5 runes) • TypeScript 5 • Vite 5 • TailwindCSS + DaisyUI • Vitest (unit) • Playwright (E2E) • Vercel deploy • AI Providers (Gemini, Pollinations) • Local state persistence via custom `useLocalStorage`.
+Simplicity • Readability • Maintainability • Testability • Reusability • Reasonable performance.
+- Prefer early returns and small pure helpers.
+- Styling: Tailwind v4 + DaisyUI 5 only. No inline styles; avoid raw CSS except shared utilities with @apply.
+- Accessibility: semantic elements or proper `role`, `aria-*`, focusable when needed.
+- Handlers: prefix with `handle` (e.g., `handleClick`).
+- Svelte 5 runes: import from `svelte` and use `$state`, `$derived`, `$effect`. Avoid legacy `$:` labels.
 
 ---
 
-### 3. High-Level Architecture
+### 2. Tech stack
+
+SvelteKit 2 (Svelte 5 runes) • TypeScript 5 • Vite 7 • TailwindCSS v4 + DaisyUI 5 • ESLint flat config + Prettier • Vitest (unit) • Playwright (E2E) • Google Gemini via `@google/genai` • Hybrid state persistence (localStorage + file-backed) via `useHybridLocalStorage`.
+
+---
+
+### 3. High-level architecture
 
 Layers:
 
-1. UI Pages & Components (`src/routes`, `src/lib/components`).
-2. AI Agents (`src/lib/ai/agents/*`) orchestrating prompts & structured JSON outputs.
-3. Game Logic Helpers (`src/routes/game/*Logic.ts`).
-4. State Persistence (`src/lib/state/*` + `useLocalStorage`).
-5. LLM Providers (`src/lib/ai/*Provider.ts`, `llm.ts`).
+1) UI pages & components: `src/routes` and `src/lib/components/*`.
+2) AI agents: `src/lib/ai/agents/*` orchestrate prompts and structured JSON outputs (see Section 4).
+3) Game logic: `src/lib/game/logic/*` and controller `src/lib/game/controllers/gameController.ts`.
+4) State: hybrid persistence in `src/lib/state/**` with `useHybridLocalStorage` and `gameStateManager.svelte.ts`.
+5) LLM provider abstractions: `src/lib/ai/*Provider.ts`, `llm.ts`.
 
-Data Flow Loop (simplified): UI action -> prepare context -> call appropriate Agent(s) -> stream thoughts/story -> parse & update local states -> summarization & memory retrieval -> regenerate actions -> UI refresh.
-
----
-
-### 4. Core AI Agents (Responsibilities)
-
-Files under `src/lib/ai/agents/`:
-| Agent | Purpose |
-|-------|---------|
-| `gameAgent.ts` | Main story progression (narrative text + structured JSON: stats, inventory, xp, image prompt, plot hints). |
-| `actionAgent.ts` | Generates next possible actions (list + enriched metadata). |
-| `characterAgent.ts` | Character narrative description & image prompt. |
-| `characterStatsAgent.ts` | Initialize/update character numerical & categorical stats/resources. |
-| `combatAgent.ts` | Combat resolution & combat-oriented JSON updates. |
-| `eventAgent.ts` | Detect & emit special events (abilities unlock, transformations). |
-| `summaryAgent.ts` | Story/history summarization & retrieval of related details (context pruning). |
-| `storyAgent.ts` | (If present) Additional story-focused tasks / legacy naming. |
-| `mappers.ts` | Helper mappers / type conversions for agent outputs. |
-
-All agents now use @google/genai structured output schemas from `ResponseSchemas.ts` for type-safe JSON generation.
-
-Never silently change JSON contracts. If modifying: update prompt, parsing code, tests, and this file.
+Data flow: UI event -> gameController orchestrates -> agents generate story/actions (Gemini structured JSON) -> update hybrid state -> optional summarization/memory -> regenerate actions -> UI refresh.
 
 ---
 
-### 5. LLM Providers
+### 4. Core AI agents (responsibilities)
 
-`geminiProvider.ts` handles streaming (story & thoughts), safety settings, fallback logic with structured output schemas. `llmProvider.ts` centralizes provider selection. `llm.ts` defines shared prompt fragments (e.g. `LANGUAGE_PROMPT`).
+Under `src/lib/ai/agents/`:
+- `gameAgent.ts`: Story progression (narrative + structured JSON: stats, inventory, xp, image prompt, plot hints).
+- `actionAgent.ts`: Next possible actions with metadata.
+- `characterAgent.ts`: Character description & image prompt.
+- `characterStatsAgent.ts`: Initialize/update stats/resources; level-up; abilities.
+- `combatAgent.ts`: Combat resolution & stat updates.
+- `eventAgent.ts`: Events evaluation (unlocks, transformations, etc.).
+- `summaryAgent.ts`: Summarization and related history retrieval.
+- `dialogueTrackingAgent.ts`: Dialogue continuity helpers.
+- `mappers.ts`: Mapping helpers.
 
-Streaming callbacks (expected shapes) must remain stable: `onStoryStreamUpdate(partialText)`, `onThoughtStreamUpdate(kind, partialThought)`.
+Agents use `@google/genai` structured output with schemas from `src/lib/ai/config/ResponseSchemas.ts` (modularized under `config/schemas/*`).
 
----
-
-### 6. State Management
-
-Pattern: `const someState = useLocalStorage<Type>('stateKey', initialValue);` All principal keys:
-
-**Core Game State:**
-`characterState`, `characterStatsState`, `storyState`, `campaignState`, `currentChapterState`, `gameActionsState`, `historyMessagesState`, `characterActionsState`, `npcState`, `inventoryState`, `isGameEnded`, `gameTimeState`.
-
-**History & Memory:**
-`relatedStoryHistoryState`, `relatedActionHistoryState`, `customMemoriesState`, `customGMNotesState`, `thoughtsState`, `rollDifferenceHistoryState`.
-
-**UI & Settings:**
-`gameSettingsState`, `aiConfigState`, `apiKeyState`, `temperatureState`, `systemInstructionsState`, `aiLanguage`, `useDynamicCombat`.
-
-**Actions & Input:**
-`chosenActionState`, `additionalStoryInputState`, `additionalActionInputState`, `didAIProcessDiceRollAction`.
-
-**Character & Player Management:**
-`playerCharactersIdToNamesMapState`, `playerCharactersGameState`, `characterImageState`, `characterTransformState`.
-
-**Events & Progression:**
-`eventEvaluationState`, `levelUpState`, `skillsProgressionState`.
-
-Use snapshots before deep mutations when required: `$state.snapshot(variable.value)`.
+Never change JSON contracts silently. If modifying: update prompts, schemas, parser/consumers, tests, and this file.
 
 ---
 
-### 7. Gameplay Flow
+### 5. LLM providers
 
-1. Creation (tale/character) -> initial agents invoked for baseline state.
-2. On `game/+page.svelte`, `sendAction()` triggers Action or Story flow.
-3. `actionAgent` proposes candidate actions.
-4. Player selects or inputs custom action; may trigger dice roll (combat/skill gating) via `gameLogic.ts`.
-5. Context is enriched (combat, memory retrieval) -> `gameAgent.generateStoryProgression`.
-6. Streaming updates UI; on completion, structured JSON parsed & local states updated.
-7. Summarization if thresholds exceeded (`summaryAgent`).
-8. Event evaluation (`eventAgent`).
-9. Regenerate actions -> repeat.
+- `geminiProvider.ts`: Handles content generation, simulated streaming, safety settings, and structured output with `@google/genai`. Uses `GeminiConfigBuilder` and `ModelCapabilities`.
+- `llmProvider.ts`: Provider selection.
+- `llm.ts`: Shared prompt fragments/constants (e.g., `LANGUAGE_PROMPT`).
+
+Keep streaming/thought callbacks stable when used by UI/controller.
 
 ---
 
-### 8. JSON Contracts (Do Not Break)
+### 6. State management
 
-Story Progression JSON (gameAgent): keys include `story`, `xp_gain`, `inventory_update`, `stats_update`, `image_prompt`, `plotPointAdvancingNudgeExplanation`, etc. Summary JSON: `{ keyDetails: string[], story: string }`. Related history retrieval JSON: `{ relatedDetails: Array<{ storyReference: string; relevanceScore: number }> }`. Combat/stat update JSON: defined in combat & character stats prompts (enums uppercase). Maintain stable casing & enumeration values.
-
-If adding a field: 1) extend type/interface, 2) adjust prompt instructions, 3) add parser & safe default, 4) write test, 5) document here.
-
----
-
-### 9. Coding Conventions (Project-Specific)
-
-Svelte 5 runes only for reactivity. Handlers: `handleX`. Prefer `const` arrow functions over `function` declarations. Tailwind + DaisyUI classes only; use semantic HTML. Derive computed values using `$derived`. Use `$effect` for side-effects; keep side-effects idempotent. Avoid complex logic in components—extract into logic or agent files.
-
-Error handling: central utility (e.g., `handleError`) & console debug through prettified JSON (`stringifyPretty`). Always catch JSON parse errors with fallback path.
+Use hybrid storage utilities: `src/lib/state/hybrid/useHybridLocalStorage.svelte.ts` and `src/lib/state/gameStateManager.svelte.ts`.
+- Keys and their storage targets are defined in `src/lib/state/hybrid-storage-config.json` (localStorage vs. file-backed store). Do not hardcode new keys—add them to the config when introducing persistent state.
+- Common keys: `gameActionsState`, `historyMessagesState`, `storyState`, `npcState`, `characterState`, `characterStatsState`, `playerCharactersGameState`, `inventoryState`, `systemInstructionsState`, `eventEvaluationState`, `gameTimeState`, `skillsProgressionState`, `characterTransformState`, `aiConfigState`, `levelUpState`, `thoughtsState`, `chosenActionState`, `playerCharactersIdToNamesMapState`, difficulty/roll-related keys, `isGameEnded`, `aiLanguage`, `temperatureState`, dice flags, `customMemoriesState`, `customGMNotesState`, `related*HistoryState`, `apiKeyState`, `safetySettingsState`.
+- For complex updates, prefer manager patterns in `gameStateManager.svelte.ts`. Take snapshots before deep mutations when required.
 
 ---
 
-### 10. Testing Strategy
+### 7. Gameplay flow
 
-Unit (Vitest): pure logic (`*Logic.ts`, parsers, mappers). Write at least one happy path + one edge case when altering logic. E2E (Playwright): key user flows (start game, choose action, progression streaming). Add tests alongside code or under `tests/`. Keep tests deterministic; mock LLM outputs where possible.
-
----
-
-### 11. Performance & Streaming
-
-Minimize token usage: rely on summaries (`summaryAgent`) & related retrieval. Avoid sending entire raw history; include only recent actions, summarized story, and related details. Lazy-load heavy components (import on demand) if they are not part of initial above-the-fold game screen.
-
----
-
-### 12. Memory & Context
-
-`summaryAgent` compresses long histories; `retrieveRelatedHistory` fetches targeted context slices. Custom player memories override summarization omission—always include them if relevant. When building prompts: order context from most to least recent/relevant.
+1) Tale/character creation -> initial agents set baseline state.
+2) In `src/routes/game/+page.svelte`, user actions call into `gameController.ts`.
+3) `actionAgent` proposes options; custom actions allowed.
+4) Dice rolls (skill/combat) via `src/lib/game/logic/*` when required.
+5) Enrich context (combat, memory) -> `gameAgent` generates story progression (structured JSON).
+6) UI streams story; upon completion, state updates and is persisted via hybrid storage.
+7) Summarize if thresholds exceeded (`summaryAgent`).
+8) Evaluate events (`eventAgent`).
+9) Regenerate actions -> loop.
 
 ---
 
-### 13. Dice & Skill Checks
+### 8. JSON contracts (do not break)
 
-`gameLogic.ts` determines if dice roll required (`mustRollDice`). On success/failure, inject side-effect additions using `addAdditionsFromActionSideeffects`. Include outcome descriptors in story context to keep narrative coherent.
+Schemas live under `src/lib/ai/config/ResponseSchemas.ts` (modular files in `config/schemas/*`). Maintain casing/enums. Examples: story progression includes `story`, `xp_gain`, `inventory_update`, `stats_update`, `image_prompt`, `plotPointAdvancingNudgeExplanation`, etc. Summaries, related history, combat and character stats have dedicated schemas.
 
----
-
-### 14. Progression Notes
-
-Campaign feature has been removed. Keep story continuity via plot point hints within `gameAgent` JSON only.
+If adding fields:
+1) Update schema/types; 2) adjust prompts; 3) update consumers/parsers with safe defaults; 4) add tests; 5) reflect changes here.
 
 ---
 
-### 15. Skills & Level Progression
+### 9. Coding conventions
 
-Increment skills via progression utilities (e.g., `advanceSkillIfApplicable`). Level thresholds defined in `levelLogic.ts`; ensure xp gains feed into that logic before UI updates.
-
----
-
-### 16. Events & Abilities
-
-`eventAgent` evaluates triggers post-story update. If new ability added, ensure UI surfaces it and state persisted. Document new ability schema here if structure changes.
+- Svelte 5 runes for reactivity; keep components thin—move logic into `src/lib/game/logic/*` or agents.
+- Use `handleX` naming, arrow functions, semantic HTML, Tailwind+DaisyUI classes.
+- `$derived` for computed values; `$effect` for idempotent side-effects only.
+- Error handling via `handleError` and `stringifyPretty` (`src/lib/util.svelte.ts`).
+- Undo/state snapshots exist; see `saveSnapshotBeforeAction`, `undoManager.ts`, and `UndoButton.svelte`.
 
 ---
 
-### 17. Error Handling & Fallback
+### 10. Testing
 
-If primary provider unstable, fallback path in providers chooses alternative (e.g., Pollinations for images, alternate LLM if configured). Keep retry counts bounded to avoid infinite loops. Always surface a user-friendly message + log raw error.
+- Unit (Vitest): logic in `src/lib/game/logic/*`, parsers, mappers.
+- E2E (Playwright): main flows (start game, choose action, streaming progression) in `tests/` with `playwright.config.ts`.
+- Keep tests deterministic; mock agent outputs for repeatability.
 
 ---
 
-### 18. Adding / Modifying Features Checklist
+### 11. Performance & streaming
+
+Minimize tokens: use summaries and related retrieval; don’t send full raw history. Prefer recent actions + summaries + relevant details. Lazy-load heavy components when feasible.
+
+---
+
+### 12. Memory & context
+
+Summaries compress long histories; related retrieval targets context slices under `src/lib/game/memory/*`. Custom player memories should be prioritized when relevant. Order prompt context from most to least recent/relevant.
+
+---
+
+### 13. Dice & skill checks
+
+`src/lib/game/logic/gameLogic.ts` determines gates (e.g., `mustRollDice`). Use `diceRollLogic.ts`, `combatLogic.ts`, etc. On success/failure, inject side-effects via helpers. Include outcome descriptors in story context for coherence.
+
+---
+
+### 14. Progression notes
+
+Campaign feature is removed. Ensure continuity via plot-point hints in `gameAgent` JSON.
+
+---
+
+### 15. Skills & level progression
+
+Use progression helpers (see `src/lib/game/progression/*` and `logic/levelLogic.ts`). Ensure XP updates feed level logic before UI refresh.
+
+---
+
+### 16. Events & abilities
+
+`eventAgent` evaluates triggers after story updates. If adding new ability structures, update schemas, state persistence, and UI components accordingly.
+
+---
+
+### 17. Error handling & fallback
+
+Use `GeminiErrorHandler`, `GeminiConfigBuilder`, and provider fallback paths prudently. Keep retries bounded. Always show a user-friendly message and log the raw error. Safety mapping is available via `getSafetyLevelFromStory`.
+
+---
+
+### 18. Adding / modifying features checklist
 
 Before coding:
 
@@ -179,85 +167,75 @@ Before coding:
 5. Add accessibility attributes.
 6. Update tests (logic &/or E2E stub). Ensure coverage of new branches / error paths.
 7. Consider summarization & context size impact.
-8. Update this instructions file if any Agent/contract changes.
+8. Update this instructions file if any agent/contract changes.
 9. Run lint + tests locally.
 10. Keep code minimal, explicit, with early returns.
 
 ---
 
-### 19. Common Pitfalls
+### 19. Common pitfalls
 
-Legacy Svelte 4 syntax (`on:click`) — must use standard attributes. Forgetting snapshots before deep object mutation (breaks reactivity). Expanding prompt context too broadly (token bloat). Altering enum casing. Adding blocking heavy computations inside `$effect` causing UI jank.
-
----
-
-### 20. Quick Reference Links
-
-`src/routes/game/+page.svelte` • `src/lib/ai/agents/gameAgent.ts` • `src/lib/ai/agents/actionAgent.ts` • `src/lib/ai/agents/summaryAgent.ts` • `src/lib/ai/agents/combatAgent.ts` • `src/lib/ai/agents/characterStatsAgent.ts` • `src/lib/ai/agents/eventAgent.ts` • `src/routes/game/memoryLogic.ts` • `src/routes/game/gameLogic.ts` • `src/lib/ai/llm.ts` • `src/lib/ai/geminiProvider.ts` • `src/lib/state/useLocalStorage.svelte.ts` (state util).
+- Forgetting snapshots before deep object mutation (may break reactivity/undo).
+- Prompt context too broad (token bloat); keep minimal and relevant.
+- Changing enum casing or field names (breaks contracts).
+- Heavy computations inside `$effect` causing jank.
+- Missing accessibility attributes.
 
 ---
 
-### 21.1 Important Files & Directories (Map)
+### 20. Quick reference links
+
+UI: `src/routes/game/+page.svelte`
+Controller: `src/lib/game/controllers/gameController.ts`
+Logic: `src/lib/game/logic/*`
+Memory: `src/lib/game/memory/*`
+Agents: `src/lib/ai/agents/*`
+Schemas: `src/lib/ai/config/ResponseSchemas.ts` and `src/lib/ai/config/schemas/*`
+LLM: `src/lib/ai/llm.ts`, `src/lib/ai/geminiProvider.ts`, `src/lib/ai/llmProvider.ts`
+State: `src/lib/state/hybrid/useHybridLocalStorage.svelte.ts`, `src/lib/state/gameStateManager.svelte.ts`
+
+---
+
+### 21. Important files & directories (map)
 
 - Core routes & pages
-  - `src/routes/+layout.svelte` / `src/routes/+layout.server.ts`: App shell, server layout.
+  - `src/routes/+layout.svelte` / `src/routes/+layout.server.ts`: App shell.
   - `src/routes/+page.svelte`: Landing / entry UI.
-  - `src/routes/game/+layout.svelte`: Game screen shell.
+  - `src/routes/game/+layout.svelte`: Game shell.
   - `src/routes/game/+page.svelte`: Main game UI and streaming presentation.
 
-- Game logic (Section 3 & 7)
-  - `src/routes/game/gameController.ts`: Orchestrates action/story cycle, coordinates agents and state updates. See Sections 4, 7, 17.
-  - `src/routes/game/gameLogic.ts`: Dice gates, side-effects injection, core flow helpers. See Sections 13, 11.
-  - `src/routes/game/gameStateUtils.ts`: Game state utility functions and helpers for state management.
-  - `src/routes/game/combatLogic.ts`: Combat outcomes and JSON updates (Section 8/Combat contract).
-  - `src/routes/game/characterLogic.ts`: Character-related helpers.
-  - `src/routes/game/resourceLogic.ts`: Resource calculations and updates.
-  - `src/routes/game/levelLogic.ts`: Level thresholds and XP handling (Section 15).
-  - `src/routes/game/timeLogic.ts`: Time progression helpers.
-  - `src/routes/game/memoryLogic.ts` + `src/routes/game/memoryLogic/`: Related history retrieval and summarization support (Section 12).
-  - `src/routes/game/skillProgressionHelpers.ts`: Skills and progression utilities (Section 15).
-  - `src/routes/game/npcLogic.ts`: NPC-related helper functions.
-  - `src/routes/game/modalManager.svelte.ts`: Centralized modal state management.
+- Game controller & logic
+  - `src/lib/game/controllers/gameController.ts`: Orchestrates action/story cycle and state updates.
+  - `src/lib/game/logic/*`: Dice gates, side-effects, combat, character, resources, level, time.
+  - `src/lib/game/state/*`: Conversation state, utilities.
+  - `src/lib/game/memory/*`: Related history retrieval and summarization support.
 
-- AI layer (Sections 4, 5, 8)
-  - `src/lib/ai/agents/*.ts`: All core agents (see Section 4 table). Do not change JSON contracts (Section 8).
-  - `src/lib/ai/llm.ts`: Shared prompt fragments and language constants.
-  - `src/lib/ai/llmProvider.ts`: Provider abstraction selection.
-  - `src/lib/ai/geminiProvider.ts`: Modern provider using @google/genai SDK with structured output.
-  - `src/lib/ai/config/GeminiConfigBuilder.ts`: Centralized configuration with THINKING_BUDGETS.
-  - `src/lib/ai/errors/GeminiErrorHandler.ts`: Consolidated error handling utilities.
-  - `src/lib/ai/streaming/StructuredStreamHandler.ts`: SDK-native structured streaming (replaces manual parsing).
-  - `src/lib/ai/schemas/ResponseSchemas.ts`: Type-safe response schemas using SDK Types.
+- AI layer
+  - `src/lib/ai/agents/*.ts`: Core agents (see Section 4). Don’t break JSON contracts (Section 8).
+  - `src/lib/ai/llm.ts`, `src/lib/ai/llmProvider.ts`, `src/lib/ai/geminiProvider.ts`.
+  - `src/lib/ai/config/GeminiConfigBuilder.ts`, `src/lib/ai/errors/GeminiErrorHandler.ts`.
+  - `src/lib/ai/config/ResponseSchemas.ts` and `src/lib/ai/config/schemas/*`.
 
-- State & utilities (Section 6)
-  - `src/lib/state/useLocalStorage.svelte.ts`: Local storage rune-based state util. Keys listed in Section 6.
-  - `src/lib/state/versionMigration.ts`: Versioned migrations for persisted state.
-  - `src/lib/state/errorState.svelte.ts`: Centralized error state handling.
-  - `src/lib/util.svelte.ts`: Shared UI/utility helpers.
-  - `src/lib/types/gameTime.ts`: Game time type definitions.
+- State & utilities
+  - `src/lib/state/hybrid/useHybridLocalStorage.svelte.ts`, `src/lib/state/gameStateManager.svelte.ts`.
+  - `src/lib/state/versionMigration.ts`, `src/lib/state/errorState.svelte.ts`.
+  - `src/lib/util.svelte.ts`, `src/lib/types/gameTime.ts`.
 
-- UI components (Section 1 & 9)
-  - `src/lib/components/StoryProgressionWithImage.svelte`: Story + image area.
-  - `src/lib/components/AIGeneratedImage.svelte`: Image rendering (Pollinations).
-  - `src/lib/components/ImportExportSaveGame.svelte`: Save/load persistence.
-  - `src/lib/components/LoadingModal.svelte` / `LoadingIcon.svelte`: Streaming/loading UI.
-  - `src/lib/components/ResourcesComponent.svelte`: Player resources.
-  - `src/lib/components/game/`: Game-specific UI components (ActionButtons, ActionInputForm, GameModals, etc.).
-  - `src/lib/components/interaction_modals/`: Modal components for various interactions (character, dice, settings, etc.).
+- UI components
+  - `src/lib/components/*` incl. game UI (actions, modals, story, time) and Undo UI.
 
-- Tests (Section 10)
-  - Unit: `src/index.test.ts`, `src/routes/game/*.test.ts`, `src/lib/ai/agents/storyAgent.test.ts`.
+- Tests
+  - Unit: in logic/modules (e.g., `src/lib/game/logic/*.test.ts`, agent tests).
   - E2E: `tests/test.ts` (Playwright). Config: `playwright.config.ts`.
 
 - Config & build
   - `svelte.config.js`, `vite.config.ts`, `tailwind.config.ts`, `postcss.config.js`.
   - `eslint.config.js`, `.prettierrc`, `.prettierignore`.
-  - `vercel.json`: Deployment target.
-  - `package.json`: Scripts and deps.
+  - `package.json` and scripts.
 
 ---
 
-### 21.2 Runes Pattern Snippet (Svelte 5)
+### 22. Runes pattern snippet (Svelte 5)
 
 Minimal, accessible pattern aligned with Section 9:
 
@@ -287,7 +265,7 @@ Minimal, accessible pattern aligned with Section 9:
 
 ---
 
-### 21.3 Run & Test Quick Reference
+### 23. Run & test quick reference
 
 - Dev server: `pnpm run dev`
 - Typecheck: `pnpm run check` (watch: `pnpm run check:watch`)
@@ -305,7 +283,7 @@ Notes:
 
 ---
 
-### 21. When Generating Code (AI Assistant Rules)
+### 24. When generating code (AI assistant rules)
 
 Always:
 
@@ -317,11 +295,11 @@ Always:
 - Add minimal JSDoc for complex functions.
 - Avoid repetition (extract helpers).
 
-Return only what user requested; avoid unsolicited large rewrites.
+Return only what the user requested; avoid unsolicited large rewrites.
 
 ---
 
-### 22. Extension Guidelines (If Creating New Agent)
+### 25. Extension guidelines (if creating a new agent)
 
 Structure:
 
@@ -351,7 +329,7 @@ Add tests: `newCoolAgent.test.ts` covering parse success + malformed JSON fallba
 
 ---
 
-### 23. Contribution Quality Gate
+### 26. Contribution quality gate
 
 Before opening PR:
 
@@ -362,7 +340,7 @@ Before opening PR:
 
 ---
 
-### 24. Recap for Copilot
+### 27. Recap for Copilot
 
 If user asks for change: gather context → outline plan → confirm assumptions (max 1 sentence) → produce code → brief explanation. Respect sections above.
 
