@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { addMinutesToGameTime, getTimeOfDay, normalizeGameTime } from './timeLogic';
+import { createDefaultTime, createDefaultWeather } from '$lib/types/gameTime';
 import type { GameTime } from '$lib/types/gameTime';
 
 const base: GameTime = {
@@ -12,7 +13,7 @@ const base: GameTime = {
 	monthName: 'December',
 	timeOfDay: 'night',
 	season: 'winter',
-	weather: { type: 'clear', intensity: 'light', description: 'clear night' }
+	weather: createDefaultWeather()
 };
 
 describe('addMinutesToGameTime', () => {
@@ -66,7 +67,7 @@ describe('addMinutesToGameTime', () => {
 			monthName: 'November',
 			timeOfDay: 'evening',
 			season: 'autumn',
-			weather: { type: 'clear', intensity: 'light', description: 'Pleasant weather' }
+			weather: createDefaultWeather()
 		};
 		const n = normalizeGameTime(t);
 		// 380th day of November 2077 -> interpret as Nov 1 + 379 days => should be 2078-? Depending on month lengths

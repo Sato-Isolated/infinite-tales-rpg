@@ -5,6 +5,7 @@ import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
 import type { GameSettings } from '$lib/types/gameSettings';
 import type { SafetyLevel } from '$lib/types/safetySettings';
 import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
+import { updateWeatherForTime } from './weatherLogic';
 
 // --- Time helpers (normalization & math) ---
 const DAY_NAMES = [
@@ -66,7 +67,7 @@ export const getSeasonForMonth = (month: number): GameTime['season'] => {
 };
 
 /**
- * Add minutes to GameTime and normalize day/month/year, updating derived fields.
+ * Add minutes to GameTime and normalize day/month/year, updating derived fields and weather.
  * Uses a proleptic Gregorian mapping via JS Date for rollover; does not change fiction calendar names if custom.
  */
 export function addMinutesToGameTime(time: GameTime, minutes: number): GameTime {
@@ -97,18 +98,82 @@ export function addMinutesToGameTime(time: GameTime, minutes: number): GameTime 
 		dayName: time.dayName && time.dayName !== '' ? newDayName : newDayName,
 		monthName: time.monthName && time.monthName !== '' ? newMonthName : newMonthName,
 		timeOfDay: getTimeOfDay(newHour),
-		season: getSeasonForMonth(newMonth),
-		weather: time.weather // keep weather as-is; other systems may change it
+		season: getSeasonForMonth(newMonth)
 	};
-	return updated;
+
+	// Update weather based on time passage
+	return updateWeatherForTime(updated, minutes);
 }
 
 /**
  * Normalize a GameTime object (e.g., if day is > month length or month > 12),
- * updating day/month/year/hour/minute and derived fields consistently.
+ * updating day/month/year/hour/minute and derived fields consistently, including weather.
  */
 export function normalizeGameTime(time: GameTime): GameTime {
 	return addMinutesToGameTime(time, 0);
+}
+
+/**
+ * Get current weather effects description for gameplay purposes
+ */
+export function getWeatherGameplayEffects(gameTime: GameTime): string {
+	const weather = gameTime.weather;
+	const effects = weather.effects;
+	
+	const impactMessages: string[] = [];
+	
+	if (effects.visibility < 50) {
+		impactMessages.push('⚠️ Severely limited visibility');
+	} else if (effects.visibility < 80) {
+		impactMessages.push('🌫️ Reduced visibility');
+	}
+	
+	if (effects.movement < 70) {
+		impactMessages.push('🦶 Movement hindered');
+	}
+	
+	if (effects.combat < 80) {
+		impactMessages.push('⚔️ Combat effectiveness reduced');
+	}
+	
+	if (effects.magic > 110) {
+		impactMessages.push('✨ Magical energies enhanced');
+	} else if (effects.magic < 90) {
+		impactMessages.push('🔮 Magical abilities weakened');
+	}
+	
+	if (effects.comfort < 60) {
+		impactMessages.push('😰 Poor comfort conditions');
+	}
+	
+	return impactMessages.length > 0 ? impactMessages.join(' • ') : '';
+}
+
+/**
+ * Check if weather conditions make certain actions more difficult
+ */
+export function isActionHinderedByWeather(gameTime: GameTime, actionType: 'movement' | 'combat' | 'magic' | 'perception'): boolean {
+	const effects = gameTime.weather.effects;
+	
+	switch (actionType) {
+		case 'movement':
+			return effects.movement < 80;
+		case 'combat':
+			return effects.combat < 80;
+		case 'magic':
+			return effects.magic < 90;
+		case 'perception':
+			return effects.visibility < 70;
+		default:
+			return false;
+	}
+}
+
+/**
+ * Get weather enhancement for magical actions
+ */
+export function getWeatherMagicModifier(gameTime: GameTime): number {
+	return gameTime.weather.effects.magic / 100;
 }
 
 /**
