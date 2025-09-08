@@ -13,8 +13,8 @@ import { mongoStorageManager } from './mongoStorageManager.js';
 import { getStorageLocation, logConfigInfo } from './config.js';
 
 /**
- * Fonction d'initialisation manuelle de MongoDB (pour le debug panel)
- * Permet de re-essayer même après un échec précédent
+ * Manual MongoDB initialization function (for debug panel)
+ * Allows retrying even after a previous failure
  */
 export async function initializeMongoDBManually(userId?: string): Promise<void> {
 	const info = mongoStorageManager.getInfo();
@@ -22,7 +22,7 @@ export async function initializeMongoDBManually(userId?: string): Promise<void> 
 		throw new Error('MongoDB not supported or not connected');
 	}
 
-	// Reset des flags pour permettre une nouvelle tentative
+	// Reset flags to allow a new attempt
 	mongoDBInitAttempted = false;
 	mongoDBInitialized = false;
 	mongoDBInitPromise = null;
@@ -35,7 +35,7 @@ export async function initializeMongoDBManually(userId?: string): Promise<void> 
 }
 
 /**
- * Retourne le statut de MongoDB
+ * Returns MongoDB status
  */
 export function getMongoDBStatus() {
 	const info = mongoStorageManager.getInfo();
@@ -46,7 +46,7 @@ export function getMongoDBStatus() {
 	};
 }
 /**
- * Comparaison profonde optimisée pour éviter les problèmes de sérialisation JSON
+ * Optimized deep comparison to avoid JSON serialization problems
  */
 function deepEqual(a: any, b: any): boolean {
 	if (a === b) return true;
@@ -83,15 +83,15 @@ function deepEqual(a: any, b: any): boolean {
 const memoryCache = new Map<string, MemoryCache<unknown>>();
 
 /**
- * Indicateur global d'initialisation de MongoDB
+ * Global indicator for MongoDB initialization
  */
 let mongoDBInitialized = false;
 let mongoDBInitPromise: Promise<void> | null = null;
-let mongoDBInitAttempted = false; // Nouveau : évite les tentatives répétées
+let mongoDBInitAttempted = false; // New: avoids repeated attempts
 
 /**
- * Hook Svelte 5 pour stockage hybride localStorage + File System
- * API identique à useHybridLocalStorage mais avec stockage intelligent
+ * Svelte 5 hook for hybrid localStorage + File System storage
+ * API identical to useHybridLocalStorage but with intelligent storage
  */
 export function useHybridLocalStorage<T>(
 	key: string,
@@ -102,28 +102,28 @@ export function useHybridLocalStorage<T>(
 		throw new Error('useHybridLocalStorage requires a valid string key');
 	}
 
-	// Configuration et état
+	// Configuration and state
 	const storageLocation = options.forceLocation || getStorageLocation(key);
 	const saveDebounceMs = options.saveDebounceMs || 300;
 	const enableDebugLogs = options.enableDebugLogs || false;
 
-	// Debug temporaire pour les clés problématiques - désactivé maintenant que le problème est résolu
+	// Temporary debug for problematic keys - disabled now that the problem is resolved
 	const isDebugKey = false; // ['gameActionsState', 'characterState', 'characterStatsState'].includes(key);
 
-	// État réactif Svelte 5
+	// Svelte 5 reactive state
 	let value = $state<T | undefined>(initialValue ? cloneDeep(initialValue) : undefined);
 	let isMounted = $state(false);
 	let hasHydrated = $state(false);
 	let lastSavedValue: T | undefined = $state<T | undefined>(undefined);
 	let currentSize = $state(0);
-	let isSaving = $state(false); // Protection contre les sauvegardes en cascade
-	let isInitializing = $state(true); // Protection pendant l'initialisation
+	let isSaving = $state(false); // Protection against cascading saves
+	let isInitializing = $state(true); // Protection during initialization
 
-	// Timeout pour le debouncing des sauvegardes
+	// Timeout for save debouncing
 	let saveTimeout: NodeJS.Timeout | null = null;
 
 	/**
-	 * Log de debug conditionnel
+	 * Conditional debug log
 	 */
 	function debugLog(...args: unknown[]) {
 		if (enableDebugLogs || isDebugKey) {
@@ -132,7 +132,7 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Calcule la taille d'une valeur en bytes
+	 * Calculate the byte size of a value
 	 */
 	function calculateSize(val: unknown): number {
 		try {
@@ -143,7 +143,7 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Sauvegarde dans localStorage
+	 * Save to localStorage
 	 */
 	async function saveToLocalStorage(val: T): Promise<void> {
 		try {
@@ -160,14 +160,14 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Charge depuis localStorage
+	 * Load from localStorage
 	 */
 	function loadFromLocalStorage(): T | undefined {
 		try {
 			const stored = localStorage.getItem(key);
 			if (stored === null) {
 				debugLog(`ℹ️ No data found for ${key} in localStorage`);
-				return undefined; // Retourner undefined pour éviter les sauvegardes automatiques
+				return undefined; // Return undefined to avoid automatic saves
 			}
 
 			const parsed = JSON.parse(stored) as T;
@@ -175,12 +175,12 @@ export function useHybridLocalStorage<T>(
 			return parsed;
 		} catch (error) {
 			console.warn(`Failed to parse localStorage value for key "${key}":`, error);
-			return undefined; // Retourner undefined en cas d'erreur
+			return undefined; // Return undefined on error
 		}
 	}
 
 	/**
-	 * Sauvegarde dans MongoDB
+	 * Save to MongoDB
 	 */
 	async function saveToMongoDB(val: T): Promise<void> {
 		try {
@@ -189,7 +189,7 @@ export function useHybridLocalStorage<T>(
 			await info.save(key, val);
 			debugLog('🗃️ Saved to MongoDB');
 		} catch (error) {
-			// Fallback silencieux vers localStorage pour différents cas
+			// Silent fallback to localStorage for different cases
 			if (error instanceof Error && (
 				error.message.includes('MongoDB not supported') ||
 				error.message.includes('not available') ||
@@ -205,7 +205,7 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Charge depuis MongoDB
+	 * Load from MongoDB
 	 */
 	async function loadFromMongoDB(): Promise<T | undefined> {
 		try {
@@ -217,12 +217,12 @@ export function useHybridLocalStorage<T>(
 				return loaded;
 			} else {
 				debugLog(`ℹ️ No data found for ${key} in MongoDB, using initial value`);
-				// Important: retourner undefined pour indiquer qu'il n'y a pas de données sauvegardées
-				// L'initialisation utilisera initialValue sans déclencher de sauvegarde
+				// Important: return undefined to indicate there is no saved data
+				// Initialization will use initialValue without triggering a save
 				return undefined;
 			}
 		} catch (error) {
-			// Fallback silencieux vers localStorage si MongoDB non disponible
+			// Silent fallback to localStorage if MongoDB is not available
 			if (error instanceof Error && (
 				error.message.includes('MongoDB not supported') ||
 				error.message.includes('not available') ||
@@ -232,14 +232,14 @@ export function useHybridLocalStorage<T>(
 				return loadFromLocalStorage();
 			} else {
 				console.warn(`Failed to load from MongoDB for key "${key}":`, error);
-				return undefined; // Utiliser undefined pour éviter les sauvegardes automatiques
+				return undefined; // Use undefined to avoid automatic saves
 			}
 		}
 	}
 
 	/**
-	 * S'assure que MongoDB est initialisé
-	 * Essaie d'initialiser automatiquement UNE SEULE FOIS au premier usage
+	 * Ensures MongoDB is initialized
+	 * Attempts automatic initialization ONLY ONCE on first use
 	 */
 	async function ensureMongoDBInitialized(): Promise<void> {
 		if (mongoDBInitialized) return;
@@ -249,7 +249,7 @@ export function useHybridLocalStorage<T>(
 			return;
 		}
 
-		// Si on a déjà essayé et échoué, ne pas re-essayer
+		// If we already tried and failed, do not retry
 		if (mongoDBInitAttempted) {
 			throw new Error('MongoDB not available (user declined or not supported)');
 		}
@@ -258,7 +258,7 @@ export function useHybridLocalStorage<T>(
 			try {
 				mongoDBInitAttempted = true;
 
-				console.log('🚀 Tentative d\'initialisation automatique de MongoDB...');
+				console.log('🚀 Attempting automatic MongoDB initialization...');
 				await mongoStorageManager.initialize();
 
 				const info = mongoStorageManager.getInfo();
@@ -268,14 +268,14 @@ export function useHybridLocalStorage<T>(
 
 				mongoDBInitialized = true;
 
-				console.log('✅ MongoDB initialisé automatiquement avec succès!');
+				console.log('✅ MongoDB initialized automatically with success!');
 
-				// Log config info une seule fois
+				// Log config info only once
 				if (enableDebugLogs) {
 					logConfigInfo();
 				}
 			} catch (error) {
-				console.log('ℹ️ MongoDB non disponible, utilisation de localStorage:', error instanceof Error ? error.message : error);
+				console.log('ℹ️ MongoDB not available, using localStorage:', error instanceof Error ? error.message : error);
 				throw error;
 			}
 		})();
@@ -284,7 +284,7 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Sauvegarde la valeur selon l'emplacement configuré
+	 * Save the value according to the configured location
 	 */
 	async function saveValue(val: T): Promise<void> {
 		try {
@@ -294,7 +294,7 @@ export function useHybridLocalStorage<T>(
 				await saveToLocalStorage(val);
 			}
 
-			// Met à jour le cache mémoire
+			// Update the in-memory cache
 			if (!options.disableMemoryCache) {
 				const size = calculateSize(val);
 				memoryCache.set(key, {
@@ -307,7 +307,7 @@ export function useHybridLocalStorage<T>(
 
 			lastSavedValue = cloneDeep(val);
 		} catch (error) {
-			// Pour les erreurs de MongoDB non supporté, ne pas loguer comme erreur
+			// For unsupported MongoDB errors, don't log as error
 			if (error instanceof Error && error.message.includes('MongoDB not supported')) {
 				debugLog(`⚠️ ${key}: MongoDB fallback completed`);
 			} else {
@@ -318,10 +318,10 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Charge la valeur depuis l'emplacement configuré
+	 * Load the value from the configured location
 	 */
 	async function loadValue(): Promise<{ value: T | undefined; fromMemory: boolean }> {
-		// Vérifie d'abord le cache mémoire
+		// Check the memory cache first
 		if (!options.disableMemoryCache) {
 			const cached = memoryCache.get(key);
 			if (cached && cached.location === storageLocation) {
@@ -330,7 +330,7 @@ export function useHybridLocalStorage<T>(
 			}
 		}
 
-		// Charge depuis le stockage
+		// Load from storage
 		if (storageLocation === 'fileSystem') {
 			return { value: await loadFromMongoDB(), fromMemory: false };
 		} else {
@@ -339,10 +339,10 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Sauvegarde avec debouncing
+	 * Save with debouncing
 	 */
 	function debouncedSave(val: T) {
-		// Protection contre les sauvegardes en cascade
+		// Protection against cascading saves
 		if (isSaving) {
 			debugLog(`⏳ Skipping save for ${key} - already saving`);
 			return;
@@ -352,18 +352,18 @@ export function useHybridLocalStorage<T>(
 			clearTimeout(saveTimeout);
 		}
 
-		saveTimeout = setTimeout(async () => {
-			if (isSaving) return; // Double vérification
+			saveTimeout = setTimeout(async () => {
+				if (isSaving) return; // Double check
 
 			try {
 				isSaving = true;
 				await saveValue(val);
 				currentSize = calculateSize(val);
-				// Mettre à jour lastSavedValue après une sauvegarde réussie
+				// Update lastSavedValue after successful save
 				lastSavedValue = cloneDeep(val);
 				debugLog(`✅ Successfully saved ${key}`);
 			} catch (error) {
-				// Pour les erreurs de MongoDB non supporté, ne pas loguer comme erreur
+				// For unsupported MongoDB errors, don't log as error
 				if (error instanceof Error && error.message.includes('MongoDB not supported')) {
 					debugLog(`⚠️ ${key}: Debounced save completed with localStorage fallback`);
 					lastSavedValue = cloneDeep(val);
@@ -376,9 +376,9 @@ export function useHybridLocalStorage<T>(
 		}, saveDebounceMs);
 	}
 
-	/**
-	 * Effet pour sauvegarder automatiquement les changements
-	 */
+		/**
+		 * Effect to automatically save changes
+		 */
 	$effect(() => {
 		const currentValue = value;
 
@@ -393,7 +393,7 @@ export function useHybridLocalStorage<T>(
 			});
 		}
 
-		// Protection contre les cycles de réactivité ET pendant l'initialisation
+		// Protection against reactivity cycles AND during initialization
 		if (!isMounted || !hasHydrated || currentValue === undefined || isSaving || isInitializing) {
 			if (isDebugKey) {
 				console.log(`[${key}] Skipping effect - protection triggered`);
@@ -401,22 +401,21 @@ export function useHybridLocalStorage<T>(
 			return;
 		}
 
-		// Éviter les cycles de réactivité en utilisant une comparaison optimisée
+		// Avoid reactivity cycles by using an optimized comparison
 		let shouldSave = false;
 
 		try {
-			// Si lastSavedValue est undefined, cela signifie qu'on utilise la valeur par défaut
-			// et qu'il n'y avait pas de données sauvegardées. Dans ce cas, on ne sauvegarde
-			// que si la valeur a été modifiée par l'utilisateur
+			// If lastSavedValue is undefined, it means we're using the default value
+			// and there was no saved data. In this case, we don't save
+			// unless the value has been modified by the user
 			if (lastSavedValue === undefined) {
-				// Comparer avec la valeur initiale pour voir si l'utilisateur a fait des changements
-				// Utilisation d'une comparaison plus stable
+				// Compare with initial value to see if user has made changes using a stable comparison
 				shouldSave = !deepEqual(currentValue, initialValue);
 				if (isDebugKey) {
 					console.log(`[${key}] Comparing with initialValue:`, { shouldSave });
 				}
 			} else {
-				// Évite la sauvegarde si la valeur n'a pas changé par rapport à la dernière sauvegarde
+				// Avoid saving if the value hasn't changed since the last save
 				shouldSave = !deepEqual(currentValue, lastSavedValue);
 				if (isDebugKey) {
 					console.log(`[${key}] Comparing with lastSavedValue:`, { shouldSave });
@@ -424,7 +423,7 @@ export function useHybridLocalStorage<T>(
 			}
 		} catch (error) {
 			console.warn(`Error comparing values for ${key}:`, error);
-			// En cas d'erreur de sérialisation, on évite la sauvegarde pour éviter les boucles
+			// In case of serialization error, we avoid saving to prevent loops
 			return;
 		}
 
@@ -440,7 +439,7 @@ export function useHybridLocalStorage<T>(
 	});
 
 	/**
-	 * Initialisation au montage
+	 * Initialization on mount
 	 */
 	onMount(async () => {
 		try {
@@ -449,22 +448,21 @@ export function useHybridLocalStorage<T>(
 			const loaded = await loadValue();
 
 			if (loaded.value !== undefined) {
-				// Il y a des données sauvegardées
+				// There is saved data
 				value = loaded.value;
 				currentSize = calculateSize(loaded.value);
-				// Important: si la valeur provient du cache mémoire, ne pas
-				// considérer qu'elle a été sauvegardée afin de déclencher une
-				// sauvegarde effective côté stockage si nécessaire
+				// Important: if the value comes from the memory cache, do not
+				// consider it as saved to ensure a storage save is triggered if necessary
 				if (!loaded.fromMemory) {
 					lastSavedValue = cloneDeep(loaded.value);
 				}
 				debugLog(`📦 Initialized with ${loaded.fromMemory ? 'memory-cached' : 'saved'} data for ${key}`);
 			} else if (initialValue !== undefined) {
-				// Pas de données sauvegardées, utiliser la valeur par défaut
+				// No saved data, use default value
 				value = cloneDeep(initialValue);
-				// Important: NE PAS mettre à jour lastSavedValue pour éviter la sauvegarde automatique
-				// lastSavedValue reste undefined, donc value !== lastSavedValue
-				// mais on évite la sauvegarde grâce à une condition supplémentaire
+				// Important: DO NOT update lastSavedValue to avoid automatic saving
+				// lastSavedValue remains undefined, so value !== lastSavedValue
+				// but we avoid saving thanks to an additional condition
 				currentSize = calculateSize(value);
 				debugLog(`🆕 Initialized with default value for ${key} (no saved data found)`);
 			}
@@ -476,9 +474,9 @@ export function useHybridLocalStorage<T>(
 				debugLog(`⚠️ Initialized with fallback value for ${key} due to load error`);
 			}
 		} finally {
-			// Important : marquer l'hydratation comme terminée ET l'initialisation comme finie
+			// Important: mark hydration as complete AND initialization as finished
 			hasHydrated = true;
-			// Attendre un tick pour s'assurer que tous les états sont stabilisés
+			// Wait a tick to ensure all states are stabilized
 			setTimeout(() => {
 				isInitializing = false;
 				debugLog(`✅ Initialization completed for ${key}`);
@@ -487,7 +485,7 @@ export function useHybridLocalStorage<T>(
 	});
 
 	/**
-	 * API publique
+	 * Public API
 	 */
 	return {
 		get value() {
@@ -496,8 +494,8 @@ export function useHybridLocalStorage<T>(
 
 		set value(newValue: T) {
 			value = newValue;
-			// Mettre à jour immédiatement le cache mémoire pour éviter les races
-			// lors des navigations entre pages avant la fin des sauvegardes débouncées
+			// Update memory cache immediately to avoid races
+			// during navigation between pages before debounced saves complete
 			if (!options.disableMemoryCache) {
 				const size = calculateSize(newValue);
 				memoryCache.set(key, {
@@ -513,7 +511,7 @@ export function useHybridLocalStorage<T>(
 			if (value !== undefined) {
 				const updated = updater(value as T);
 				value = updated;
-				// Également propager au cache mémoire immédiatement
+				// Also propagate to the memory cache immediately
 				if (!options.disableMemoryCache) {
 					const size = calculateSize(updated);
 					memoryCache.set(key, {
@@ -561,7 +559,7 @@ export function useHybridLocalStorage<T>(
 				const loaded = await loadValue();
 				if (loaded.value !== undefined) {
 					value = loaded.value;
-					// Ne marquer comme "dernier sauvegardé" que si la source n'est pas mémoire
+					// Only mark as "last saved" if the source is not memory
 					if (!loaded.fromMemory) {
 						lastSavedValue = cloneDeep(loaded.value);
 					}

@@ -110,10 +110,10 @@
 		}
 	});
 
-	// Détection de changement d'action pour reset automatique
+	// Detect action change for automatic reset
 	$effect(() => {
 		if (isMounted && action) {
-			// Créer un ID unique pour l'action basé sur ses propriétés
+			// Create a unique ID for the action based on its properties
 			const currentActionId = JSON.stringify({
 				text: action.text,
 				characterName: action.characterName,
@@ -122,7 +122,7 @@
 			});
 
 			if (previousActionId !== undefined && previousActionId !== currentActionId) {
-				// Nouvelle action détectée, reset les valeurs
+				// New action detected, reset values
 				rolledValueState.value = undefined;
 				diceRollRequiredValueState.value = undefined;
 			}
@@ -241,7 +241,7 @@
 				result = results[0].value;
 			}
 
-			// Assigner la valeur seulement après le roll réussi
+			// Assign the value only after a successful roll
 			rolledValueState.value = result;
 		} catch (error) {
 			console.error('Error rolling dice:', error);
@@ -257,7 +257,7 @@
 			diceBox.clear();
 		}
 
-		// Sauvegarder le résultat seulement si on a vraiment lancé
+		// Save the result only if a roll actually occurred
 		const finalResult = rolledValueState.value;
 		if (finalResult !== undefined) {
 			const requiredValue = diceRollRequiredValueState.value ?? 20;

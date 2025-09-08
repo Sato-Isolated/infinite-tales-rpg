@@ -26,7 +26,7 @@
 			isRegenerating = true;
 			await regenerateActions();
 		} catch (error) {
-			console.error('Erreur lors de la régénération des actions:', error);
+			console.error('Error while regenerating actions:', error);
 		} finally {
 			isRegenerating = false;
 		}
@@ -42,11 +42,11 @@
 	disabled:hover:scale-100 disabled:hover:rotate-0 disabled:hover:shadow-none"
 	onclick={handleRegenerate}
 	disabled={disabled || isRegenerating}
-	aria-label="Régénérer les actions"
+	aria-label="Regenerate actions"
 >
 	{#if isRegenerating}
 		<LoadingIcon />
-		{#if !iconOnly}Génération...{/if}
+		{#if !iconOnly}Generating...{/if}
 	{:else}
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -65,7 +65,7 @@
 			<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
 			<path d="M3 21v-5h5" />
 		</svg>
-		{#if !iconOnly}Régénérer actions{/if}
+		{#if !iconOnly}Regenerate actions{/if}
 	{/if}
 </button>
 

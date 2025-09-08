@@ -17,7 +17,7 @@
 	const hasResult = $derived(rollResult !== undefined);
 	const canContinue = $derived(hasResult && !isRolling);
 
-	// Détection de changement de notation pour reset automatique
+	// Detect notation change for automatic reset
 	$effect(() => {
 		if (notation !== previousNotation) {
 			rollResult = undefined;
@@ -43,14 +43,14 @@
 		if (diceBox) {
 			diceBox.clear();
 		}
-		// Seulement appeler onClose si on a un résultat valide
+		// Only call onClose if we have a valid result
 		if (result !== undefined) {
 			onClose(result);
 		}
 	};
 
 	onMount(async () => {
-		// Reset au montage pour s'assurer d'un état frais
+		// Reset on mount to ensure a fresh state
 		rollResult = undefined;
 
 		try {

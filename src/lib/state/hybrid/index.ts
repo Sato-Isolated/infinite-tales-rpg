@@ -1,6 +1,6 @@
 /**
- * Système de stockage hybride localStorage + File System
- * Export de l'API publique
+ * Hybrid storage system: localStorage + File System
+ * Public API exports
  */
 
 // Hook principal

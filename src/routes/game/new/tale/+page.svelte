@@ -291,10 +291,10 @@
 									<span class="text-2xl">🛡️</span>
 									<div>
 										<h4 class="text-warning-content font-semibold">
-											Niveau de Sécurité du Contenu
+											Content Security Level
 										</h4>
 										<p class="text-warning-content/80 mt-1 text-sm">
-											Ce paramètre contrôle les filtres de sécurité AI pour cette histoire
+											This parameter controls AI security filters for this story
 										</p>
 									</div>
 								</div>
@@ -373,16 +373,16 @@
 
 							<!-- Help text -->
 							<div class="bg-info/5 border-info/20 mt-6 rounded-xl border p-4">
-								<div class="flex items-start gap-3">
-									<span class="text-info mt-0.5 text-lg">💡</span>
-									<div class="text-info-content/80 text-sm">
-										<p class="mb-1 font-medium">Conseil :</p>
-										<p>
-											Vous pouvez modifier ce paramètre à tout moment lors de l'édition de votre
-											histoire. Chaque tale peut avoir son propre niveau de sécurité.
-										</p>
-									</div>
-								</div>
+													<div class="flex items-start gap-3">
+														<span class="text-info mt-0.5 text-lg">💡</span>
+														<div class="text-info-content/80 text-sm">
+															<p class="mb-1 font-medium">Tip:</p>
+															<p>
+																You can change this setting at any time while editing your story.
+																Each tale can have its own safety level.
+															</p>
+														</div>
+													</div>
 							</div>
 						</div>
 					{:else}

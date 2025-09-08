@@ -236,7 +236,7 @@ export class ActionAgent {
 					if (textMatch) {
 						transformedAction.characterName = textMatch[1];
 					} else {
-						transformedAction.characterName = 'Personnage';
+						transformedAction.characterName = 'Character';
 					}
 					console.warn(
 						`Generated characterName for action at index ${index}: ${transformedAction.characterName}`

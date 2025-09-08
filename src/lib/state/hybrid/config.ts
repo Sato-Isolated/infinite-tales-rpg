@@ -1,18 +1,18 @@
 import type { HybridStorageConfig } from './types.js';
-// @ts-ignore - JSON import sera géré par le bundler
+// @ts-ignore - JSON import will be handled by the bundler
 import configData from '../hybrid-storage-config.json';
 
 /**
- * Configuration du stockage hybride générée automatiquement
- * par le script d'analyse analyze-save-size.js
+ * Hybrid storage configuration automatically generated
+ * by the analyze-save-size.js script
  */
 export const hybridStorageConfig: HybridStorageConfig = configData as HybridStorageConfig;
 
 /**
- * Détermine l'emplacement de stockage pour une clé donnée
+ * Determine the storage location for a given key
  */
 export function getStorageLocation(key: string): 'localStorage' | 'fileSystem' {
-	// Vérification explicite dans la config
+	// Explicit check in the config
 	if (hybridStorageConfig.fileSystemKeys.includes(key)) {
 		return 'fileSystem';
 	}
@@ -21,27 +21,27 @@ export function getStorageLocation(key: string): 'localStorage' | 'fileSystem' {
 		return 'localStorage';
 	}
 
-	// Par défaut, utilise localStorage pour les nouvelles clés
+	// By default, use localStorage for new keys
 	console.warn(`🤔 Key "${key}" not found in hybrid config, defaulting to localStorage`);
 	return 'localStorage';
 }
 
 /**
- * Vérifie si une clé doit être stockée dans le File System
+ * Check whether a key should be stored using the File System
  */
 export function shouldUseFileSystem(key: string): boolean {
 	return getStorageLocation(key) === 'fileSystem';
 }
 
 /**
- * Vérifie si une clé doit rester dans localStorage
+ * Check whether a key should remain in localStorage
  */
 export function shoulduseHybridLocalStorage(key: string): boolean {
 	return getStorageLocation(key) === 'localStorage';
 }
 
 /**
- * Obtient des statistiques sur la configuration
+ * Get configuration statistics
  */
 export function getConfigStats() {
 	return {
@@ -55,7 +55,7 @@ export function getConfigStats() {
 }
 
 /**
- * Log de la configuration au démarrage (pour debug)
+ * Log configuration at startup (for debugging)
  */
 export function logConfigInfo() {
 	const stats = getConfigStats();

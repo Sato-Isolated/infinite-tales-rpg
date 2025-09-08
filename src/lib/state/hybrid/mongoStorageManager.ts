@@ -16,11 +16,11 @@ export class MongoStorageManager {
   private isInitialized = false;
 
   constructor() {
-    // Constructor ne fait plus l'initialisation async
+  // Constructor no longer performs async initialization
   }
 
   /**
-   * Retourne les informations sur le manager (pour compatibilité avec l'ancienne API)
+   * Returns information about the manager (for compatibility with the old API)
    */
   getInfo(): MongoStorageInfo {
     return {
@@ -36,7 +36,7 @@ export class MongoStorageManager {
     if (this.isInitialized) return;
     
     try {
-      // Test de connectivité à notre API
+      // Connectivity test to our API
       await this.checkSupport();
       this.isInitialized = true;
       console.log('✅ MongoDB API manager initialized successfully');
@@ -49,7 +49,7 @@ export class MongoStorageManager {
 
   private async checkSupport(): Promise<void> {
     try {
-      // Test simple avec un ping
+      // Simple test with a ping
       const response = await fetch('/api/storage?key=ping-test');
       
       if (response.ok) {
@@ -131,14 +131,9 @@ export class MongoStorageManager {
     }
 
     try {
-      const response = await fetch('/api/storage', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key
-        })
+      // Match server API: DELETE /api/storage?key=xxx
+      const response = await fetch(`/api/storage?key=${encodeURIComponent(key)}`, {
+        method: 'DELETE'
       });
 
       if (!response.ok) {
@@ -153,5 +148,5 @@ export class MongoStorageManager {
   }
 }
 
-// Instance singleton
+// Singleton instance
 export const mongoStorageManager = new MongoStorageManager();

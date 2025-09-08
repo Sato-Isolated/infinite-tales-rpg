@@ -24,7 +24,7 @@ class MongoStorageManagerClass {
 				method: 'GET'
 			});
 			
-			// API fonctionne si on a une réponse 200 (même si data=null)
+			// API works if we get a 200 response (even if data=null)
 			this._isSupported = response.ok;
 			this._lastError = null;
 		} catch (error) {
@@ -38,7 +38,7 @@ class MongoStorageManagerClass {
 			return false;
 		}
 
-		// Vérifier le support avant l'initialisation
+		// Check support before initialization
 		await this.checkSupport();
 
 		if (!this._isSupported) {
@@ -46,7 +46,7 @@ class MongoStorageManagerClass {
 		}
 
 		try {
-			// Générer ou récupérer un userId unique pour ce navigateur
+			// Generate or retrieve a unique userId for this browser
 			let userId = localStorage.getItem('mongo-user-id');
 			if (!userId) {
 				userId = crypto.randomUUID();
@@ -147,7 +147,7 @@ class MongoStorageManagerClass {
 		};
 	}
 
-	// Méthode pour tenter de réparer la connexion
+	// Method to attempt reconnecting/fixing the connection
 	async repair(): Promise<boolean> {
 		this._isInitialized = false;
 		this._userId = null;
@@ -163,5 +163,5 @@ class MongoStorageManagerClass {
 
 export const mongoStorageManager = new MongoStorageManagerClass();
 
-// Export par défaut pour compatibilité
+// Default export for compatibility
 export default mongoStorageManager;

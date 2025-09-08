@@ -64,7 +64,7 @@
 	let isGeneratingState: boolean = $state(false);
 
 	onMount(async () => {
-		// 🚨 ATTENDRE que apiKeyState soit hydraté avec timeout pour éviter les boucles infinies
+		// 🚨 WAIT for apiKeyState to hydrate with timeout to avoid infinite loops
 		const maxWaitTime = 3000; // 3 secondes maximum
 		const startTime = Date.now();
 
@@ -75,22 +75,22 @@
 			await new Promise((resolve) => setTimeout(resolve, 50));
 		}
 
-		// Si l'hydratation n'est toujours pas terminée après le timeout, on continue quand même
+		// If hydration is still not finished after the timeout, continue anyway
 		if (!apiKeyState.storageInfo.isHydrated) {
 			console.warn(
-				'⚠️ GMQuestionModal - Hydratation timeout - continuation avec les valeurs par défaut'
+				'⚠️ GMQuestionModal - Hydration timeout - continuing with default values'
 			);
 		}
 		if (apiKeyState.storageInfo.isInitializing) {
 			console.warn(
-				'⚠️ GMQuestionModal - Initialisation timeout - continuation avec les valeurs par défaut'
+				'⚠️ GMQuestionModal - Initialization timeout - continuing with default values'
 			);
 		}
 
 		console.log(
-			'🔑 GMQuestionModal - API Key après hydratation:',
+			'🔑 GMQuestionModal - API Key after hydration:',
 			apiKeyState.value?.length || 0,
-			'caractères'
+			'characters'
 		);
 
 		const llm = LLMProvider.provideLLM(

@@ -1,16 +1,16 @@
 /**
- * Types pour le système de stockage hybride localStorage + File System
- * Sans rétrocompatibilité - implémentation clean
+ * Types for the hybrid localStorage + File System storage system
+ * No backward compatibility — clean implementation
  */
 
 export interface HybridStorageConfig {
-	/** Clés qui doivent être stockées dans le File System */
+	/** Keys that must be stored using the File System */
 	fileSystemKeys: string[];
-	/** Clés qui restent dans localStorage */
+	/** Keys that remain in localStorage */
 	localStorageKeys: string[];
-	/** Seuil de taille en bytes pour la détection automatique */
+	/** Size threshold in bytes for automatic detection */
 	sizeThreshold: number;
-	/** Statistiques d'analyse */
+	/** Analysis statistics */
 	analysis: {
 		totalSize: number;
 		fileSystemSize: number;
@@ -21,49 +21,49 @@ export interface HybridStorageConfig {
 }
 
 export interface FileSystemStorageManager {
-	/** Initialise le gestionnaire et demande les permissions */
+	/** Initialize the manager and request permissions */
 	initialize(): Promise<void>;
-	/** Vérifie si le File System Access API est supporté */
+	/** Check whether the File System Access API is supported */
 	isSupported(): boolean;
-	/** Sauvegarde une valeur dans un fichier */
+	/** Save a value to a file */
 	save<T>(key: string, value: T): Promise<void>;
-	/** Charge une valeur depuis un fichier */
+	/** Load a value from a file */
 	load<T>(key: string, fallback?: T): Promise<T | undefined>;
-	/** Supprime un fichier */
+	/** Delete a file */
 	remove(key: string): Promise<void>;
-	/** Liste tous les fichiers de sauvegarde */
+	/** List all saved files */
 	listFiles(): Promise<string[]>;
-	/** Nettoie tous les fichiers */
+	/** Clear all files */
 	clear(): Promise<void>;
-	/** Obtient la taille d'un fichier */
+	/** Get a file size */
 	getFileSize(key: string): Promise<number>;
 }
 
 export type StorageLocation = 'localStorage' | 'fileSystem';
 
 export interface HybridStorageItem<T> {
-	/** Valeur stockée */
+	/** Stored value */
 	value: T;
-	/** Emplacement de stockage */
+	/** Storage location */
 	location: StorageLocation;
-	/** Taille en bytes */
+	/** Size in bytes */
 	size: number;
-	/** Timestamp de dernière modification */
+	/** Last modification timestamp */
 	lastModified: number;
 }
 
 export interface UseHybridLocalStorageReturn<T> {
-	/** Valeur réactive */
+	/** Reactive value */
 	get value(): T;
-	/** Définir une nouvelle valeur */
+	/** Set a new value */
 	set value(newValue: T);
-	/** Mettre à jour la valeur avec une fonction */
+	/** Update the value with a function */
 	update(updater: (current: T) => T): void;
-	/** Reset à la valeur initiale */
+	/** Reset to the initial value */
 	reset(): void;
-	/** Reset une propriété spécifique */
+	/** Reset a specific property */
 	resetProperty(property: keyof T): void;
-	/** Informations sur le stockage */
+	/** Storage information */
 	readonly storageInfo: {
 		location: StorageLocation;
 		size: number;
@@ -71,20 +71,20 @@ export interface UseHybridLocalStorageReturn<T> {
 		isMounted: boolean;
 		isInitializing: boolean;
 	};
-	/** Force une sauvegarde manuelle */
+	/** Force a manual save */
 	forceSave(): Promise<void>;
-	/** Force un rechargement depuis le stockage */
+	/** Force a reload from storage */
 	forceReload(): Promise<void>;
 }
 
 export interface HybridStorageOptions {
-	/** Force un emplacement de stockage spécifique */
+	/** Force a specific storage location */
 	forceLocation?: StorageLocation;
-	/** Désactive le cache en mémoire */
+	/** Disable in-memory cache */
 	disableMemoryCache?: boolean;
-	/** Délai de debounce pour les sauvegardes (ms) */
+	/** Debounce delay for saves (ms) */
 	saveDebounceMs?: number;
-	/** Active les logs de debug */
+	/** Enable debug logs */
 	enableDebugLogs?: boolean;
 }
 
@@ -95,7 +95,7 @@ export interface HybridStorageError extends Error {
 }
 
 /**
- * Cache en mémoire pour optimiser les performances
+ * In-memory cache to optimize performance
  */
 export interface MemoryCache<T> {
 	value: T;
@@ -105,7 +105,7 @@ export interface MemoryCache<T> {
 }
 
 /**
- * Événements du système hybride
+ * Hybrid system events
  */
 export interface HybridStorageEventMap {
 	'storage-changed': {
@@ -129,7 +129,7 @@ export interface HybridStorageEventMap {
 }
 
 /**
- * Interface pour écouter les événements du système hybride
+ * Interface to listen to hybrid system events
  */
 export interface HybridStorageEventTarget {
 	addEventListener<K extends keyof HybridStorageEventMap>(

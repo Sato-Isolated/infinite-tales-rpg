@@ -51,7 +51,7 @@
 					const issueMsg = diagnostics.issues.join('; ');
 					alert(`Impossible d'annuler: ${issueMsg}`);
 				} else {
-					alert("Impossible d'annuler la dernière action");
+					alert("Unable to undo the last action");
 				}
 			}
 		} catch (error) {
@@ -92,8 +92,8 @@
 		class:btn-disabled={!canUndo}
 		onclick={handleUndo}
 		disabled={!canUndo}
-		aria-label="Annuler la dernière action"
-		title={canUndo ? `Annuler l'action ${lastActionId}` : 'Aucune action à annuler'}
+		aria-label="Undo last action"
+		title={canUndo ? `Undo action ${lastActionId}` : 'No actions to undo'}
 	>
 		<span class="text-lg">↶</span>
 		Annuler
@@ -104,7 +104,7 @@
 
 	{#if canUndo}
 		<div class="text-base-content/60 mt-1 text-xs">
-			Dernière action: #{lastActionId}
+			Last action: #{lastActionId}
 		</div>
 	{/if}
 </div>

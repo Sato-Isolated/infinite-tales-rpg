@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { connectToMongoDB, GameData, ensureMongoDBConnection } from '$lib/db/mongodb';
 
-// GET /api/storage?key=xxx - Récupérer une donnée
+// GET /api/storage?key=xxx - Retrieve data
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const key = url.searchParams.get('key');
@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			throw error(400, 'key is required');
 		}
 
-		// Vérifier la connexion MongoDB
+		// Check MongoDB connection
 		console.log('🔗 Checking MongoDB connection...');
 		const isConnected = await ensureMongoDBConnection();
 		console.log(`🔗 MongoDB connection status: ${isConnected}`);
@@ -24,12 +24,12 @@ export const GET: RequestHandler = async ({ url }) => {
 		}
 
 		console.log(`🔍 Searching for document: key=${key}`);
-		// Récupérer la donnée (sans userId, juste la clé)
+		// Retrieve data (without userId, just the key)
 		const document = await GameData.findOne({ key });
 		console.log(`📄 Document found:`, document ? 'Yes' : 'No');
 		
 		if (!document) {
-			// Pas de donnée trouvée, retourner null
+			// No data found, return null
 			return json({ data: null, found: false });
 		}
 
@@ -45,7 +45,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 };
 
-// POST /api/storage - Sauvegarder une donnée
+// POST /api/storage - Save data
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const { key, data } = await request.json();
@@ -56,13 +56,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			throw error(400, 'key and data are required');
 		}
 
-		// Vérifier la connexion MongoDB
+		// Check MongoDB connection
 		const isConnected = await ensureMongoDBConnection();
 		if (!isConnected) {
 			throw error(503, 'MongoDB not available');
 		}
 
-		// Upsert (insert ou update) - juste avec la clé
+		// Upsert (insert or update) - just with the key
 		const result = await GameData.findOneAndUpdate(
 			{ key },
 			{ 
@@ -70,8 +70,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				lastModified: new Date()
 			},
 			{ 
-				upsert: true, // Créer si n'existe pas
-				new: true     // Retourner le document mis à jour
+				upsert: true, // Create if doesn't exist
+				new: true     // Return the updated document
 			}
 		);
 
@@ -88,7 +88,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 };
 
-// DELETE /api/storage?key=xxx - Supprimer une donnée
+// DELETE /api/storage?key=xxx - Delete data
 export const DELETE: RequestHandler = async ({ url }) => {
 	try {
 		const key = url.searchParams.get('key');
@@ -99,13 +99,13 @@ export const DELETE: RequestHandler = async ({ url }) => {
 			throw error(400, 'key is required');
 		}
 
-		// Vérifier la connexion MongoDB
+		// Check MongoDB connection
 		const isConnected = await ensureMongoDBConnection();
 		if (!isConnected) {
 			throw error(503, 'MongoDB not available');
 		}
 
-		// Supprimer juste avec la clé
+		// Delete just with the key
 		const result = await GameData.deleteOne({ key });
 
 		console.log(`✅ Deleted ${key} from MongoDB`);

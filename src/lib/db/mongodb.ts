@@ -1,24 +1,24 @@
 import mongoose from 'mongoose';
 import { env } from '$env/dynamic/private';
 
-// Type pour les données de jeu stockées (sans userId)
+// Type for stored game data (without userId)
 export interface GameDataDocument {
 	key: string;
 	data: any;
 	lastModified: Date;
 }
 
-// Schema MongoDB simplifié
+// Simplified MongoDB schema
 const gameDataSchema = new mongoose.Schema<GameDataDocument>({
 	key: { type: String, required: true, unique: true, index: true },
 	data: { type: mongoose.Schema.Types.Mixed, required: true },
 	lastModified: { type: Date, default: Date.now }
 });
 
-// Modèle
+// Model
 export const GameData = mongoose.models.GameData || mongoose.model<GameDataDocument>('GameData', gameDataSchema);
 
-// Connexion MongoDB (singleton)
+// MongoDB connection (singleton)
 let isConnected = false;
 
 export async function connectToMongoDB(): Promise<boolean> {
@@ -48,7 +48,7 @@ export async function connectToMongoDB(): Promise<boolean> {
 	}
 }
 
-// Fonction utilitaire pour s'assurer que MongoDB est connecté
+// Utility function to ensure MongoDB is connected
 export async function ensureMongoDBConnection(): Promise<boolean> {
 	if (mongoose.connection.readyState === 1) {
 		return true; // Already connected

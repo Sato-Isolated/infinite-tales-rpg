@@ -26,7 +26,7 @@ export function addNPCNamesToState(npcs: Targets, npcState: NPCState) {
 }
 
 /**
- * Ajoute une relation entre deux NPCs ou entre un NPC et le joueur
+ * Adds a relationship between two NPCs or between an NPC and the player
  */
 export function addRelationship(
 	npcState: NPCState,
@@ -40,7 +40,7 @@ export function addRelationship(
 		npc.relationships = [];
 	}
 
-	// Vérifier si la relation existe déjà pour éviter les doublons
+	// Check if the relationship already exists to avoid duplicates
 	const existingRelation = npc.relationships.find(
 		r => r.target_name === relationship.target_name &&
 			r.relationship_type === relationship.relationship_type
@@ -52,7 +52,7 @@ export function addRelationship(
 }
 
 /**
- * Trouve la relation d'un NPC avec une cible spécifique
+ * Finds the relationship of an NPC with a specific target
  */
 export function getRelationship(
 	npcState: NPCState,
@@ -66,7 +66,7 @@ export function getRelationship(
 }
 
 /**
- * Valide la cohérence des relations familiales entre NPCs
+ * Validates the consistency of family relationships between NPCs
  */
 export function validateFamilyRelationships(npcState: NPCState): string[] {
 	const errors: string[] = [];
@@ -76,7 +76,7 @@ export function validateFamilyRelationships(npcState: NPCState): string[] {
 
 		npc.relationships.forEach(relationship => {
 			if (relationship.relationship_type === 'family') {
-				// Vérifier que les relations familiales sont cohérentes
+				// Check that family relationships are consistent
 				if (relationship.target_npc_id) {
 					const targetNpc = npcState[relationship.target_npc_id];
 					if (targetNpc?.relationships) {
@@ -86,10 +86,10 @@ export function validateFamilyRelationships(npcState: NPCState): string[] {
 
 						if (!reciprocalRelation) {
 							errors.push(
-								`Relation familiale manquante: ${npcId} considère ${relationship.target_name} comme ${relationship.specific_role}, mais la relation réciproque n'existe pas`
+								`Missing family relationship: ${npcId} considers ${relationship.target_name} as ${relationship.specific_role}, but the reciprocal relationship does not exist`
 							);
 						} else {
-							// Valider que les rôles sont compatibles
+							// Validate that roles are compatible
 							const validPairs = [
 								['sister', 'brother'], ['brother', 'sister'],
 								['father', 'son'], ['father', 'daughter'],
@@ -105,7 +105,7 @@ export function validateFamilyRelationships(npcState: NPCState): string[] {
 
 							if (!isValidPair) {
 								errors.push(
-									`Relation familiale incohérente: ${npcId} (${relationship.specific_role}) et ${relationship.target_name} (${reciprocalRelation.specific_role})`
+									`Inconsistent family relationship: ${npcId} (${relationship.specific_role}) and ${relationship.target_name} (${reciprocalRelation.specific_role})`
 								);
 							}
 						}
@@ -119,7 +119,7 @@ export function validateFamilyRelationships(npcState: NPCState): string[] {
 }
 
 /**
- * Génère un contexte relationnel pour l'IA concernant un NPC spécifique
+ * Generates relational context for AI concerning a specific NPC
  */
 export function generateRelationshipContext(
 	npcState: NPCState,
@@ -131,21 +131,21 @@ export function generateRelationshipContext(
 		return "";
 	}
 
-	let context = `\n=== CONTEXTE RELATIONNEL POUR ${npcId} ===\n`;
+	let context = `\n=== RELATIONAL CONTEXT FOR ${npcId} ===\n`;
 
 	npc.relationships.forEach(rel => {
 		const emotionalTone = {
-			'very_negative': 'déteste profondément',
-			'negative': 'n\'aime pas',
-			'neutral': 'a une relation neutre avec',
-			'positive': 'apprécie',
-			'very_positive': 'adore'
+			'very_negative': 'deeply despises',
+			'negative': 'dislikes',
+			'neutral': 'has a neutral relationship with',
+			'positive': 'appreciates',
+			'very_positive': 'adores'
 		}[rel.emotional_bond];
 
 		if (rel.target_npc_id) {
-			context += `• ${rel.specific_role || rel.relationship_type} de ${rel.target_name} - ${emotionalTone} cette personne\n`;
+			context += `• ${rel.specific_role || rel.relationship_type} of ${rel.target_name} - ${emotionalTone} this person\n`;
 		} else {
-			context += `• Relation avec ${playerName}: ${rel.specific_role || rel.relationship_type} - ${emotionalTone} le joueur\n`;
+			context += `• Relationship with ${playerName}: ${rel.specific_role || rel.relationship_type} - ${emotionalTone} the player\n`;
 		}
 
 		if (rel.description) {
@@ -154,24 +154,24 @@ export function generateRelationshipContext(
 	});
 
 	if (npc.speech_patterns) {
-		context += `• Façon de parler: ${npc.speech_patterns}\n`;
+		context += `• Speaking style: ${npc.speech_patterns}\n`;
 	}
 
 	if (npc.personality_traits && npc.personality_traits.length > 0) {
-		context += `• Traits de personnalité: ${npc.personality_traits.join(', ')}\n`;
+		context += `• Personality traits: ${npc.personality_traits.join(', ')}\n`;
 	}
 
 	if (npc.background_notes) {
-		context += `• Contexte personnel: ${npc.background_notes}\n`;
+		context += `• Personal background: ${npc.background_notes}\n`;
 	}
 
-	context += "=== FIN CONTEXTE RELATIONNEL ===\n";
+	context += "=== END RELATIONAL CONTEXT ===\n";
 
 	return context;
 }
 
 /**
- * Crée des relations familiales bidirectionnelles
+ * Creates bidirectional family relationships
  */
 export function createFamilyRelationship(
 	npcState: NPCState,
@@ -184,23 +184,23 @@ export function createFamilyRelationship(
 	emotionalBond: 'very_negative' | 'negative' | 'neutral' | 'positive' | 'very_positive' = 'positive',
 	description?: string
 ): void {
-	// Relation de npc1 vers npc2
+	// Relationship from npc1 to npc2
 	addRelationship(npcState, npc1Id, {
 		target_npc_id: npc2Id,
 		target_name: npc2Name,
 		relationship_type: 'family',
 		specific_role: npc2Role,
 		emotional_bond: emotionalBond,
-		description: description || `Relation familiale: ${npc1Role} de ${npc2Name}`
+		description: description || `Family relationship: ${npc1Role} of ${npc2Name}`
 	});
 
-	// Relation réciproque de npc2 vers npc1
+	// Reciprocal relationship from npc2 to npc1
 	addRelationship(npcState, npc2Id, {
 		target_npc_id: npc1Id,
 		target_name: npc1Name,
 		relationship_type: 'family',
 		specific_role: npc1Role,
 		emotional_bond: emotionalBond,
-		description: description || `Relation familiale: ${npc2Role} de ${npc1Name}`
+		description: description || `Family relationship: ${npc2Role} of ${npc1Name}`
 	});
 }

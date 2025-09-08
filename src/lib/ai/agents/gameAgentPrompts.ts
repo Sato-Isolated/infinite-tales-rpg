@@ -368,21 +368,21 @@ export function generateEnrichedNPCContext(npcState: NPCState, playerName: strin
   Object.keys(npcState).forEach(npcId => {
     const npc = npcState[npcId];
     if (npc?.relationships && npc.relationships.length > 0) {
-      enrichedContext += `\n=== CONTEXTE RELATIONNEL POUR ${npcId} ===\n`;
+      enrichedContext += `\n=== RELATIONAL CONTEXT FOR ${npcId} ===\n`;
 
       npc.relationships.forEach(rel => {
         const emotionalTone = {
-          'very_negative': 'déteste profondément',
-          'negative': 'n\'aime pas',
-          'neutral': 'a une relation neutre avec',
-          'positive': 'apprécie',
-          'very_positive': 'adore'
+          'very_negative': 'deeply hates',
+          'negative': 'dislikes',
+          'neutral': 'has a neutral relationship with',
+          'positive': 'likes',
+          'very_positive': 'adores'
         }[rel.emotional_bond];
 
         if (rel.target_npc_id) {
-          enrichedContext += `• ${rel.specific_role || rel.relationship_type} de ${rel.target_name} - ${emotionalTone} cette personne\n`;
+          enrichedContext += `• ${rel.specific_role || rel.relationship_type} of ${rel.target_name} - ${emotionalTone} this person\n`;
         } else {
-          enrichedContext += `• Relation avec ${playerName}: ${rel.specific_role || rel.relationship_type} - ${emotionalTone} le joueur\n`;
+          enrichedContext += `• Relationship with ${playerName}: ${rel.specific_role || rel.relationship_type} - ${emotionalTone} the player\n`;
         }
 
         if (rel.description) {
@@ -391,18 +391,18 @@ export function generateEnrichedNPCContext(npcState: NPCState, playerName: strin
       });
 
       if (npc.speech_patterns) {
-        enrichedContext += `• Façon de parler: ${npc.speech_patterns}\n`;
+        enrichedContext += `• Speech patterns: ${npc.speech_patterns}\n`;
       }
 
       if (npc.personality_traits && npc.personality_traits.length > 0) {
-        enrichedContext += `• Traits de personnalité: ${npc.personality_traits.join(', ')}\n`;
+        enrichedContext += `• Personality traits: ${npc.personality_traits.join(', ')}\n`;
       }
 
       if (npc.background_notes) {
-        enrichedContext += `• Contexte personnel: ${npc.background_notes}\n`;
+        enrichedContext += `• Personal background: ${npc.background_notes}\n`;
       }
 
-      enrichedContext += "=== FIN CONTEXTE RELATIONNEL ===\n";
+      enrichedContext += "=== END OF RELATIONAL CONTEXT ===\n";
     }
   });
 

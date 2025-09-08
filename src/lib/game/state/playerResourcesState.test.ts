@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
-// Types simplifiés pour les tests
+// Simplified types for tests
 type ResourceValue = {
 	current_value: number;
 	max_value: number;
@@ -24,58 +24,58 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 	describe('XP Access Error Prevention', () => {
 		it('should prevent "Cannot read properties of undefined (reading XP)" error', () => {
-			// Test le scénario exact de l'erreur originale
+			// Test the exact scenario of the original error
 
-			// Arrange: état non initialisé (comme dans le bug)
+			// Arrange: uninitialized state (as in the bug)
 			expect(mockPlayerCharactersGameState[mockCharacterId]).toBeUndefined();
 
-			// Simule la correction implémentée dans confirmCharacterChangeEvent
+			// Simulate the fix implemented in confirmCharacterChangeEvent
 			const confirmCharacterChangeEventLogic = () => {
-				// CORRECTION: vérifier que l'état existe avant d'accéder à XP
+				// FIX: ensure state exists before accessing XP
 				if (!mockPlayerCharactersGameState[mockCharacterId]) {
-					// Initialisation automatique si l'état n'existe pas
+					// Automatic initialization if state doesn't exist
 					mockPlayerCharactersGameState[mockCharacterId] = {
 						hp: { current_value: 10, max_value: 10, game_ends_when_zero: true },
 						XP: { current_value: 0, max_value: 0, game_ends_when_zero: false }
 					};
 				}
 
-				// Maintenant l'accès à XP est sûr
+				// Now XP access is safe
 				const existingXP = mockPlayerCharactersGameState[mockCharacterId].XP as ResourceValue;
 
-				// Mise à jour avec préservation de XP
+				// Update with XP preservation
 				mockPlayerCharactersGameState[mockCharacterId] = {
 					hp: { current_value: 15, max_value: 15, game_ends_when_zero: true },
 					XP: existingXP
 				};
 			};
 
-			// Act & Assert: ne doit plus lever l'erreur XP
+			// Act & Assert: must no longer throw the XP error
 			expect(() => confirmCharacterChangeEventLogic()).not.toThrow();
 
-			// Vérification que l'état a été correctement initialisé
+			// Verify that the state was properly initialized
 			expect(mockPlayerCharactersGameState[mockCharacterId]).toBeDefined();
 			expect(mockPlayerCharactersGameState[mockCharacterId].XP).toBeDefined();
 		});
 
 		it('should handle level up XP access safely', () => {
-			// Test pour la protection dans levelUpClicked
+			// Test for protection in levelUpClicked
 
-			// Cas 1: état non initialisé
+			// Case 1: uninitialized state
 			expect(mockPlayerCharactersGameState[mockCharacterId]).toBeUndefined();
 
 			const safeLevelUpLogic = (xpCost: number) => {
-				// CORRECTION: protection avec optional chaining
+				// FIX: protection with optional chaining
 				if (mockPlayerCharactersGameState[mockCharacterId]?.XP) {
 					(mockPlayerCharactersGameState[mockCharacterId].XP as ResourceValue).current_value -=
 						xpCost;
 				}
 			};
 
-			// Ne doit pas crasher même si l'état n'existe pas
+			// Must not crash even if the state does not exist
 			expect(() => safeLevelUpLogic(50)).not.toThrow();
 
-			// Cas 2: état initialisé
+			// Case 2: initialized state
 			mockPlayerCharactersGameState[mockCharacterId] = {
 				XP: { current_value: 100, max_value: 0, game_ends_when_zero: false }
 			};
@@ -89,15 +89,15 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 	describe('Resource Update Reactivity', () => {
 		it('should test original bug scenario: "You lose 2 ÉNERGIE ÆTHÉRIQUE"', () => {
-			// Reproduit exactement le bug signalé par l'utilisateur
+			// Reproduces exactly the bug reported by the user
 
-			// Arrange: état initial avec les ressources du jeu
+			// Arrange: initial state with game resources
 			mockPlayerCharactersGameState[mockCharacterId] = {
 				ÉNERGIE_ÆTHÉRIQUE: { current_value: 8, max_value: 8, game_ends_when_zero: false },
 				hp: { current_value: 8, max_value: 8, game_ends_when_zero: true }
 			};
 
-			// Act: simule l'action "You lose 2 ÉNERGIE ÆTHÉRIQUE"
+			// Act: simulate the action "You lose 2 ÉNERGIE ÆTHÉRIQUE"
 			const loseResource = (resourceKey: string, amount: number) => {
 				const resource = mockPlayerCharactersGameState[mockCharacterId][resourceKey];
 				if (resource) {
@@ -107,15 +107,15 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 			loseResource('ÉNERGIE_ÆTHÉRIQUE', 2);
 
-			// Assert: avec useHybridLocalStorage, la réactivité doit être automatique
+			// Assert: with useHybridLocalStorage, reactivity must be automatic
 			expect(
 				mockPlayerCharactersGameState[mockCharacterId]['ÉNERGIE_ÆTHÉRIQUE'].current_value
 			).toBe(6);
-			expect(mockPlayerCharactersGameState[mockCharacterId].hp.current_value).toBe(8); // Inchangé
+			expect(mockPlayerCharactersGameState[mockCharacterId].hp.current_value).toBe(8); // Unchanged
 		});
 
 		it('should handle special characters in resource names', () => {
-			// Test avec différents caractères spéciaux qui peuvent poser problème
+			// Test with different special characters that can cause problems
 			const resourcesWithSpecialChars = {
 				ÉNERGIE_ÆTHÉRIQUE: { current_value: 10, max_value: 10, game_ends_when_zero: false },
 				mana_spirituelle: { current_value: 5, max_value: 5, game_ends_when_zero: false },
@@ -124,7 +124,7 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 			mockPlayerCharactersGameState[mockCharacterId] = resourcesWithSpecialChars;
 
-			// Test de modification
+			// Update test
 			mockPlayerCharactersGameState[mockCharacterId]['ÉNERGIE_ÆTHÉRIQUE'].current_value = 7;
 
 			expect(
@@ -135,19 +135,19 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 	describe('getCurrentCharacterGameState Function Safety', () => {
 		it('should handle undefined character states gracefully', () => {
-			// Test la fonction getCurrentCharacterGameState améliorée
+			// Test the improved getCurrentCharacterGameState function
 
 			const getCurrentCharacterGameState = (characterId: string) => {
 				return mockPlayerCharactersGameState[characterId] || undefined;
 			};
 
-			// Cas 1: ID inexistant
+			// Case 1: non-existent ID
 			expect(getCurrentCharacterGameState('nonexistent')).toBeUndefined();
 
-			// Cas 2: ID vide
+			// Case 2: empty ID
 			expect(getCurrentCharacterGameState('')).toBeUndefined();
 
-			// Cas 3: état existant
+			// Case 3: existing state
 			mockPlayerCharactersGameState[mockCharacterId] = {
 				hp: { current_value: 10, max_value: 10, game_ends_when_zero: true }
 			};
@@ -159,7 +159,7 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 	describe('useHybridLocalStorage Pattern Compliance', () => {
 		it('should follow project standards for state management', () => {
-			// Test que la nouvelle structure suit les conventions du projet
+			// Verify that the new structure follows project conventions
 
 			// Mock useHybridLocalStorage pattern
 			const mockuseHybridLocalStorage = <T>(key: string, defaultValue: T) => ({
@@ -177,17 +177,17 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 		});
 
 		it('should ensure backward compatibility with existing saves', () => {
-			// Test de compatibilité avec les anciens formats de sauvegarde
+			// Test compatibility with old save formats
 
 			const legacyPlayerState: any = {
 				player_1: {
 					hp: { current_value: 8, max_value: 10, game_ends_when_zero: true },
 					mana: { current_value: 5, max_value: 5, game_ends_when_zero: false }
-					// Ancien format sans XP
+					// Old format without XP
 				}
 			};
 
-			// Simule la migration automatique
+			// Simulate automatic migration
 			const characterId = 'player_1';
 			if (!legacyPlayerState[characterId].XP) {
 				legacyPlayerState[characterId].XP = {
@@ -204,7 +204,7 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 
 	describe('Error Prevention and Edge Cases', () => {
 		it('should handle corrupted state gracefully', () => {
-			// Test avec état corrompu ou null
+			// Test with corrupted or null state
 			const corruptedState = null as any;
 
 			const safeStateAccess = (state: any, characterId: string) => {
@@ -216,11 +216,11 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 		});
 
 		it('should validate resource structure before access', () => {
-			// Test de validation de structure avant accès
+			// Test structure validation before access
 
 			mockPlayerCharactersGameState[mockCharacterId] = {
 				hp: { current_value: 10, max_value: 10, game_ends_when_zero: true }
-				// Pas de XP
+				// No XP
 			};
 
 			const safeResourceAccess = (resourceKey: string) => {
@@ -229,21 +229,21 @@ describe('PlayerResourcesState - Resource Update System Tests', () => {
 				return resource?.current_value || 0;
 			};
 
-			expect(safeResourceAccess('XP')).toBe(0); // Au lieu de crasher
-			expect(safeResourceAccess('hp')).toBe(10); // Valeur existante
+			expect(safeResourceAccess('XP')).toBe(0); // Instead of crashing
+			expect(safeResourceAccess('hp')).toBe(10); // Existing value
 		});
 	});
 });
 
-// Tests de régression pour s'assurer que les corrections restent en place
+// Regression tests to ensure corrections remain in place
 describe('Regression Tests - Fixed Issues', () => {
 	it('should prevent regression of XP undefined error in confirmCharacterChangeEvent', () => {
-		// Ce test doit échouer si quelqu'un supprime la protection XP
+		// This test should fail if someone removes the XP protection
 
 		const playerState: TestPlayerState = {};
 		const characterId = 'test_player';
 
-		// Fonction avec la correction implémentée
+		// Function with the implemented correction
 		const fixedCode = () => {
 			if (!playerState[characterId]) {
 				playerState[characterId] = {
@@ -253,19 +253,19 @@ describe('Regression Tests - Fixed Issues', () => {
 			return playerState[characterId].XP;
 		};
 
-		// La version corrigée doit fonctionner
+		// The fixed version should work
 		expect(() => fixedCode()).not.toThrow();
 		expect(fixedCode()).toBeDefined();
 	});
 
 	it('should prevent regression of level up XP access error', () => {
-		// Test pour s'assurer que la protection level up reste en place
+		// Test to ensure level up protection remains in place
 
 		const playerState: TestPlayerState = {};
 		const characterId = 'test_player';
 
 		const protectedLevelUp = (xpCost: number) => {
-			// Protection ajoutée: vérification avant accès
+			// Added protection: check before access
 			if (playerState[characterId]?.XP) {
 				(playerState[characterId].XP as ResourceValue).current_value -= xpCost;
 				return true;
@@ -273,13 +273,13 @@ describe('Regression Tests - Fixed Issues', () => {
 			return false; // Pas d'erreur, juste pas d'action
 		};
 
-		// Ne doit pas crasher même avec état non initialisé
+		// Should not crash even with uninitialized state
 		expect(() => protectedLevelUp(50)).not.toThrow();
-		expect(protectedLevelUp(50)).toBe(false); // Aucune action car état non initialisé
+		expect(protectedLevelUp(50)).toBe(false); // No action because state is not initialized
 	});
 
 	it('should verify useHybridLocalStorage replaces $state pattern correctly', () => {
-		// Test pour s'assurer qu'on utilise bien useHybridLocalStorage et pas $state
+		// Test to ensure we use useHybridLocalStorage and not $state
 
 		// Pattern attendu (correct)
 		const correctPattern = {
@@ -291,7 +291,7 @@ describe('Regression Tests - Fixed Issues', () => {
 	});
 
 	it('should document the specific fixes implemented', () => {
-		// Test documentaire qui explique les corrections apportées
+		// Documentary test explaining the fixes applied
 
 		const fixes = [
 			'Added null check before accessing XP in confirmCharacterChangeEvent',

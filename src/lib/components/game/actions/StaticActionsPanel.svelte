@@ -69,7 +69,7 @@
 				// Refresh the page to reflect the restored state
 				window.location.reload();
 			} else {
-				console.error("Échec de l'annulation de la dernière action");
+				console.error('Failed to undo the last action');
 			}
 		} catch (error) {
 			console.error("Erreur lors de l'annulation:", error);
@@ -94,10 +94,10 @@
 			aria-disabled={busy}
 			title={lastActionInfo.actionId
 				? `Annuler l'action #${lastActionInfo.actionId}`
-				: 'Annuler la dernière action'}
+				: 'Undo last action'}
 		>
 			<span class="text-base">↶</span>
-			Annuler la dernière action
+			Undo last action
 		</button>
 	{/if}
 

@@ -1,5 +1,5 @@
 /**
- * Tests pour le système de relations NPCs
+ * Tests for the NPC relationships system
  */
 
 import { describe, it, expect } from 'vitest';
@@ -11,8 +11,8 @@ import {
 	getRelationship 
 } from './npcLogic';
 
-describe('Système de relations NPCs', () => {
-	it('devrait créer des relations familiales bidirectionnelles correctes', () => {
+describe('NPC relationships system', () => {
+	it('should create correct bidirectional family relationships', () => {
 		const npcState: NPCState = {
 			"marie": {
 				known_names: ["Marie"],
@@ -40,20 +40,20 @@ describe('Système de relations NPCs', () => {
 			"pierre", "Pierre", "brother"
 		);
 
-		// Vérifier que Marie a Pierre comme frère
+		// Verify that Marie has Pierre as brother
 		const marieRelation = getRelationship(npcState, "marie", "Pierre");
 		expect(marieRelation).toBeDefined();
 		expect(marieRelation?.specific_role).toBe("brother");
 		expect(marieRelation?.relationship_type).toBe("family");
 
-		// Vérifier que Pierre a Marie comme sœur  
+		// Verify that Pierre has Marie as sister  
 		const pierreRelation = getRelationship(npcState, "pierre", "Marie");
 		expect(pierreRelation).toBeDefined();
 		expect(pierreRelation?.specific_role).toBe("sister");
 		expect(pierreRelation?.relationship_type).toBe("family");
 	});
 
-	it('devrait valider les relations familiales cohérentes', () => {
+	it('should validate consistent family relationships', () => {
 		const npcState: NPCState = {
 			"marie": {
 				known_names: ["Marie"],
@@ -85,7 +85,7 @@ describe('Système de relations NPCs', () => {
 		expect(errors).toHaveLength(0);
 	});
 
-	it('devrait détecter les relations familiales incohérentes', () => {
+	it('should detect inconsistent family relationships', () => {
 		const npcState: NPCState = {
 			"marie": {
 				known_names: ["Marie"],
@@ -98,7 +98,7 @@ describe('Système de relations NPCs', () => {
 					target_npc_id: "pierre",
 					target_name: "Pierre",
 					relationship_type: "family",
-					specific_role: "sister", // Marie dit que Pierre est sa sœur
+					specific_role: "sister", // Marie says Pierre is her sister
 					emotional_bond: "positive",
 					description: "Test"
 				}]
@@ -114,7 +114,7 @@ describe('Système de relations NPCs', () => {
 					target_npc_id: "marie",
 					target_name: "Marie",
 					relationship_type: "family", 
-					specific_role: "father", // Pierre dit que Marie est son père
+					specific_role: "father", // Pierre says Marie is his father
 					emotional_bond: "positive",
 					description: "Test"
 				}]
@@ -123,10 +123,10 @@ describe('Système de relations NPCs', () => {
 
 		const errors = validateFamilyRelationships(npcState);
 		expect(errors.length).toBeGreaterThan(0);
-		expect(errors[0]).toContain("incohérente");
+		expect(errors[0]).toContain("Inconsistent family relationship");
 	});
 
-	it('ne devrait pas créer de relations en double', () => {
+	it('should not create duplicate relationships', () => {
 		const npcState: NPCState = {
 			"marie": {
 				known_names: ["Marie"],
@@ -148,7 +148,7 @@ describe('Système de relations NPCs', () => {
 		};
 
 		addRelationship(npcState, "marie", relationship);
-		addRelationship(npcState, "marie", relationship); // Même relation ajoutée deux fois
+		addRelationship(npcState, "marie", relationship); // Same relationship added twice
 
 		expect(npcState.marie.relationships).toHaveLength(1);
 	});

@@ -130,7 +130,7 @@
 	// Prevent race conditions by ensuring only one AI operation at a time
 	let aiOperationInProgress = $state(false);
 
-	// Create modal manager après les autres états locaux
+	// Create modal manager after other local states
 	const modalManager = createModalManager();
 	let gameAgent: GameAgent,
 		summaryAgent: SummaryAgent,
@@ -293,9 +293,9 @@
 			}
 		});
 
-		// 🚨 ATTENDRE que apiKeyState soit hydraté avec timeout pour éviter les boucles infinies
-		// useHybridLocalStorage a besoin de temps pour charger depuis localStorage
-		const maxWaitTime = 3000; // 3 secondes maximum
+		// 🚨 WAIT for apiKeyState to be hydrated with a timeout to avoid infinite loops
+		// useHybridLocalStorage needs time to load from localStorage
+		const maxWaitTime = 3000; // maximum 3 seconds
 		const startTime = Date.now();
 
 		while (
@@ -305,15 +305,15 @@
 			await new Promise((resolve) => setTimeout(resolve, 50));
 		}
 
-		// Si l'hydratation n'est toujours pas terminée après le timeout, on continue quand même
+		// If hydration still isn't finished after the timeout, proceed anyway
 		if (!apiKeyState.storageInfo.isHydrated) {
-			console.warn('⚠️ Hydratation timeout - continuation avec les valeurs par défaut');
+			console.warn('⚠️ Hydration timeout - continuing with default values');
 		}
 		if (apiKeyState.storageInfo.isInitializing) {
-			console.warn('⚠️ Initialisation timeout - continuation avec les valeurs par défaut');
+			console.warn('⚠️ Initialization timeout - continuing with default values');
 		}
 
-		console.log('🔑 API Key après hydratation:', apiKeyState.value?.length || 0, 'caractères');
+		console.log('🔑 API Key after hydration:', apiKeyState.value?.length || 0, 'characters');
 
 		const llm = LLMProvider.provideLLM(
 			{
@@ -448,7 +448,7 @@
 			getRelatedHistoryForStory();
 		}
 
-		// 🚨 ATTENDRE que gameActionsState soit aussi hydraté avant de décider de démarrer le jeu
+		// 🚨 WAIT for gameActionsState to be hydrated before deciding to start the game
 		while (!gameActionsState.storageInfo.isHydrated && Date.now() - startTime < maxWaitTime) {
 			await new Promise((resolve) => setTimeout(resolve, 50));
 		}

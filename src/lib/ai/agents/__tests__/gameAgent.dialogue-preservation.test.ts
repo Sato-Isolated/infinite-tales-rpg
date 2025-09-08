@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
+// Note: This test intentionally uses French strings (quotes and paraphrase)
+// to verify quoted dialogue preservation. Do not translate these fixtures.
 import { GameAgent } from '../gameAgent';
 import type { Action } from '$lib/types/action';
 

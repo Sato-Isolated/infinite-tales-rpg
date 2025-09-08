@@ -98,12 +98,12 @@ function generateNpcRanks(): string[] {
 }
 
 export type Relationship = {
-	target_npc_id?: string; // ID du NPC cible (undefined si relation avec le joueur)
-	target_name: string; // Nom de la cible (joueur ou autre NPC)
+	target_npc_id?: string; // Target NPC ID (undefined if relationship with player)
+	target_name: string; // Target name (player or other NPC)
 	relationship_type: 'family' | 'friend' | 'romantic' | 'enemy' | 'acquaintance' | 'professional' | 'other';
 	specific_role?: string; // Ex: "sister", "brother", "father", "mother", "colleague", "boss", etc.
 	emotional_bond: 'very_negative' | 'negative' | 'neutral' | 'positive' | 'very_positive';
-	description: string; // Description de la relation et comment elle doit influencer les interactions
+	description: string; // Relationship description and how it should influence interactions
 };
 
 export type NPCState = { [uniqueTechnicalNameId: string]: NPCStats };
@@ -115,10 +115,10 @@ export type NPCStats = {
 	rank_enum_english: string;
 	level: number;
 	spells_and_abilities: Array<Ability>;
-	relationships?: Array<Relationship>; // Relations avec d'autres NPCs et le joueur
-	personality_traits?: string[]; // Traits de personnalité qui influencent le comportement
-	speech_patterns?: string; // Façon de parler spécifique (accent, expressions, etc.)
-	background_notes?: string; // Notes sur l'histoire personnelle et les motivations
+	relationships?: Array<Relationship>; // Relationships with other NPCs and the player
+	personality_traits?: string[]; // Personality traits that influence behavior
+	speech_patterns?: string; // Specific way of speaking (accent, expressions, etc.)
+	background_notes?: string; // Notes on personal history and motivations
 };
 
 export class CharacterStatsAgent {
