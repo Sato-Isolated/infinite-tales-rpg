@@ -1,5 +1,6 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
+import type { GameSettings } from '$lib/types/gameSettings';
 import { CharacterDescriptionResponseSchema, type CharacterDescriptionResponse } from '$lib/ai/config/ResponseSchemas';
 import {
 	buildCharacterDescriptionAgentInstructions,
@@ -39,10 +40,11 @@ export class CharacterAgent {
 
 	async generateCharacterDescription(
 		storyState: object,
+		gameSettings: GameSettings,
 		characterOverwrites: Partial<CharacterDescription> | undefined = undefined,
 		transformInto?: string
 	): Promise<CharacterDescription> {
-		const agentInstruction = buildCharacterDescriptionAgentInstructions(transformInto);
+		const agentInstruction = buildCharacterDescriptionAgentInstructions(gameSettings, transformInto);
 
 		const preset = {
 			...storyState,

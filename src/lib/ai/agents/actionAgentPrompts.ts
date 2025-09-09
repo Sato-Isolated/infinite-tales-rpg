@@ -1,4 +1,6 @@
 import { stringifyPretty } from '$lib/util.svelte';
+import type { GameSettings } from '$lib/types/gameSettings';
+import { getActionNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 
 // =============================================================================
 // TYPES AND ENUMS
@@ -191,6 +193,7 @@ export const buildSingleActionAgentInstructions = (
   attributes: string[],
   skills: string[],
   newSkillsAllowed: boolean,
+  gameSettings: GameSettings,
   customSystemInstruction?: string,
   customActionAgentInstruction?: string
 ): string[] => {
@@ -200,7 +203,8 @@ export const buildSingleActionAgentInstructions = (
     getCharacterDescriptionInstructionTemplate(characterDescription),
     getInventoryInstructionTemplate(inventoryState),
     getResourceModifierInstructionTemplate(characterResources),
-    getActionInstructionsTemplate(attributes, skills, newSkillsAllowed)
+    getActionInstructionsTemplate(attributes, skills, newSkillsAllowed),
+    getActionNarrationPrompt(gameSettings)
   ];
 
   if (customSystemInstruction) {
@@ -225,6 +229,7 @@ export const buildActionsGeneratorAgentInstructions = (
   attributes: string[],
   skills: string[],
   newSkillsAllowed: boolean,
+  gameSettings: GameSettings,
   relatedHistory?: string[],
   customSystemInstruction?: string,
   customActionAgentInstruction?: string
@@ -236,7 +241,8 @@ export const buildActionsGeneratorAgentInstructions = (
     getCharacterDescriptionActionsTemplate(characterDescription),
     getInventoryActionsTemplate(inventoryState),
     getResourceModifierInstructionTemplate(characterResources),
-    getActionInstructionsTemplate(attributes, skills, newSkillsAllowed)
+    getActionInstructionsTemplate(attributes, skills, newSkillsAllowed),
+    getActionNarrationPrompt(gameSettings)
   ];
 
   if (relatedHistory && relatedHistory.length > 0) {
@@ -264,6 +270,7 @@ export const buildItemActionsAgentInstructions = (
   attributes: string[],
   skills: string[],
   newSkillsAllowed: boolean,
+  gameSettings: GameSettings,
   customSystemInstruction?: string,
   customActionAgentInstruction?: string
 ): string[] => {
@@ -274,7 +281,8 @@ export const buildItemActionsAgentInstructions = (
     getCharacterDescriptionActionsTemplate(characterDescription),
     getInventoryItemCombinationTemplate(inventoryState),
     getResourceModifierInstructionTemplate(characterResources),
-    getActionInstructionsTemplate(attributes, skills, newSkillsAllowed)
+    getActionInstructionsTemplate(attributes, skills, newSkillsAllowed),
+    getActionNarrationPrompt(gameSettings)
   ];
 
   if (customSystemInstruction) {

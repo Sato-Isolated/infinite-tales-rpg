@@ -1,3 +1,6 @@
+import type { GameSettings } from '$lib/types/gameSettings';
+import { getEventNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
+
 // ========================================
 // SYSTEM PROMPTS
 // ========================================
@@ -54,13 +57,15 @@ export const PROMPT_FRAGMENTS = {
 /**
  * Builds modern enhanced prompt system
  */
-export function buildModernEventPrompt(currentAbilitiesNames: string[]): string[] {
+export function buildModernEventPrompt(currentAbilitiesNames: string[], gameSettings: GameSettings): string[] {
   console.log('EventAgent: Using enhanced legacy prompts (modern imports not available)');
 
   const baseInstructions = [
     ...MODERN_EVENT_BASE_INSTRUCTIONS,
     '',
     buildAbilityExclusionRule(currentAbilitiesNames),
+    '',
+    getEventNarrationPrompt(gameSettings),
     '',
     PROMPT_FRAGMENTS.SCHEMA_INSTRUCTION
   ];
@@ -71,10 +76,15 @@ export function buildModernEventPrompt(currentAbilitiesNames: string[]): string[
 /**
  * Builds legacy prompt system (fallback)
  */
-export function buildLegacyEventPrompt(currentAbilitiesNames: string[]): string[] {
-  return LEGACY_EVENT_INSTRUCTIONS.map(instruction => 
+export function buildLegacyEventPrompt(currentAbilitiesNames: string[], gameSettings: GameSettings): string[] {
+  const instructions = LEGACY_EVENT_INSTRUCTIONS.map(instruction => 
     instruction.replace('{currentAbilities}', currentAbilitiesNames.join(', '))
   );
+  
+  // Add narration instructions
+  instructions.push('', getEventNarrationPrompt(gameSettings));
+  
+  return instructions;
 }
 
 /**

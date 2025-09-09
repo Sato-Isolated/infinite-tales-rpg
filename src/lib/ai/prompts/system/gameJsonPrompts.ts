@@ -1,4 +1,4 @@
-import { storyWordLimitConcise, storyWordLimitDetailed } from '../shared/narrativePrompts';
+import { getNarrationLimit } from '../shared/narrationSystem';
 import type { GameSettings } from '$lib/types/gameSettings';
 
 /**
@@ -32,7 +32,7 @@ Do NOT set required fields to null or undefined
 📖 STORY PROGRESSION RULES
 
 Narrative must reflect the result of player actions, incorporating consequences of success or failure.
-Use this word count limit for story output:${gameSettingsState.detailedNarrationLength ? storyWordLimitDetailed : storyWordLimitConcise}
+Use this word count limit for story output: ${getNarrationLimit('story', gameSettingsState)}
 
 🎭 STORY MARKUP GUIDELINES
 

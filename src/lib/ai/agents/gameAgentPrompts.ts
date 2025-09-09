@@ -16,6 +16,7 @@ import {
   DIALOGUE_CONSISTENCY_PROMPT,
   DIALOGUE_MEMORY_CHECK
 } from '$lib/ai/prompts/shared';
+import { getStoryNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 import {
   systemBehaviour,
   jsonSystemInstructionForGameAgent,
@@ -487,6 +488,9 @@ export function buildGameAgentSystemInstructions(
   const gameAgent = [
     SYSTEM_INSTRUCTION_TEMPLATES.CORE_BEHAVIOR,
     systemBehaviour(gameSettings),
+    '',
+    '=== NARRATION INSTRUCTIONS ===',
+    getStoryNarrationPrompt(gameSettings),
     '',
     SYSTEM_INSTRUCTION_TEMPLATES.STORY_STATE,
     stringifyPretty(storyState),

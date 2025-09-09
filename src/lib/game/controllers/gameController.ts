@@ -188,6 +188,7 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.systemInstructionsState.value.combatAgentInstruction,
 			getLatestStoryMessagesFromHistory(ctx.state.historyMessagesState.value),
 			ctx.state.storyState.value,
+			ctx.state.gameSettingsState.value,
 			getSafetyLevelFromStory(ctx.state.storyState.value)
 		);
 
@@ -417,7 +418,8 @@ export function createGameController(ctx: ControllerCtx) {
 					.filter((n): n is string => !!n);
 				const { thoughts, event_evaluation } = await ctx.agents.eventAgent.evaluateEvents(
 					storyHistory,
-					currentAbilitiesNames
+					currentAbilitiesNames,
+					ctx.state.gameSettingsState.value
 				);
 				ctx.state.thoughtsState.value.eventThoughts = thoughts || '';
 				if (event_evaluation) {
@@ -438,6 +440,7 @@ export function createGameController(ctx: ControllerCtx) {
 				ctx.state.characterState.value,
 				ctx.state.characterStatsState.value,
 				ctx.state.inventoryState.value,
+				ctx.state.gameSettingsState.value,
 				ctx.state.systemInstructionsState.value.generalSystemInstruction,
 				ctx.state.systemInstructionsState.value.actionAgentInstruction,
 				relatedHistory,
@@ -476,6 +479,7 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.characterState.value,
 			ctx.state.characterStatsState.value,
 			ctx.state.inventoryState.value,
+			ctx.state.gameSettingsState.value,
 			ctx.state.systemInstructionsState.value.generalSystemInstruction,
 			ctx.state.systemInstructionsState.value.actionAgentInstruction,
 			relatedHistory,
@@ -505,7 +509,8 @@ export function createGameController(ctx: ControllerCtx) {
 				JSON.parse(JSON.stringify(ctx.state.characterState.value)),
 				JSON.parse(JSON.stringify(ctx.state.characterStatsState.value)),
 				ctx.agents.characterAgent,
-				ctx.agents.characterStatsAgent
+				ctx.agents.characterStatsAgent,
+				ctx.state.gameSettingsState.value
 			);
 
 			if (transformedCharacter) {
@@ -656,6 +661,7 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.characterState.value,
 			ctx.state.characterStatsState.value,
 			ctx.state.inventoryState.value,
+			ctx.state.gameSettingsState.value,
 			ctx.state.systemInstructionsState.value.generalSystemInstruction,
 			ctx.state.systemInstructionsState.value.actionAgentInstruction,
 			ctx.state.relatedActionHistoryState.value,
@@ -764,6 +770,7 @@ export function createGameController(ctx: ControllerCtx) {
 			ctx.state.characterState.value,
 			ctx.state.characterStatsState.value,
 			ctx.state.inventoryState.value,
+			ctx.state.gameSettingsState.value,
 			ctx.state.systemInstructionsState.value.generalSystemInstruction,
 			ctx.state.systemInstructionsState.value.actionAgentInstruction,
 			ctx.state.relatedActionHistoryState.value,

@@ -4,8 +4,10 @@ import type { Action } from '$lib/types/action';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState } from '$lib/types/players';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
+import type { GameSettings } from '$lib/types/gameSettings';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import type { LLMMessage } from '$lib/ai/llm';
+import { getCombatNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 
 // Base combat agent prompts
 export const COMBAT_AGENT_BASE_PROMPT = "You are RPG combat agent, you decide which actions the NPCs take in response to the player character's action and what the consequences of these actions are.";
@@ -57,6 +59,7 @@ export function buildCombatAgentInstructions(
   playerCharResources: ResourcesWithCurrentValue,
   inventoryState: InventoryState,
   storyState: Story,
+  gameSettings: GameSettings,
   customSystemInstruction?: string,
   customCombatAgentInstruction?: string
 ): string[] {
@@ -67,6 +70,7 @@ export function buildCombatAgentInstructions(
       .replace('{playerResources}', stringifyPretty(playerCharResources)),
     COMBAT_INVENTORY_CONTEXT_TEMPLATE.replace('{inventory}', stringifyPretty(inventoryState)),
     COMBAT_STORY_CONTEXT_TEMPLATE.replace('{storyState}', stringifyPretty(storyState)),
+    getCombatNarrationPrompt(gameSettings),
     COMBAT_FINAL_INSTRUCTION
   ];
 

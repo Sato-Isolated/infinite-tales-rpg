@@ -1,5 +1,6 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMRequest } from '$lib/ai/llm';
+import type { GameSettings } from '$lib/types/gameSettings';
 import type { Ability } from './characterStatsAgent';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { EventResponseSchema, type EventResponse } from '$lib/ai/config/ResponseSchemas';
@@ -94,7 +95,8 @@ export class EventAgent {
 	 */
 	async evaluateEvents(
 		storyHistory: string[],
-		currentAbilitiesNames: string[]
+		currentAbilitiesNames: string[],
+		gameSettings: GameSettings
 	): Promise<{ thoughts: string; event_evaluation: EventEvaluation }> {
 		// Debug logging
 		console.log('EventAgent: Starting evaluation with modern prompts:', this.useModernPrompts);
@@ -104,7 +106,7 @@ export class EventAgent {
 		for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
 			try {
 				console.log(`EventAgent: Attempt ${attempt}/${this.maxRetries} starting...`);
-				const response = await this.attemptEventEvaluation(storyHistory, currentAbilitiesNames, attempt);
+				const response = await this.attemptEventEvaluation(storyHistory, currentAbilitiesNames, gameSettings, attempt);
 				console.log(`EventAgent: Attempt ${attempt} succeeded!`);
 				return response;
 			} catch (error) {
@@ -132,13 +134,14 @@ export class EventAgent {
 	private async attemptEventEvaluation(
 		storyHistory: string[],
 		currentAbilitiesNames: string[],
+		gameSettings: GameSettings,
 		attempt: number
 	): Promise<{ thoughts: string; event_evaluation: EventEvaluation }> {
 		try {
 			console.log(`EventAgent: Building prompt for attempt ${attempt}...`);
 			const systemInstruction = this.useModernPrompts
-				? buildModernEventPrompt(currentAbilitiesNames)
-				: buildLegacyEventPrompt(currentAbilitiesNames);
+				? buildModernEventPrompt(currentAbilitiesNames, gameSettings)
+				: buildLegacyEventPrompt(currentAbilitiesNames, gameSettings);
 
 			console.log(`EventAgent: System instruction type:`, Array.isArray(systemInstruction) ? 'array' : typeof systemInstruction);
 			console.log(`EventAgent: System instruction length:`, systemInstruction.length);

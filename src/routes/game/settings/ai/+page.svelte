@@ -28,6 +28,7 @@
 	import AiGenerationSettings from '$lib/components/modals/settings/AiGenerationSettings.svelte';
 	import OutputFeaturesModal from '$lib/components/modals/settings/OutputFeaturesModal.svelte';
 	import SystemPromptsModal from '$lib/components/modals/settings/SystemPromptsModal.svelte';
+	import type { GameSettings } from '$lib/types/gameSettings';
 	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
@@ -49,6 +50,7 @@
 	);
 	const npcState = useHybridLocalStorage<NPCState>('npcState', {});
 	const storyState = useHybridLocalStorage('storyState', initialStoryState);
+	const gameSettingsState = useHybridLocalStorage<GameSettings>('gameSettingsState');
 	const isGameEnded = useHybridLocalStorage('isGameEnded', false);
 	const rollDifferenceHistoryState = useHybridLocalStorage('rollDifferenceHistoryState', []);
 	// campaign removed
@@ -169,7 +171,8 @@
 				);
 				const characterAgent = new CharacterAgent(characterLlm);
 				const newCharacterState = await characterAgent.generateCharacterDescription(
-					$state.snapshot(storyState.value)
+					$state.snapshot(storyState.value),
+					gameSettingsState.value
 				);
 				if (newCharacterState) {
 					characterState.value = newCharacterState;

@@ -40,10 +40,17 @@
 			'<div class="border-l-2 border-primary/30 pl-3 py-1 mb-2 bg-primary/5 rounded-r"><span class="text-primary/80 text-sm font-medium">$1:</span> <span class="text-base-content italic">"$2"</span></div>'
 		);
 
+		
+
 		// 2. Character mentions: [character]Name[/character] - no UUID needed
 		parsed = parsed.replace(
 			/\[character\](.*?)\[\/character\]/gs,
 			'<span class="font-semibold text-secondary/90 px-1 py-0.5 bg-secondary/10 rounded">$1</span>'
+		);
+
+		parsed = parsed.replace(
+			/\[specific_role:([^\]]+)\](.*?)\[\/specific_role\]/gs,
+			'<span class="font-semibold text-secondary/90 px-1 py-0.5 bg-secondary/10 rounded">$2</span>'
 		);
 
 		// 3. Highlight important text: [highlight]text[/highlight]

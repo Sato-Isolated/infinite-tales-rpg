@@ -19,11 +19,13 @@
 		getCharacterTechnicalId
 	} from '$lib/game/logic/characterLogic';
 	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
+	import type { GameSettings } from '$lib/types/gameSettings';
 
 	let isGeneratingState = $state(false);
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	const storyState = useHybridLocalStorage<Story>('storyState', initialStoryState);
+	const gameSettingsState = useHybridLocalStorage<GameSettings>('gameSettingsState');
 	// campaign removed
 	const characterState = useHybridLocalStorage<CharacterDescription>(
 		'characterState',
@@ -87,6 +89,7 @@
 		isGeneratingState = true;
 		const newState = await characterAgent.generateCharacterDescription(
 			$state.snapshot(storyState.value),
+			gameSettingsState.value,
 			characterStateOverwrites
 		);
 		if (newState) {

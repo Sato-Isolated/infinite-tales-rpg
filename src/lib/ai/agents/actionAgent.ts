@@ -6,9 +6,11 @@ import type { Action } from '$lib/types/action';
 import type { GameActionState } from '$lib/types/actions';
 import type { InventoryState, Item } from '$lib/types/inventory';
 import type { Story } from '$lib/ai/agents/storyAgent';
+import type { GameSettings } from '$lib/types/gameSettings';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
 import { actionRules } from '$lib/ai/prompts/system';
+import { getActionNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 import {
 	SingleActionResponseSchema,
 	ActionsWithThoughtsResponseSchema,
@@ -91,6 +93,7 @@ export class ActionAgent {
 		characterDescription: CharacterDescription,
 		characterStats: CharacterStats,
 		inventoryState: InventoryState,
+		gameSettings: GameSettings,
 		customSystemInstruction?: string,
 		customActionAgentInstruction?: string,
 		relatedHistory?: string[],
@@ -115,6 +118,7 @@ export class ActionAgent {
 			Object.keys(characterStats.attributes),
 			Object.keys(characterStats.skills),
 			newSkillsAllowed,
+			gameSettings,
 			customSystemInstruction,
 			customActionAgentInstruction
 		);
@@ -152,6 +156,7 @@ export class ActionAgent {
 		characterDescription: CharacterDescription,
 		characterStats: CharacterStats,
 		inventoryState: InventoryState,
+		gameSettings: GameSettings,
 		customSystemInstruction?: string,
 		customActionAgentInstruction?: string,
 		relatedHistory?: string[],
@@ -177,6 +182,7 @@ export class ActionAgent {
 			Object.keys(characterStats.attributes),
 			Object.keys(characterStats.skills),
 			newSkillsAllowed,
+			gameSettings,
 			relatedHistory,
 			customSystemInstruction,
 			customActionAgentInstruction
@@ -273,6 +279,7 @@ export class ActionAgent {
 		characterDescription: CharacterDescription,
 		characterStats: CharacterStats,
 		inventoryState: InventoryState,
+		gameSettings: GameSettings,
 		restrainingState?: string,
 		customSystemInstruction?: string,
 		customActionAgentInstruction?: string,
@@ -293,6 +300,7 @@ export class ActionAgent {
 			Object.keys(characterStats.attributes),
 			Object.keys(characterStats.skills),
 			newSkillsAllowed,
+			gameSettings,
 			customSystemInstruction,
 			customActionAgentInstruction
 		);

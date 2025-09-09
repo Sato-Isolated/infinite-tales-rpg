@@ -1,5 +1,7 @@
 import { stringifyPretty } from '$lib/util.svelte';
+import type { GameSettings } from '$lib/types/gameSettings';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
+import { getCharacterNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 
 // =============================================================================
 // CHARACTER AGENT PROMPT CONSTANTS
@@ -40,9 +42,13 @@ export const getCharacterGenerationUserMessageTemplate = (preset: object): strin
  * Builds the complete agent instruction array for character description generation
  */
 export const buildCharacterDescriptionAgentInstructions = (
+	gameSettings: GameSettings,
 	transformInto?: string
 ): string[] => {
-	const instructions = [BASE_CHARACTER_DESCRIPTION_INSTRUCTION];
+	const instructions = [
+		BASE_CHARACTER_DESCRIPTION_INSTRUCTION,
+		getCharacterNarrationPrompt(gameSettings)
+	];
 
 	if (transformInto) {
 		instructions.push(getCharacterTransformationInstructionTemplate(transformInto));

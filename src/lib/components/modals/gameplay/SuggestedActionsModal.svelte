@@ -16,6 +16,7 @@
 	import LoadingIcon from '$lib/components/ui/loading/LoadingIcon.svelte';
 	import type { AIConfig } from '$lib';
 	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
+	import type { GameSettings } from '$lib/types/gameSettings';
 
 	let {
 		onclose,
@@ -36,6 +37,7 @@
 	const characterStatsState = useHybridLocalStorage<CharacterStats>('characterStatsState');
 	const historyMessagesState = useHybridLocalStorage<LLMMessage[]>('historyMessagesState');
 	const inventoryState = useHybridLocalStorage<InventoryState>('inventoryState', {});
+	const gameSettingsState = useHybridLocalStorage<GameSettings>('gameSettingsState');
 	const additionalActionInputState = useHybridLocalStorage<string>(
 		'additionalActionInputState',
 		''
@@ -77,6 +79,7 @@
 			characterState.value,
 			characterStatsState.value,
 			inventoryState.value,
+			gameSettingsState.value,
 			currentGameActionState.is_character_restrained_explanation,
 			customSystemInstruction.value,
 			customActionAgentInstruction.value,

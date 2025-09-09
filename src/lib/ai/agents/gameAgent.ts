@@ -32,11 +32,11 @@ import {
 import {
 	PAST_STORY_PLOT_RULE,
 	SLOW_STORY_PROMPT,
-	storyWordLimit,
 	TIME_DURATION_GUIDELINES,
 	DIALOGUE_CONSISTENCY_PROMPT,
 	DIALOGUE_MEMORY_CHECK
 } from '$lib/ai/prompts/shared';
+import { getStoryNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 import { systemBehaviour, jsonSystemInstructionForGameAgent, jsonSystemInstructionForPlayerQuestion } from '$lib/ai/prompts/system';
 import type { SafetyLevel } from '$lib/types/safetySettings';
 import { GeminiProvider } from '$lib/ai/geminiProvider';
@@ -460,6 +460,9 @@ export class GameAgent {
 		const gameAgent = [
 			'=== CORE BEHAVIOR INSTRUCTIONS ===',
 			systemBehaviour(gameSettings),
+			'',
+			'=== NARRATION INSTRUCTIONS ===',
+			getStoryNarrationPrompt(gameSettings),
 			'',
 			'=== CURRENT STORY STATE ===',
 			stringifyPretty(storyState),

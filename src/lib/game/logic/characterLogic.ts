@@ -4,6 +4,7 @@ import type { CharacterStats, CharacterStatsAgent } from '$lib/ai/agents/charact
 import type { Story } from '$lib/ai/agents/storyAgent';
 import type { Action } from '$lib/types/action';
 import type { PlayerCharactersIdToNamesMap } from '$lib/types/players';
+import type { GameSettings } from '$lib/types/gameSettings';
 import type { DiceRollResult } from './diceRollLogic';
 import { ActionDifficulty } from './gameLogic';
 
@@ -13,7 +14,8 @@ export async function applyCharacterChange(
 	oldDescription: CharacterDescription,
 	oldStats: CharacterStats,
 	characterAgent: CharacterAgent,
-	characterStatsAgent: CharacterStatsAgent
+	characterStatsAgent: CharacterStatsAgent,
+	gameSettings: GameSettings
 ): Promise<{
 	transformedCharacter?: CharacterDescription;
 	transformedCharacterStats?: CharacterStats;
@@ -21,6 +23,7 @@ export async function applyCharacterChange(
 	const changeIntoString = gameEvent.changed_into + '; ' + gameEvent.description;
 	const transformedCharacter = await characterAgent.generateCharacterDescription(
 		story,
+		gameSettings,
 		oldDescription,
 		changeIntoString
 	);

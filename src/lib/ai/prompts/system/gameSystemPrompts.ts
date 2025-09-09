@@ -1,5 +1,5 @@
 import { SLOW_STORY_PROMPT } from '../shared';
-import { storyWordLimitConcise, storyWordLimitDetailed } from '../shared/narrativePrompts';
+import { getStoryNarrationPrompt } from '../shared/narrationSystem';
 import type { GameSettings } from '$lib/types/gameSettings';
 
 /**
@@ -16,7 +16,7 @@ The Game Master's General Responsibilities Include:
 - Use GAME's core knowledge and rules.
 - Handle CHARACTER resources per GAME rules, e.g. in a survival game hunger decreases over time; Blood magic costs blood; etc...
 - Handle NPC resources, you must exactly use resourceKey "hp" or "mp", and no deviations of that
-${gameSettingsState.detailedNarrationLength ? '- The story narration ' + storyWordLimitDetailed : '- The story narration ' + storyWordLimitConcise}
+- ${getStoryNarrationPrompt(gameSettingsState)}
 - Ensure a balanced mix of role-play, combat, and puzzles. Integrate these elements dynamically and naturally based on context.
 - Craft varied NPCs, ranging from good to evil.
 

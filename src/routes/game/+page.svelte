@@ -510,6 +510,7 @@
 				characterState.value,
 				characterStatsState.value,
 				inventoryState.value,
+				gameSettingsState.value,
 				systemInstructionsState.value.generalSystemInstruction,
 				systemInstructionsState.value.actionAgentInstruction,
 				await getRelatedHistory(

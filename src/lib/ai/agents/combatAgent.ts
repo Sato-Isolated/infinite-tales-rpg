@@ -4,6 +4,7 @@ import type { Action } from '$lib/types/action';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState } from '$lib/types/players';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
+import type { GameSettings } from '$lib/types/gameSettings';
 import { ActionDifficulty, getEmptyCriticalResourceKeys } from '$lib/game/logic/gameLogic';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapStatsUpdates } from '$lib/ai/agents/mappers';
@@ -57,6 +58,7 @@ export class CombatAgent {
 		customCombatAgentInstruction: string,
 		historyMessages: Array<LLMMessage>,
 		storyState: Story,
+		gameSettings: GameSettings,
 		safetyLevel: 'strict' | 'balanced' | 'permissive'
 	): Promise<CombatResponse> {
 		const agent = buildCombatAgentInstructions(
@@ -64,6 +66,7 @@ export class CombatAgent {
 			playerCharResources,
 			inventoryState,
 			storyState,
+			gameSettings,
 			customSystemInstruction,
 			customCombatAgentInstruction
 		);
