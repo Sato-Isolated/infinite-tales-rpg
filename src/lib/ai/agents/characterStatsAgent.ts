@@ -290,7 +290,7 @@ export class CharacterStatsAgent {
 		const request: LLMRequest = {
 			userMessage: action,
 			systemInstruction: agent,
-			model: GEMINI_MODELS.FLASH_THINKING_2_0,
+			model: GEMINI_MODELS.FLASH_THINKING_2_5,
 			config: {
 				responseSchema: NPCStatsResponseSchema
 			}

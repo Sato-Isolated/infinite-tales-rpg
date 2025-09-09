@@ -66,7 +66,7 @@ export class SummaryAgent {
 			userMessage: 'Summarize the following story: \n' + stringifyPretty(toSummarize),
 			systemInstruction: agent,
 			temperature: 1,
-			model: GEMINI_MODELS.FLASH_THINKING_2_0,
+			model: GEMINI_MODELS.FLASH_THINKING_2_5,
 			config: {
 				responseSchema: SummaryResponseSchema
 			}
@@ -146,7 +146,7 @@ export class SummaryAgent {
 			userMessage: 'STORY PROGRESSION:\n' + storyProgression,
 			systemInstruction: agent,
 			historyMessages: consideredHistory,
-			model: GEMINI_MODELS.FLASH_THINKING_2_0,
+			model: GEMINI_MODELS.FLASH_THINKING_2_5,
 			temperature: 0.1,
 			config: {
 				responseSchema: RelatedHistoryResponseSchema

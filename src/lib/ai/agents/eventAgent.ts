@@ -149,7 +149,7 @@ export class EventAgent {
 			const request: LLMRequest = {
 				userMessage,
 				systemInstruction,
-				model: GEMINI_MODELS.FLASH_THINKING_2_0,
+				model: GEMINI_MODELS.FLASH_THINKING_2_5,
 				temperature: 0.1,
 				config: {
 					responseSchema: EventResponseSchema

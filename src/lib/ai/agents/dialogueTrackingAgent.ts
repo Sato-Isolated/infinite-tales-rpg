@@ -99,7 +99,7 @@ export class DialogueTrackingAgent {
       userMessage,
       systemInstruction,
       temperature: 0.1, // Low temperature for consistent analysis
-      model: GEMINI_MODELS.FLASH_THINKING_2_0,
+      model: GEMINI_MODELS.FLASH_THINKING_2_5,
       tryAutoFixJSONError: true,
       config: {
         responseSchema: DialogueTrackingResponseSchema
@@ -148,7 +148,7 @@ export class DialogueTrackingAgent {
       userMessage,
       systemInstruction,
       temperature: 0.3,
-      model: GEMINI_MODELS.FLASH_THINKING_2_0,
+      model: GEMINI_MODELS.FLASH_THINKING_2_5,
       tryAutoFixJSONError: true,
       config: {
         responseSchema: ConversationSummaryResponseSchema

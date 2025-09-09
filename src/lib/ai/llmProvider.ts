@@ -21,7 +21,7 @@ export class LLMProvider {
 				safetyLevel,
 				!useFallback
 					? undefined
-					: new GeminiProvider({ ...configToUse, model: GEMINI_MODELS.FLASH_THINKING_2_0 }, safetyLevel)
+					: new GeminiProvider({ ...configToUse, model: GEMINI_MODELS.FLASH_THINKING_2_5 }, safetyLevel)
 			)
 		);
 	}
