@@ -32,7 +32,7 @@
 	import * as combatLogic from '$lib/game/logic/combatLogic';
 	import { CombatAgent } from '$lib/ai/agents/combatAgent';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
+	import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 	import {
 		getCurrentCharacterGameState,
 		getRenderedGameUpdates

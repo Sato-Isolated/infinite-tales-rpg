@@ -19,7 +19,7 @@ import {
   HarmBlockThreshold
 } from '@google/genai';
 import { HarmCategory as HC, HarmBlockThreshold as HBT } from '@google/genai';
-import type { SafetyLevel } from '$lib/utils/contentRatingToSafety';
+import type { SafetyLevel } from '$lib/ai/config/contentRatingToSafety';
 
 /**
  * Permissive safety settings for RPG content - allows creative freedom

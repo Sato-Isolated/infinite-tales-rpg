@@ -7,7 +7,7 @@ import { getLevelUpCostObject } from '$lib/game/resourceUtils';
 import { getPromptForGameMasterNotes, getCraftingPrompt } from '$lib/ai/agents/gameAgentPrompts';
 import type { LLMMessage, SystemInstructionsState } from '$lib/ai/llm';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import { getSafetyLevelFromStory } from '$lib/utils/contentRatingToSafety';
+import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 import { saveSnapshotBeforeAction, validateUndoConsistency } from '$lib/state/gameActionHelper';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
