@@ -38,12 +38,18 @@ Use this word count limit for story output: ${getNarrationLimit('story', gameSet
 
 Use these tags to enrich storytelling without over-marking. Tags must be used exactly as shown, including brackets.
 
-🗣️ Core Tags
+🗣️ Core Tags - DIALOGUE FORMATTING REQUIREMENTS
 
-[speaker:Name]dialogue[/speaker] → For direct speech
+[speaker:Name]dialogue[/speaker] → For ALL direct speech (MANDATORY for character dialogue)
 [character]Name[/character] → Highlight named characters
 [highlight]text[/highlight] → Emphasize critical story elements
 [br] → Scene or time breaks (MAX: one per paragraph)
+
+🚨 CRITICAL DIALOGUE RULES:
+- ALL character speech MUST use [speaker:Name]text[/speaker] format
+- NEVER use "Character: quoted text" format
+- NEVER use Character: "quoted text" format  
+- ALWAYS wrap dialogue in speaker tags: [speaker:CharacterName]What they say[/speaker]
 
 🎨 Style Tags
 

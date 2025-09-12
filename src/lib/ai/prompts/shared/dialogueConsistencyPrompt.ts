@@ -10,9 +10,11 @@ CRITICAL: Before writing any character dialogue, carefully review the PAST STORY
 
 1. 🚫 FORBIDDEN REPETITIONS:
    - Never repeat the exact same dialogue lines that have been said before
+   - Never repeat similar dialogue content even if worded slightly differently
    - Avoid repeating the same information, stories, or explanations
    - Don't have characters ask questions they've already asked
    - Avoid repeated exposition about the same topics
+   - NEVER generate the same dialogue content twice in a single story response
 
 2. ✅ ACCEPTABLE DIALOGUE PATTERNS:
    - Brief acknowledgments ("Yes", "I understand", "Agreed")
@@ -36,6 +38,12 @@ CRITICAL: Before writing any character dialogue, carefully review the PAST STORY
    - Check: "Does this dialogue add new value to the conversation?"
    - Check: "Is this character reacting appropriately to recent events?"
    - Check: "Would this character realistically repeat this information?"
+   - Check: "Am I about to write dialogue that already appears earlier in this response?"
+
+6. 🔄 SINGLE-RESPONSE REPETITION PREVENTION:
+   - NEVER repeat dialogue within the same story response
+   - If a character says something, they should not say it again in the same scene
+   - Ensure each line of dialogue serves a unique purpose in the narrative
 
 IF UNCERTAIN about whether dialogue might be repetitive, err on the side of creating fresh, new dialogue that advances the story or relationships.
 `;

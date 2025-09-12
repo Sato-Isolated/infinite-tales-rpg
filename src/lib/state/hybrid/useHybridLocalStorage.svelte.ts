@@ -45,6 +45,15 @@ export function getMongoDBStatus() {
 		wasAttempted: mongoDBInitAttempted
 	};
 }
+
+/**
+ * Reset MongoDB state (for testing)
+ */
+export function resetMongoDBState() {
+	mongoDBInitialized = false;
+	mongoDBInitAttempted = false;
+	mongoDBInitPromise = null;
+}
 /**
  * Optimized deep comparison to avoid JSON serialization problems
  */
@@ -111,11 +120,11 @@ export function useHybridLocalStorage<T>(
 	const isDebugKey = false; // ['gameActionsState', 'characterState', 'characterStatsState'].includes(key);
 
 	// Svelte 5 reactive state
-	let value = $state<T | undefined>(initialValue ? cloneDeep(initialValue) : undefined);
+	let value = $state<T | undefined>(initialValue !== undefined ? cloneDeep(initialValue) : undefined);
 	let isMounted = $state(false);
 	let hasHydrated = $state(false);
 	let lastSavedValue: T | undefined = $state<T | undefined>(undefined);
-	let currentSize = $state(0);
+	let currentSize = $state(initialValue !== undefined ? calculateSize(initialValue) : 0);
 	let isSaving = $state(false); // Protection against cascading saves
 	let isInitializing = $state(true); // Protection during initialization
 
@@ -136,7 +145,9 @@ export function useHybridLocalStorage<T>(
 	 */
 	function calculateSize(val: unknown): number {
 		try {
-			return new TextEncoder().encode(JSON.stringify(val)).length;
+			const json = JSON.stringify(val);
+			const encoded = new TextEncoder().encode(json);
+			return encoded.length;
 		} catch {
 			return 0;
 		}
@@ -232,7 +243,7 @@ export function useHybridLocalStorage<T>(
 				return loadFromLocalStorage();
 			} else {
 				console.warn(`Failed to load from MongoDB for key "${key}":`, error);
-				return undefined; // Use undefined to avoid automatic saves
+				throw error; // Throw other errors to allow proper error handling
 			}
 		}
 	}
@@ -352,8 +363,8 @@ export function useHybridLocalStorage<T>(
 			clearTimeout(saveTimeout);
 		}
 
-			saveTimeout = setTimeout(async () => {
-				if (isSaving) return; // Double check
+		saveTimeout = setTimeout(async () => {
+			if (isSaving) return; // Double check
 
 			try {
 				isSaving = true;
@@ -376,9 +387,9 @@ export function useHybridLocalStorage<T>(
 		}, saveDebounceMs);
 	}
 
-		/**
-		 * Effect to automatically save changes
-		 */
+	/**
+	 * Effect to automatically save changes
+	 */
 	$effect(() => {
 		const currentValue = value;
 

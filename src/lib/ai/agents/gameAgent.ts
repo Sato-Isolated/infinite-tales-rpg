@@ -264,21 +264,99 @@ export class GameAgent {
 
 		console.log('GameAgent: Successfully generated new state, building history messages...');
 
+		// 🔍 Post-generation dialogue validation: detect and fix internal repetition
+		try {
+			if (typeof newState.story === 'string') {
+				let storyText = newState.story || '';
+				
+				// Extract all dialogue segments from the story using regex
+				const speakerTagMatches = Array.from(storyText.matchAll(/\[speaker:([^\]]+)\]([^[]+)\[\/speaker\]/g));
+				const colonFormatMatches = Array.from(storyText.matchAll(/(\w+):\s*[""]([^""]+)[""]|(\w+):\s*([^.\n]+)/g));
+				
+				// Track dialogue content to detect duplicates
+				const dialogueContents = new Set<string>();
+				const duplicatedDialogue: string[] = [];
+				
+				// Check speaker tag format duplicates
+				speakerTagMatches.forEach(match => {
+					const content = match[2]?.trim();
+					if (content && content.length > 10) { // Only check substantial dialogue
+						if (dialogueContents.has(content.toLowerCase())) {
+							duplicatedDialogue.push(content);
+						} else {
+							dialogueContents.add(content.toLowerCase());
+						}
+					}
+				});
+				
+				// Check colon format duplicates
+				colonFormatMatches.forEach(match => {
+					const content = (match[2] || match[4])?.trim();
+					if (content && content.length > 10) { // Only check substantial dialogue
+						if (dialogueContents.has(content.toLowerCase())) {
+							duplicatedDialogue.push(content);
+						} else {
+							dialogueContents.add(content.toLowerCase());
+						}
+					}
+				});
+				
+				// Report duplicated dialogue
+				if (duplicatedDialogue.length > 0) {
+					console.warn('🚨 Detected duplicated dialogue in generated story:', duplicatedDialogue);
+					console.warn('Full story text:', storyText);
+					
+					// Simple fix: remove duplicate speaker tag segments
+					for (const duplicate of duplicatedDialogue) {
+						const duplicateRegex = new RegExp(`\\[speaker:[^\\]]+\\]${duplicate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\[\\/speaker\\]\\s*`, 'gi');
+						const matches = storyText.match(duplicateRegex);
+						if (matches && matches.length > 1) {
+							// Remove all but the first occurrence
+							let count = 0;
+							storyText = storyText.replace(duplicateRegex, (match) => {
+								count++;
+								return count === 1 ? match : '';
+							});
+							console.log(`🔧 Removed ${matches.length - 1} duplicate occurrence(s) of: "${duplicate}"`);
+						}
+					}
+					
+					newState.story = storyText;
+				}
+			}
+		} catch (e) {
+			console.warn('Post-generation dialogue validation failed (non-fatal):', e);
+		}
+
 		// 🔒 Post-generation enforcement: ensure verbatim quoted segments appear in the story
 		try {
 			if (quotedSegments.length > 0 && typeof newState.story === 'string') {
 				let storyText = newState.story || '';
 				let injected = false;
 				for (const q of quotedSegments) {
-					// Check presence of the exact inner text (without quotes) to keep detection robust across markup
-					if (!storyText.includes(q)) {
+					// Improved dialogue detection - check for multiple formats:
+					// 1. Exact text match (basic case)
+					// 2. Speaker tag format: [speaker:Name]text[/speaker]
+					// 3. Character colon format: Character: "text" or Character: text
+					const hasExactText = storyText.includes(q);
+					const hasSpeakerTag = storyText.includes(`[speaker:${action.characterName}]${q}[/speaker]`);
+					const hasColonFormat = storyText.includes(`${action.characterName}: "${q}"`) || 
+						storyText.includes(`${action.characterName}: ${q}`) ||
+						storyText.includes(`${action.characterName}:"${q}"`);
+					
+					// Only inject if dialogue is truly missing in any recognizable format
+					if (!hasExactText && !hasSpeakerTag && !hasColonFormat) {
+						console.log(`🔧 Injecting missing dialogue segment: "${q}"`);
 						const injectedLine = `[speaker:${action.characterName}]${q}[/speaker]\n`;
 						storyText = injectedLine + storyText;
 						injected = true;
+					} else {
+						console.log(`✅ Dialogue segment found in story: "${q}"`);
 					}
 				}
 				if (injected) {
 					newState.story = storyText;
+					console.log('🔧 Dialogue preservation: injected missing segments');
 				}
 			}
 		} catch (e) {

@@ -183,7 +183,7 @@ export class CharacterStatsAgent {
 
 	mapStats = (resp: CharacterStatsResponse): CharacterStats => {
 		// Defensive defaults and conversion from array-based schema to object maps
-		const level = resp?.level ?? 1;
+		const level = Number.isFinite(resp?.level) ? resp.level : 1;
 		const resourcesArr = Array.isArray(resp?.resources) ? resp.resources : [];
 		const attributesArr = Array.isArray(resp?.attributes) ? resp.attributes : [];
 		const skillsArr = Array.isArray(resp?.skills) ? resp.skills : [];

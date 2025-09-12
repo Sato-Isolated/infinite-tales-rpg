@@ -39,8 +39,9 @@ export const DIALOGUE_PRESERVATION_INSTRUCTIONS = {
   RULES: [
     '- Do NOT paraphrase, translate, or alter punctuation/casing/spaces for these segments.',
     '- Attribute the quotes as spoken by {characterName} unless the action explicitly names a different speaker.',
-    '- Prefer rendering using the markup [speaker:NAME]TEXT[/speaker] so the UI styles dialogue; otherwise include the quotes directly.',
-    '- If the player indicates whispering/murmuring, keep it subtle but still use the exact quoted words.'
+    '- MANDATORY: Use ONLY the markup [speaker:NAME]TEXT[/speaker] format for ALL dialogue - NEVER use "Character: quoted text" format.',
+    '- FORBIDDEN FORMATS: Never use Character: "text", Character:"text", or Character: text formats.',
+    '- If the player indicates whispering/murmuring, keep it subtle but still use the exact quoted words in speaker tags.'
   ],
   SEGMENTS_HEADER: 'Quoted segments to include verbatim:'
 };
@@ -226,6 +227,13 @@ export function buildAntiRepetitionAlert(
   }
 
   alert += `${ANTI_REPETITION_PROMPTS.INTERACTION_RULES.join('\n')}\n`;
+  
+  // Add dialogue formatting enforcement
+  alert += `\n🗣️ DIALOGUE FORMAT ENFORCEMENT:\n`;
+  alert += `- Use ONLY [speaker:Name]dialogue[/speaker] format for ALL character speech\n`;
+  alert += `- NEVER use "Character: quoted text" or Character:"text" formats\n`;
+  alert += `- NEVER repeat the same dialogue content within your response\n`;
+  
   alert += `${ANTI_REPETITION_PROMPTS.FINAL_WARNING}\n`;
 
   return alert;

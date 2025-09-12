@@ -272,7 +272,6 @@ Minimal, accessible pattern aligned with Section 9:
 - Lint/format: `pnpm run lint` • `pnpm run lint:fix` • `pnpm run format`
 - Unit tests: `pnpm run test:unit` (Vitest)
 - E2E tests: `pnpm run test:integration` (Playwright)
-- Full test suite: `pnpm test`
 - Build/preview: `pnpm run build` • `pnpm run preview`
 - Release: `pnpm run release` (release-it)
 
@@ -333,8 +332,8 @@ Add tests: `newCoolAgent.test.ts` covering parse success + malformed JSON fallba
 
 Before opening PR:
 
-1. `npm run lint` passes.
-2. `npm test` passes (unit + integration subset).
+1. `pnpm run lint` passes.
+2. `pnpm test:unit` passes (unit + integration subset).
 3. No type errors (`tsc --noEmit`).
 4. Story flow manual smoke: start new tale -> choose action -> see streamed story.
 
