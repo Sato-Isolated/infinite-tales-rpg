@@ -1,6 +1,6 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import { GEMINI_MODELS } from '../geminiProvider';
 import {
 	SummaryResponseSchema,

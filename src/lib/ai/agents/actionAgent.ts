@@ -2,8 +2,8 @@ import { shuffleArray } from '$lib/util.svelte';
 import type { LLM, LLMMessage, LLMRequest } from '$lib/ai/llm';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
-import type { Action } from '$lib/types/action';
-import type { GameActionState } from '$lib/types/actions';
+import type { Action } from '$lib/types/playerAction';
+import type { GameActionState } from '$lib/types/gameState';
 import type { InventoryState, Item } from '$lib/types/inventory';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import type { GameSettings } from '$lib/types/gameSettings';
@@ -348,3 +348,4 @@ export class ActionAgent {
 		};
 	}
 }
+

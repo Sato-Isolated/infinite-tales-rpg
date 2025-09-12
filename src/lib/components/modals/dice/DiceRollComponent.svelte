@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DiceBox from '@3d-dice/dice-box';
 	import * as diceRollLogic from '$lib/game/logic/diceRollLogic';
-	import type { Action } from '$lib/types/action';
+	import type { Action } from '$lib/types/playerAction';
 	import type { GameSettings } from '$lib/types/gameSettings';
 	import {
 		detectWebGLCapabilities,
@@ -584,3 +584,4 @@
 		</div>
 	</div>
 </dialog>
+

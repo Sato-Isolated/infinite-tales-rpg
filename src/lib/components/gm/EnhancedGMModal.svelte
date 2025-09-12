@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { GameAgent } from '$lib/ai/agents/gameAgent';
-	import type { GameActionState, GameMasterAnswer } from '$lib/types/actions';
+	import type { GameActionState, GameMasterAnswer } from '$lib/types/gameState';
 	import { defaultGameSettings, type GameSettings } from '$lib/types/gameSettings';
 	import type { InventoryState } from '$lib/types/inventory';
 	import type { PlayerCharactersGameState } from '$lib/types/players';
@@ -432,3 +432,4 @@
 		overflow: hidden;
 	}
 </style>
+

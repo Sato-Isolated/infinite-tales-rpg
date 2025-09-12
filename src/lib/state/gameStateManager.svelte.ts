@@ -5,8 +5,8 @@
  */
 
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-import type { Action } from '$lib/types/action';
-import type { GameActionState } from '$lib/types/actions';
+import type { Action } from '$lib/types/playerAction';
+import type { GameActionState } from '$lib/types/gameState';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
@@ -136,3 +136,5 @@ export function createGameStateManager(initialStates: {
 		addGameAction
 	};
 }
+
+

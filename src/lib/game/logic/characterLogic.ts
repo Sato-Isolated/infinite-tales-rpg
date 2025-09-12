@@ -2,7 +2,7 @@ import type { CharacterChangedInto } from '$lib/ai/agents/eventAgent';
 import { CharacterAgent, type CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { CharacterStats, CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import type { GameSettings } from '$lib/types/gameSettings';
 import type { DiceRollResult } from './diceRollLogic';
@@ -230,3 +230,4 @@ export function addCharacterToPlayerCharactersIdToNamesMap(
 		playerCharactersIdToNamesMapState[characterId].push(characterName);
 	}
 }
+

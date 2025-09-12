@@ -1,7 +1,7 @@
 import { stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
 import type { GameTime } from '$lib/types/gameTime';
 import { ActionDifficulty } from '$lib/game/logic/gameLogic';
-import type { Action, DiceRollDifficulty, ReasonedEnum, ReasonedLevelEnum } from '$lib/types/action';
+import type { Action, DiceRollDifficulty, ReasonedEnum, ReasonedLevelEnum } from '$lib/types/playerAction';
 import { type StatsUpdate } from '$lib/ai/agents/combatAgent';
 import type { LLM, LLMMessage, LLMRequest, SystemInstructionsState } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
@@ -17,7 +17,7 @@ import type { InventoryUpdate, InventoryState, ItemWithId, Item } from '$lib/typ
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 import type { PlayerCharactersIdToNamesMap, PlayerCharactersGameState } from '$lib/types/players';
 import type { GameSettings, RandomEventsHandling, defaultGameSettings } from '$lib/types/gameSettings';
-import type { Targets, GameActionState, GameMasterAnswer } from '$lib/types/actions';
+import type { Targets, GameActionState, GameMasterAnswer } from '$lib/types/gameState';
 import { getRefillValue, getRefillResourcesUpdateObject, getLevelUpCostObject } from '$lib/game/resourceUtils';
 import { generateEnrichedNPCContext as generateEnrichedNPCContextFromUtils } from '$lib/game/npc/contextUtils';
 import { buildHistoryMessages } from '$lib/game/messaging/historyBuilder';
@@ -577,3 +577,4 @@ export class GameAgent {
 	}
 
 }
+

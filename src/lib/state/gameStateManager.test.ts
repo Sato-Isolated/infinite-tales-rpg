@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createGameStateManager, type GameStateManager } from './gameStateManager.svelte';
-import type { GameActionState } from '$lib/types/actions';
-import type { Action } from '$lib/types/action';
+import type { GameActionState } from '$lib/types/gameState';
+import type { Action } from '$lib/types/playerAction';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
@@ -525,3 +525,5 @@ describe('GameStateManager', () => {
     });
   });
 });
+
+

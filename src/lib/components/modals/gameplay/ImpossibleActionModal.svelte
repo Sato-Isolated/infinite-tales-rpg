@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Action } from '$lib/types/action';
+	import type { Action } from '$lib/types/playerAction';
 
 	let {
 		onclose,
@@ -44,3 +44,4 @@
 		</button>
 	</div>
 </dialog>
+

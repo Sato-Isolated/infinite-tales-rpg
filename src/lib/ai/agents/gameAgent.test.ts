@@ -3,7 +3,7 @@ import { GameAgent } from './gameAgent';
 import type { LLM, LLMMessage } from '$lib/ai/llm';
 import type { CharacterDescription } from './characterAgent';
 import type { Story } from './storyAgent';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { GameSettings } from '$lib/types/gameSettings';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState } from '$lib/types/players';
@@ -236,3 +236,4 @@ describe('GameAgent', () => {
     });
   });
 });
+

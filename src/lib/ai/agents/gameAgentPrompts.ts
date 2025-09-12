@@ -1,10 +1,10 @@
 import { stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
 import type { GameTime } from '$lib/types/gameTime';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { LLMMessage, SystemInstructionsState } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import type { GameActionState, GameMasterAnswer } from '$lib/types/actions';
+import type { GameActionState, GameMasterAnswer } from '$lib/types/gameState';
 import type { GameSettings } from '$lib/types/gameSettings';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState } from '$lib/types/players';
@@ -596,3 +596,4 @@ export function getPromptForGameMasterNotes(notes: Array<string>): string {
 export function getInitialGameTimeUserMessage(): string {
   return STATIC_PROMPTS.TIME_GENERATION_USER_MESSAGE;
 }
+

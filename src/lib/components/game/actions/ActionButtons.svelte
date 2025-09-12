@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Action } from '$lib/types/action';
-	import type { GameActionState } from '$lib/types/actions';
+	import type { Action } from '$lib/types/playerAction';
+	import type { GameActionState } from '$lib/types/gameState';
 	import type { InventoryState } from '$lib/types/inventory';
 	import { getTextForActionButton } from '$lib/util.svelte';
 	import { mustRollDice, isEnoughResource } from '$lib/game/logic/gameLogic';
@@ -85,3 +85,5 @@
 		padding: 1rem;
 	}
 </style>
+
+

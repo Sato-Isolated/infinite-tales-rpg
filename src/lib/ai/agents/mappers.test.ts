@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mapGameState, mapStatsUpdates, mapStatsUpdate } from './mappers';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import type { DiceRoll, StatsUpdate } from './combatAgent';
 import Dice from 'dice-notation-js';
 

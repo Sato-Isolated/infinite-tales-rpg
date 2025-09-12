@@ -1,4 +1,4 @@
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent';
 import {
 	getRequiredSkillProgression,
@@ -64,3 +64,4 @@ export const determineProgressionForAction = (
 	if (existingProgression !== undefined) return existingProgression;
 	return getSkillProgressionForDifficulty(action.action_difficulty);
 };
+

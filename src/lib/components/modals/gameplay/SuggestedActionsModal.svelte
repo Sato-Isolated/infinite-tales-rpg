@@ -7,8 +7,8 @@
 	import type { LLMMessage } from '$lib/ai/llm';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import { ActionAgent } from '$lib/ai/agents/actionAgent';
-	import type { Action } from '$lib/types/action';
-	import type { GameActionState } from '$lib/types/actions';
+	import type { Action } from '$lib/types/playerAction';
+	import type { GameActionState } from '$lib/types/gameState';
 	import type { InventoryState, ItemWithId } from '$lib/types/inventory';
 	import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 	import { getTextForActionButton } from '$lib/util.svelte';
@@ -150,3 +150,5 @@
 		</div>
 	</div>
 </dialog>
+
+

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Action } from '$lib/types/action';
-	import type { Targets } from '$lib/types/actions';
+	import type { Action } from '$lib/types/playerAction';
+	import type { Targets } from '$lib/types/gameState';
 	import { getNPCDisplayName } from '$lib/util.svelte';
 
 	let {
@@ -119,3 +119,5 @@
 		</form>
 	</div>
 </dialog>
+
+

@@ -3,7 +3,7 @@
  * Includes action generation, single actions, and enhanced action schemas
  */
 
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 
 // Action Agent Response Schema
 export const ActionResponseSchema = {
@@ -251,3 +251,4 @@ export interface ActionsWithThoughtsResponse {
     };
   }>;
 }
+

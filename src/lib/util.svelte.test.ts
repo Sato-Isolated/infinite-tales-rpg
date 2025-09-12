@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ActionDifficulty } from '$lib/game/logic/gameLogic';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import {
   downloadLocalStorageAsJson,
   downloadHybridStorageAsJson,

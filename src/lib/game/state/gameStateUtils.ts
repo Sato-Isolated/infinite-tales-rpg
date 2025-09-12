@@ -1,4 +1,4 @@
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 import { getCharacterTechnicalId } from '../logic/characterLogic';

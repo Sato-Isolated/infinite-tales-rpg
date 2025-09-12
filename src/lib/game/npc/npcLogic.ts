@@ -1,5 +1,5 @@
 import type { NPCState, Relationship } from '$lib/ai/agents/characterStatsAgent';
-import type { Targets } from '$lib/types/actions';
+import type { Targets } from '$lib/types/gameState';
 import { getAllNpcsIds } from '../logic/gameLogic';
 
 export function removeDeadNPCs(npcState: NPCState): string[] {

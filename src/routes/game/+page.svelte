@@ -2,9 +2,9 @@
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { ConversationStateManager } from '$lib/game/state/conversationState.svelte';
 	import { beforeNavigate } from '$app/navigation';
-	import type { Action } from '$lib/types/action';
+	import type { Action } from '$lib/types/playerAction';
 	import { GameAgent } from '$lib/ai/agents/gameAgent';
-	import type { GameActionState, GameMasterAnswer } from '$lib/types/actions';
+	import type { GameActionState, GameMasterAnswer } from '$lib/types/gameState';
 	import { defaultGameSettings, type GameSettings } from '$lib/types/gameSettings';
 	import type { InventoryState, Item } from '$lib/types/inventory';
 	import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';

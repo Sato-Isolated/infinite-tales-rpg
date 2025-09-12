@@ -1,6 +1,6 @@
 import type { Resources } from '$lib/ai/agents/characterStatsAgent';
 import { GameAgent } from '$lib/ai/agents/gameAgent';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 import type { PlayerCharactersGameState } from '$lib/types/players';
 import { getRefillValue, getRefillResourcesUpdateObject } from '$lib/game/resourceUtils';

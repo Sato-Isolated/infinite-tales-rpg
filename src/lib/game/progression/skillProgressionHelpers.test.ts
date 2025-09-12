@@ -5,7 +5,7 @@ import {
   addSkillsIfApplicable,
   determineProgressionForAction
 } from './skillProgressionHelpers';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { CharacterStats, SkillsProgression } from '$lib/ai/agents/characterStatsAgent';
 import { ActionDifficulty } from '$lib/game/logic/gameLogic';
 
@@ -425,3 +425,4 @@ describe('skillProgressionHelpers', () => {
     });
   });
 });
+

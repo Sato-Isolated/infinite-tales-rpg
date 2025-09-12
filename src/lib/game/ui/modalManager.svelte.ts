@@ -1,4 +1,4 @@
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { Item } from '$lib/types/inventory';
 import type { CharacterChangedInto } from '$lib/ai/agents/eventAgent';
 import type { Ability, AiLevelUp } from '$lib/ai/agents/characterStatsAgent';
@@ -228,3 +228,4 @@ export function createModalManager() {
 }
 
 export type ModalManager = ReturnType<typeof createModalManager>;
+

@@ -1,5 +1,5 @@
 import { defaultGameSettings, type GameSettings } from '$lib/types/gameSettings';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 
 export const migrateIfApplicable = (key: string, state: unknown) => {
 	if (!state) return state;
@@ -83,3 +83,4 @@ function migrateNPCState(key: string, state: any) {
 	}
 	return state;
 }
+

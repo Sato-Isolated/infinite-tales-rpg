@@ -4,7 +4,7 @@ import {
   initializeMissingResources
 } from './resourceLogic';
 import type { Resources } from '$lib/ai/agents/characterStatsAgent';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import type { PlayerCharactersGameState } from '$lib/types/players';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 import * as resourceUtils from '$lib/game/resourceUtils';

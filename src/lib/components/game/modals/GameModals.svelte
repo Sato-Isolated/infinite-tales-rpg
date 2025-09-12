@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { ModalManager } from '$lib/game/ui/modalManager.svelte';
-	import type { GameActionState } from '$lib/types/actions';
+	import type { GameActionState } from '$lib/types/gameState';
 	import type { InventoryState } from '$lib/types/inventory';
 	import type { PlayerCharactersGameState } from '$lib/types/players';
 	import type { Ability, CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
 	import type { EventEvaluation } from '$lib/ai/agents/eventAgent';
-	import type { Action } from '$lib/types/action';
+	import type { Action } from '$lib/types/playerAction';
 	import { errorState } from '$lib/state/errorState.svelte';
 	import type { Story } from '$lib/ai/agents/storyAgent';
 	import { getCurrentCharacterGameState } from '$lib/game/state/gameStateUtils';
@@ -182,3 +182,5 @@
 		notation={modalManager.customDiceRollNotation}
 	/>
 {/if}
+
+

@@ -1,6 +1,6 @@
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import { GameAgent } from '$lib/ai/agents/gameAgent';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import { getLevelUpCostObject } from '$lib/game/resourceUtils';
@@ -890,3 +890,4 @@ export function createGameController(ctx: ControllerCtx) {
 		levelUpClicked
 	} as const;
 }
+

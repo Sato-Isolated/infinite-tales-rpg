@@ -4,7 +4,7 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { LLMMessage } from '$lib/ai/llm';
 import type { GameTime } from '$lib/types/gameTime';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import { addMinutesToGameTime } from '$lib/game/logic/timeLogic';
 
 /**

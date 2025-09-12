@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 // Note: This test intentionally uses French strings (quotes and paraphrase)
 // to verify quoted dialogue preservation. Do not translate these fixtures.
 import { GameAgent } from '../gameAgent';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 
 // Minimal fake LLM that attempts to paraphrase, to verify our enforcement injects the exact quote
 class FakeLLM {
@@ -60,3 +60,4 @@ describe('GameAgent quoted dialogue preservation', () => {
     expect(newState.story).toContain('[speaker:Player]');
   });
 });
+

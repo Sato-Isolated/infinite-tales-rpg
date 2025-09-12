@@ -4,8 +4,8 @@ import type { LLM, LLMMessage } from '$lib/ai/llm';
 import type { CharacterDescription } from './characterAgent';
 import type { CharacterStats } from './characterStatsAgent';
 import type { Story } from './storyAgent';
-import type { Action } from '$lib/types/action';
-import type { GameActionState } from '$lib/types/actions';
+import type { Action } from '$lib/types/playerAction';
+import type { GameActionState } from '$lib/types/gameState';
 import type { GameSettings } from '$lib/types/gameSettings';
 import type { InventoryState, Item } from '$lib/types/inventory';
 
@@ -485,3 +485,4 @@ describe('ActionAgent', () => {
     });
   });
 });
+

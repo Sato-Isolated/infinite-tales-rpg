@@ -1,6 +1,6 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import { ActionDifficulty, getEmptyCriticalResourceKeys } from '$lib/game/logic/gameLogic';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState } from '$lib/types/players';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
@@ -154,3 +154,4 @@ export function buildCombatPromptAddition(): string {
     COMBAT_DICE_BONUS_RULE
   );
 }
+

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SummaryAgent, type RelatedStoryHistory } from './summaryAgent';
 import type { LLM, LLMMessage } from '../llm';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import type { SummaryResponse, RelatedHistoryResponse } from '$lib/ai/config/ResponseSchemas';
 import { GEMINI_MODELS } from '../geminiProvider';
 

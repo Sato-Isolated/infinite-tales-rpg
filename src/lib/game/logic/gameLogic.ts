@@ -1,5 +1,5 @@
-import type { Action } from '$lib/types/action';
-import type { GameActionState, Targets } from '$lib/types/actions';
+import type { Action } from '$lib/types/playerAction';
+import type { GameActionState, Targets } from '$lib/types/gameState';
 import type { RandomEventsHandling } from '$lib/types/gameSettings';
 import type { InventoryState, InventoryUpdate } from '$lib/types/inventory';
 import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
@@ -596,3 +596,4 @@ export const utilityPlayerActions = [
 		value: 'long-rest'
 	}
 ];
+

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { migrateIfApplicable } from './versionMigration';
 import { defaultGameSettings } from '$lib/types/gameSettings';
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 
 // Mock the dependencies
 vi.mock('$lib/types/gameSettings', () => ({
@@ -570,3 +570,4 @@ describe('versionMigration', () => {
     });
   });
 });
+

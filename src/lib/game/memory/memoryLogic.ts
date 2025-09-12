@@ -1,6 +1,6 @@
-import type { GameActionState } from '$lib/types/actions';
+import type { GameActionState } from '$lib/types/gameState';
 import type { SummaryAgent, RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 
 /**
  * Enhanced memory retrieval with dialogue-aware filtering
@@ -83,3 +83,4 @@ function isDialogueRelatedContent(storyReference: string): boolean {
 
 	return dialogueKeywords.some(keyword => lowerCaseRef.includes(keyword));
 }
+

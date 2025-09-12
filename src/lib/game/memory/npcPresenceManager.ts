@@ -1,4 +1,4 @@
-import type { GameActionState, Targets } from '$lib/types/actions';
+import type { GameActionState, Targets } from '$lib/types/gameState';
 import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
 
 export type NPCPresenceMemory = {

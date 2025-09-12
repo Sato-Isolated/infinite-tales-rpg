@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CombatAgent, type StatsUpdate, type DiceRoll } from './combatAgent';
 import type { LLM, LLMMessage } from '$lib/ai/llm';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { InventoryState } from '$lib/types/inventory';
 import type { PlayerCharactersGameState } from '$lib/types/players';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
@@ -607,3 +607,4 @@ describe('CombatAgent', () => {
     });
   });
 });
+

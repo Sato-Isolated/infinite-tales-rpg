@@ -8,7 +8,7 @@ import {
   addCharacterToPlayerCharactersIdToNamesMap
 } from './characterLogic';
 import type { CharacterStats } from '$lib/ai/agents/characterStatsAgent';
-import type { Action } from '$lib/types/action';
+import type { Action } from '$lib/types/playerAction';
 import type { PlayerCharactersIdToNamesMap } from '$lib/types/players';
 import { ActionDifficulty } from './gameLogic';
 
@@ -260,3 +260,4 @@ describe('characterLogic', () => {
     });
   });
 });
+

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Action } from '$lib/types/action';
+	import type { Action } from '$lib/types/playerAction';
 	import { GameAgent } from '$lib/ai/agents/gameAgent';
 	import type { InventoryState, Item, ItemWithId } from '$lib/types/inventory';
 	import { formatItemId } from '$lib/game/logic/gameLogic';
@@ -121,3 +121,4 @@
 		{/each}
 	</div>
 </dialog>
+

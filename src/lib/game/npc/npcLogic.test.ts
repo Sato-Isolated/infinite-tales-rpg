@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { NPCState, NPCStats, Relationship } from '$lib/ai/agents/characterStatsAgent';
-import type { Targets } from '$lib/types/actions';
+import type { Targets } from '$lib/types/gameState';
 import {
   removeDeadNPCs,
   addNPCNamesToState,
