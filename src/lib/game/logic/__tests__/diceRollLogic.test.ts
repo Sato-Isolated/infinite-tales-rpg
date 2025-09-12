@@ -7,7 +7,6 @@ import {
   getDiceRollPromptAddition,
   type DiceRollResult
 } from '../diceRollLogic';
-import { ActionDifficulty } from '../gameLogic';
 import * as utilModule from '$lib/util.svelte';
 
 // Mock the getRandomInteger function for deterministic testing

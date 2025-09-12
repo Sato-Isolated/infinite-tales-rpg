@@ -4,7 +4,6 @@
  * Uses SvelteMap/SvelteSet for better reactivity where appropriate
  */
 
-import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import type { Action } from '$lib/types/playerAction';
 import type { GameActionState } from '$lib/types/gameState';
 import type { InventoryState } from '$lib/types/inventory';

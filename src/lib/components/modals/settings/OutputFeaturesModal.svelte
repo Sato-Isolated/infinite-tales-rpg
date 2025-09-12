@@ -1,14 +1,9 @@
 <!-- src/lib/components/OutputFeaturesModal.svelte -->
 <script lang="ts">
-	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import type { AIConfig } from '$lib';
+
 
 	let { onclose }: { onclose: () => void } = $props();
 
-	// --- State Management ---
-	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState', {
-		useFallbackLlmState: false
-	});
 </script>
 
 <dialog open class="modal z-50" style="background: rgba(0, 0, 0, 0.3);">

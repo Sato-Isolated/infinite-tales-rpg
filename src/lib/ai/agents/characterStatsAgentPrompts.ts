@@ -1,6 +1,5 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
-import type { LLMMessage } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import type { CharacterStats, Ability } from './characterStatsAgent';
@@ -67,38 +66,6 @@ Scale the ability according to the level`;
 export const ABILITIES_FINAL_INSTRUCTION = 'Generate structured abilities array with all required fields.';
 
 // Utility functions for building complete prompts
-
-export function buildCharacterStatsAgentInstructions(
-  statsOverwrites?: Partial<CharacterStats>,
-  isAdaptiveOverwrite: boolean = false,
-  transformInto?: string
-): string[] {
-  const instructions = [
-    ROLE_PROMPT,
-    GOALS_PROMPT,
-    OUTPUT_CONTRACT_PROMPT,
-    BALANCING_RULES_PROMPT,
-    QUALITY_CHECKLIST_PROMPT
-  ];
-
-  if (statsOverwrites) {
-    let statsPrompt = OVERWRITES_PROMPT;
-
-    if (isAdaptiveOverwrite) {
-      statsPrompt = ADAPTIVE_OVERWRITE_PROMPT;
-    }
-
-    if (transformInto) {
-      statsPrompt = TRANSFORMATION_PROMPT_TEMPLATE.replace('{transformInto}', transformInto);
-    }
-
-    statsPrompt += '\nEXISTING STATS:\n' + stringifyPretty(statsOverwrites);
-    instructions.push(statsPrompt);
-  }
-
-  instructions.push(FINAL_INSTRUCTION_PROMPT);
-  return instructions;
-}
 
 export function buildCharacterStatsHistoryMessages(
   storyState: Story,

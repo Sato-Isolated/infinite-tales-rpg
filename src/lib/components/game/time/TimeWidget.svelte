@@ -136,14 +136,6 @@
 	const weatherEffectsText = $derived(() => {
 		return gameTime ? getWeatherGameplayEffects(gameTime) : '';
 	});
-
-	const getTemperatureIcon = (temp: number) => {
-		if (temp >= 30) return '🔥';
-		if (temp >= 20) return '☀️';
-		if (temp >= 10) return '🌤️';
-		if (temp >= 0) return '❄️';
-		return '🥶';
-	};
 </script>
 
 <div class="bg-base-200 rounded-lg p-3 shadow-xs" class:p-2={compact}>

@@ -12,19 +12,6 @@
 	let { content }: NarrativeMarkupParserProps = $props();
 
 	/**
-	 * Core supported markup tags - simplified set for better AI adoption
-	 */
-	const CORE_MARKUP_TAGS = new Set([
-		'speaker',
-		'character',
-		'highlight',
-		'location',
-		'time',
-		'whisper',
-		'br'
-	]);
-
-	/**
 	 * Parse simplified narrative markup into HTML with clean styling
 	 * Error-tolerant approach - unknown tags are silently ignored
 	 * No UUID dependencies - uses character names directly

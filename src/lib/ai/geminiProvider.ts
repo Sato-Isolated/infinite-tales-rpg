@@ -1,4 +1,3 @@
-import { stringifyPretty } from '$lib/util.svelte';
 
 import { handleError } from '../util.svelte';
 import {

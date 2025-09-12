@@ -1,10 +1,7 @@
 <script lang="ts">
 	import type { Action } from '$lib/types/playerAction';
-	import { GameAgent } from '$lib/ai/agents/gameAgent';
 	import type { InventoryState, Item, ItemWithId } from '$lib/types/inventory';
 	import { formatItemId } from '$lib/game/logic/gameLogic';
-	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import type { AIConfig } from '$lib';
 	import CraftingModal from './CraftingModal.svelte';
 
 	let {
@@ -23,7 +20,6 @@
 		dialogRef: HTMLDialogElement;
 	} = $props();
 
-	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	let craftingDialogState = $state<boolean>(false);
 
 	function mapToAction(item_id: string, item: Item): ItemWithId & Action {

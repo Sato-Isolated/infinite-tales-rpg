@@ -1,12 +1,8 @@
 <script lang="ts">
-	import type { AIConfig } from '$lib';
 	import {
-		CharacterStatsAgent,
 		type Ability,
 		type Resources
 	} from '$lib/ai/agents/characterStatsAgent';
-	import { initialStoryState, type Story } from '$lib/ai/agents/storyAgent';
-	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 
 	type Props = {
 		ability: Ability;
@@ -28,8 +24,6 @@
 		onRandomize
 	}: Props = $props();
 
-	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
-	const storyState = useHybridLocalStorage<Story>('storyState', initialStoryState);
 
 	let isOverwritten = $state(false);
 

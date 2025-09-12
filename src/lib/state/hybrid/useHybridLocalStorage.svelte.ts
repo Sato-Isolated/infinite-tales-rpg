@@ -1,50 +1,13 @@
-import { getContext, setContext } from 'svelte';
-
 import { onMount } from 'svelte';
 import cloneDeep from 'lodash.clonedeep';
 import type {
 	UseHybridLocalStorageReturn,
 	HybridStorageOptions,
-	StorageLocation,
 	MemoryCache,
 	HybridStorageError
 } from './types.js';
 import { mongoStorageManager } from './mongoStorageManager.js';
 import { getStorageLocation, logConfigInfo } from './config.js';
-
-/**
- * Manual MongoDB initialization function (for debug panel)
- * Allows retrying even after a previous failure
- */
-export async function initializeMongoDBManually(userId?: string): Promise<void> {
-	const info = mongoStorageManager.getInfo();
-	if (!info.isSupported) {
-		throw new Error('MongoDB not supported or not connected');
-	}
-
-	// Reset flags to allow a new attempt
-	mongoDBInitAttempted = false;
-	mongoDBInitialized = false;
-	mongoDBInitPromise = null;
-
-	await mongoStorageManager.initialize();
-	mongoDBInitialized = true;
-	mongoDBInitAttempted = true;
-
-	console.log('✅ MongoDB manually initialized');
-}
-
-/**
- * Returns MongoDB status
- */
-export function getMongoDBStatus() {
-	const info = mongoStorageManager.getInfo();
-	return {
-		isSupported: info.isSupported,
-		isInitialized: mongoDBInitialized,
-		wasAttempted: mongoDBInitAttempted
-	};
-}
 
 /**
  * Reset MongoDB state (for testing)

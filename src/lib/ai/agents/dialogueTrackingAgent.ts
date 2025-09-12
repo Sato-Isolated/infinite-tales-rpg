@@ -1,7 +1,5 @@
-import type { LLM, LLMMessage, LLMRequest } from '../llm';
-import type { GameActionState } from '$lib/types/gameState';
+import type { LLM, LLMRequest } from '../llm';
 import { GEMINI_MODELS } from '../geminiProvider';
-import { stringifyPretty } from '$lib/util.svelte';
 import {
   DialogueTrackingResponseSchema,
   ConversationSummaryResponseSchema,

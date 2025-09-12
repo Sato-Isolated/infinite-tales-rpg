@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { createIntersectionObserver } from '$lib/utils/performance.svelte';
 
 	interface Props {
 		size?: 'sm' | 'md' | 'lg';

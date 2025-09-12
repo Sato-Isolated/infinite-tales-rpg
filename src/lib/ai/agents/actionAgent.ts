@@ -10,7 +10,6 @@ import type { GameSettings } from '$lib/types/gameSettings';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
 import { actionRules } from '$lib/ai/prompts/system';
-import { getActionNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 import {
 	SingleActionResponseSchema,
 	ActionsWithThoughtsResponseSchema,

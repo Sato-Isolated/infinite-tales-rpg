@@ -11,12 +11,7 @@
 
 import type {
   GenerateContentConfig,
-  SafetySetting,
-  ThinkingConfig
-} from '@google/genai';
-import {
-  HarmCategory,
-  HarmBlockThreshold
+  SafetySetting
 } from '@google/genai';
 import { HarmCategory as HC, HarmBlockThreshold as HBT } from '@google/genai';
 import type { SafetyLevel } from '$lib/ai/config/contentRatingToSafety';

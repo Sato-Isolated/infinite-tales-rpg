@@ -20,7 +20,7 @@ import type { StatsUpdate } from '$lib/ai/agents/combatAgent';
 import type { Action } from '$lib/types/playerAction';
 import type { Targets } from '$lib/types/gameState';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
-import type { NpcID, NPCState } from '$lib/ai/agents/characterStatsAgent';
+import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
 import { InterruptProbability } from '$lib/ai/agents/actionAgent';
 
 describe('renderStatUpdates', () => {

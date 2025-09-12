@@ -16,7 +16,6 @@ import type { SafetyLevel } from '$lib/types/safetySettings';
 import { GeminiProvider } from '$lib/ai/geminiProvider';
 import { GEMINI_MODELS } from '../geminiProvider';
 import {
-	buildCharacterStatsAgentInstructions,
 	buildCharacterStatsHistoryMessages,
 	buildLevelUpAgentInstructions,
 	buildLevelUpHistoryMessages,
@@ -28,15 +27,6 @@ import {
 	buildAbilitiesPartialPrompt,
 	CHARACTER_STATS_USER_MESSAGE
 } from './characterStatsAgentPrompts';
-
-export type SpellOrAbility = {
-	name: string;
-	effect: string;
-	resource_cost: {
-		resource_key: string | undefined;
-		cost: number;
-	};
-};
 
 export type Ability = {
 	name: string;
@@ -88,14 +78,6 @@ export const initialCharacterStatsState: CharacterStats = {
 	skills: {},
 	spells_and_abilities: []
 };
-
-/**
- * Dynamic NPC rank generator - no caching
- * Generates fresh rank array on each call to prevent repetitive patterns
- */
-function generateNpcRanks(): string[] {
-	return ['Very Weak', 'Weak', 'Average', 'Strong', 'Boss', 'Legendary'];
-}
 
 export type Relationship = {
 	target_npc_id?: string; // Target NPC ID (undefined if relationship with player)

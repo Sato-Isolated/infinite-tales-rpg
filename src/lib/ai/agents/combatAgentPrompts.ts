@@ -6,7 +6,6 @@ import type { PlayerCharactersGameState } from '$lib/types/players';
 import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 import type { GameSettings } from '$lib/types/gameSettings';
 import type { Story } from '$lib/ai/agents/storyAgent';
-import type { LLMMessage } from '$lib/ai/llm';
 import { getCombatNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
 
 // Base combat agent prompts

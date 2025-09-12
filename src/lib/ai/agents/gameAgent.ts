@@ -1,37 +1,27 @@
 import { stringifyPretty, type ThoughtsState } from '$lib/util.svelte';
-import type { GameTime } from '$lib/types/gameTime';
-import { ActionDifficulty } from '$lib/game/logic/gameLogic';
-import type { Action, DiceRollDifficulty, ReasonedEnum, ReasonedLevelEnum } from '$lib/types/playerAction';
-import { type StatsUpdate } from '$lib/ai/agents/combatAgent';
+import type { Action } from '$lib/types/playerAction';
 import type { LLM, LLMMessage, LLMRequest, SystemInstructionsState } from '$lib/ai/llm';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import { mapGameState } from '$lib/ai/agents/mappers';
 import {
-	type NpcID,
-	type NPCState,
-	type Resources
+	type NPCState
 } from '$lib/ai/agents/characterStatsAgent';
 import { DialogueTrackingAgent } from '$lib/ai/agents/dialogueTrackingAgent';
-import type { InventoryUpdate, InventoryState, ItemWithId, Item } from '$lib/types/inventory';
-import type { ResourcesWithCurrentValue } from '$lib/types/resources';
-import type { PlayerCharactersIdToNamesMap, PlayerCharactersGameState } from '$lib/types/players';
-import type { GameSettings, RandomEventsHandling, defaultGameSettings } from '$lib/types/gameSettings';
-import type { Targets, GameActionState, GameMasterAnswer } from '$lib/types/gameState';
-import { getRefillValue, getRefillResourcesUpdateObject, getLevelUpCostObject } from '$lib/game/resourceUtils';
+import type {  InventoryState} from '$lib/types/inventory';
+import type { PlayerCharactersGameState } from '$lib/types/players';
+import type { GameSettings } from '$lib/types/gameSettings';
+import type { GameActionState, GameMasterAnswer } from '$lib/types/gameState';
 import { generateEnrichedNPCContext as generateEnrichedNPCContextFromUtils } from '$lib/game/npc/contextUtils';
 import { buildHistoryMessages } from '$lib/game/messaging/historyBuilder';
 import {
-	GameTimeResponseSchema,
 	GameAgentResponseSchema,
 	GameMasterAnswerResponseSchema,
-	type GameTimeResponse,
 	type GameAgentResponse,
 	type GameMasterAnswerResponse
 } from '$lib/ai/config/ResponseSchemas';
 import {
 	PAST_STORY_PLOT_RULE,
-	SLOW_STORY_PROMPT,
 	TIME_DURATION_GUIDELINES,
 	DIALOGUE_CONSISTENCY_PROMPT,
 	DIALOGUE_MEMORY_CHECK
@@ -44,26 +34,8 @@ import {
 	buildDialoguePreservationInstructions,
 	buildAntiRepetitionAlert,
 	extractTemporalContext,
-	extractPlotContext,
-	mapPlotStringToIds,
-	buildGameMasterSystemInstructions,
-	buildGameMasterUserMessage,
-	buildGameAgentSystemInstructions,
-	buildInitialGameTimeInstructions,
-	getGameEndedPrompt,
-	getStartingPrompt,
-	getCraftingPrompt,
-	getPromptForGameMasterNotes,
-	getInitialGameTimeUserMessage
+	extractPlotContext
 } from './gameAgentPrompts';
-import {
-	NPC_TEMPORAL_CONTINUITY_PROMPT,
-	NPC_ACTIVITY_DURING_ABSENCE_PROMPT,
-	INTEGRATE_NPC_TEMPORAL_CONTEXT,
-	NPC_TIME_GAP_EXAMPLES
-} from '$lib/ai/prompts/templates/npcTemporalContinuity';
-import { addMinutesToGameTime } from '$lib/game/logic/timeLogic';
-
 export class GameAgent {
 	llm: LLM;
 	dialogueTracker: DialogueTrackingAgent;

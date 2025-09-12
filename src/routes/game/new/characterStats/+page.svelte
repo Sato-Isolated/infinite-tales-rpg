@@ -12,7 +12,6 @@
 	import { LLMProvider } from '$lib/ai/llmProvider';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { navigate, parseState, removeEmptyValues } from '$lib/util.svelte';
-	import { onMount } from 'svelte';
 	import cloneDeep from 'lodash.clonedeep';
 	import isEqual from 'fast-deep-equal';
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';

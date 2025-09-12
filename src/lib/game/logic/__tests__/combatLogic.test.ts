@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { addResourceValues } from '../combatLogic';
-import type { NPCState, NPCStats } from '$lib/ai/agents/characterStatsAgent';
+import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
 import * as utilModule from '$lib/util.svelte';
 
 // Mock the getRandomInteger utility

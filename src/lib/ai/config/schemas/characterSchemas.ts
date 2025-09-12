@@ -21,13 +21,6 @@ export const CharacterResponseSchema = {
   required: ['character_description', 'personality_traits', 'background_story', 'goals_motivations']
 };
 
-export interface CharacterResponse {
-  character_description: string;
-  personality_traits: string[];
-  background_story: string;
-  goals_motivations: string[];
-}
-
 // Character Description Response Schema
 export const CharacterDescriptionResponseSchema = {
   type: 'object' as const,

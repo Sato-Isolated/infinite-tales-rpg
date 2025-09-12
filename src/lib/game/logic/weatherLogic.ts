@@ -8,7 +8,7 @@ import type {
 	GeographicWeatherData,
 	GameTime
 } from '$lib/types/gameTime';
-import { createDefaultWeatherEffects, createDefaultWeather } from '$lib/types/gameTime';
+import { createDefaultWeatherEffects } from '$lib/types/gameTime';
 
 // Helper to create complete weather transition matrix
 const createWeatherTransition = (primary: Record<string, number>): Record<WeatherType, number> => {

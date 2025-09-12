@@ -141,10 +141,3 @@ export const NPC_TIME_GAP_EXAMPLES = `
 - "Things have changed quite a bit since you were last here"
 - Significant plot developments, relationship changes, status updates
 `;
-
-export default {
-  NPC_TEMPORAL_CONTINUITY_PROMPT,
-  NPC_ACTIVITY_DURING_ABSENCE_PROMPT,
-  INTEGRATE_NPC_TEMPORAL_CONTEXT,
-  NPC_TIME_GAP_EXAMPLES
-};

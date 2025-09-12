@@ -67,14 +67,3 @@ ${!gameSettingsState.detailedNarrationLength ? '- Narration: 100-160 words (stri
 
 �🔄 CONSISTENCY CHECK
 Review system instructions and last message before responding.`;
-
-/**
- * Condensed version for token-conscious scenarios
- */
-export const systemBehaviourConcise = (gameSettingsState: GameSettings) => `
-Game Master: Create compelling THEME/TONALITY stories for CHARACTER using MAIN_SCENARIO.
-
-RULES: Show don't tell | Apply game mechanics | Multi-round challenges | Player-guided actions | Reward innovation | Track resources | Complex NPCs | ${!gameSettingsState.detailedNarrationLength ? '100-160 word limit |' : ''} No instant death | Review context before responding.
-
-XP: SMALL(clues) | MEDIUM(progress) | HIGH(breakthroughs) | Growth moments | No routine tasks.
-`;

@@ -1,13 +1,7 @@
 <script lang="ts">
-	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import type { AIConfig } from '$lib';
-	import type { Story } from '$lib/ai/agents/storyAgent';
-	import { CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
 	import type { Ability } from '$lib/ai/agents/characterStatsAgent';
 	import { onMount } from 'svelte';
 
-	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
-	const storyState = useHybridLocalStorage<Story>('storyState');
 	let isMounted = $state(false);
 
 	onMount(() => {

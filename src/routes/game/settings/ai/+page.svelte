@@ -24,7 +24,7 @@
 	} from '$lib/ai/agents/eventAgent';
 	import type { CharacterChangedInto, EventEvaluation } from '$lib/ai/agents/eventAgent';
 	import type { PlayerCharactersIdToNamesMap } from '$lib/types/players';
-	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
+	import { type GameTime } from '$lib/types/gameTime';
 	import AiGenerationSettings from '$lib/components/modals/settings/AiGenerationSettings.svelte';
 	import OutputFeaturesModal from '$lib/components/modals/settings/OutputFeaturesModal.svelte';
 	import SystemPromptsModal from '$lib/components/modals/settings/SystemPromptsModal.svelte';

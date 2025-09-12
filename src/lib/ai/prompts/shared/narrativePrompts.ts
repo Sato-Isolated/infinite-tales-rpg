@@ -30,6 +30,3 @@ export const characterDescriptionDetailed = 'should be 150-300 words, providing 
 // Event narration limits for event descriptions
 export const eventNarrationConcise = 'should be 60-120 words, focusing on key event outcomes and immediate consequences.';
 export const eventNarrationDetailed = 'should be 120-250 words, providing rich environmental context, character reactions, and detailed event progression.';
-
-// For backward compatibility (deprecated, use storyWordLimitConcise)
-export const storyWordLimit = storyWordLimitConcise;

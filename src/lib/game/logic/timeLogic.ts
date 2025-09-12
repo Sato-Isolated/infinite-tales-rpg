@@ -4,7 +4,6 @@ import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
 import type { GameSettings } from '$lib/types/gameSettings';
 import type { SafetyLevel } from '$lib/types/safetySettings';
-import { getSafetyLevelFromStory } from '$lib/ai/config/contentRatingToSafety';
 import { updateWeatherForTime } from './weatherLogic';
 
 // --- Time helpers (normalization & math) ---

@@ -1,32 +1,5 @@
-import type { Action } from '$lib/types/playerAction';
 import type { Item } from '$lib/types/inventory';
-import type { CharacterChangedInto } from '$lib/ai/agents/eventAgent';
-import type { Ability, AiLevelUp } from '$lib/ai/agents/characterStatsAgent';
 import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-
-/**
- * Modal Manager - Centralized modal state management
- * Following copilot instructions: Extract complex logic from components
- */
-
-export interface ModalState {
-	// Dialog references
-	diceRollDialog?: HTMLDialogElement;
-	useSpellsAbilitiesModal?: any;
-	useItemsModal?: any;
-	utilityModal?: any;
-
-	// Modal state
-	customActionImpossibleReasonState: 'not_enough_resource' | 'not_plausible' | undefined;
-	gmQuestionState: string;
-	customDiceRollNotation: string;
-	itemForSuggestActionsState?: Item & { item_id: string };
-	levelUpState: {
-		buttonEnabled: boolean;
-		dialogOpened: boolean;
-		playerName: string;
-	};
-}
 
 export function createModalManager() {
 	// Reactive state

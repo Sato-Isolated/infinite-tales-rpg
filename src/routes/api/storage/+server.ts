@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { connectToMongoDB, GameData, ensureMongoDBConnection } from '$lib/db/mongodb';
+import { GameData, ensureMongoDBConnection } from '$lib/db/mongodb';
 
 // GET /api/storage?key=xxx - Retrieve data
 export const GET: RequestHandler = async ({ url }) => {

@@ -16,15 +16,6 @@
  */
 
 import type { GameActionState } from '$lib/types/gameState';
-import type { InventoryState } from '$lib/types/inventory';
-import type { PlayerCharactersGameState, PlayerCharactersIdToNamesMap } from '$lib/types/players';
-import type { CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
-import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
-import type { Story } from '$lib/ai/agents/storyAgent';
-import { initialStoryState } from '$lib/ai/agents/storyAgent';
-import type { LLMMessage } from '$lib/ai/llm';
-import type { RelatedStoryHistory } from '$lib/ai/agents/summaryAgent';
-import { stringifyPretty } from '$lib/util.svelte';
 
 export interface UndoSnapshot {
   timestamp: number;
@@ -79,19 +70,7 @@ export class UndoManager {
     'gameTimeState',
     'isGameEnded'
   ] as const;
-
-  /**
-   * Large state keys excluded from snapshots to prevent storage issues
-   * These states can be reconstructed or are not critical for undo
-   */
-  private static readonly EXCLUDED_LARGE_STATES = [
-    'historyMessagesState',      // Can be very large, not critical for undo
-    'relatedStoryHistoryState',  // Large contextual data, can be reconstructed
-    'relatedActionHistoryState', // Large contextual data, can be reconstructed  
-    'thoughtsState',            // Large AI thoughts, not critical for undo
-    'rollDifferenceHistoryState' // Historical data, not critical for undo
-  ] as const;
-
+  
   /**
    * Volatile UI states that should be cleaned after restoration
    */

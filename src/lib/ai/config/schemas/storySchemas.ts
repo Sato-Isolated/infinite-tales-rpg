@@ -131,33 +131,3 @@ export const StoryResponseSchema = {
   },
   required: ['story', 'xp_gain', 'inventory_update', 'stats_update']
 };
-
-export interface StoryResponse {
-  story: string;
-  xp_gain: number;
-  inventory_update: {
-    items_added: Array<{
-      name: string;
-      quantity: number;
-      description?: string;
-    }>;
-    items_removed: Array<{
-      name: string;
-      quantity: number;
-    }>;
-  };
-  stats_update: {
-    health?: number;
-    mana?: number;
-    energy?: number;
-    mood?: string;
-    location?: string;
-  };
-  plotPointAdvancingNudgeExplanation?: string;
-  time_progression?: {
-    hours_passed: number;
-    new_time_description: string;
-  };
-  story_beats?: string[];
-  consequences?: string[];
-}

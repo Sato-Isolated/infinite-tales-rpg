@@ -94,18 +94,13 @@
 	import StorySection from '$lib/components/game/story/StorySection.svelte';
 	import ActionButtons from '$lib/components/game/actions/ActionButtons.svelte';
 	import StaticActionsPanel from '$lib/components/game/actions/StaticActionsPanel.svelte';
-	import UndoButton from '$lib/components/game/UndoButton.svelte';
 	import ActionInputForm, {
 		type Receiver
 	} from '$lib/components/game/actions/ActionInputForm.svelte';
 	import { createGameController } from '$lib/game/controllers/gameController';
 	import { createModalManager } from '$lib/game/ui/modalManager.svelte';
 	import TimeWidget from '$lib/components/game/time/TimeWidget.svelte';
-	import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
-	import {
-		generateStoryAppropriateTime,
-		shouldRegenerateGameTime
-	} from '$lib/game/logic/timeLogic';
+	import { type GameTime } from '$lib/types/gameTime';
 
 	// Element/component refs (dialogs, child components)
 	let actionInputFormComponent = $state<{ clear?: () => void }>();

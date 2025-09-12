@@ -1,12 +1,9 @@
 <script lang="ts">
 	import TargetModal from './TargetModal.svelte';
-	import { type Ability, CharacterStatsAgent } from '$lib/ai/agents/characterStatsAgent';
+	import { type Ability } from '$lib/ai/agents/characterStatsAgent';
 	import type { Action } from '$lib/types/playerAction';
 	import type { ResourcesWithCurrentValue } from '$lib/types/resources';
 	import type { Targets } from '$lib/types/gameState';
-	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
-	import type { AIConfig } from '$lib';
-
 	let {
 		abilities,
 		playerName,
@@ -23,7 +20,6 @@
 		dialogRef: HTMLDialogElement;
 	} = $props();
 
-	const aiConfigState = useHybridLocalStorage<AIConfig>('aiConfigState');
 	// dialog ref is mutated at runtime; make it reactive
 	let targetModalRef = $state<any>();
 	let abilityActionState = $state({} as Action);

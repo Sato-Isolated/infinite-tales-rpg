@@ -272,24 +272,6 @@ export const GameTimeResponseSchema = {
   required: ['day', 'dayName', 'month', 'monthName', 'year', 'hour', 'minute', 'timeOfDay', 'season', 'weather']
 };
 
-export interface GameTimeResponse {
-  day: number;
-  dayName: string;
-  month: number;
-  monthName: string;
-  year: number;
-  hour: number;
-  minute: number;
-  timeOfDay: 'dawn' | 'morning' | 'midday' | 'afternoon' | 'evening' | 'night' | 'deep_night';
-  season: 'spring' | 'summer' | 'autumn' | 'winter';
-  weather: {
-    type: 'clear' | 'cloudy' | 'light_rain' | 'heavy_rain' | 'drizzle' | 'snow' | 'blizzard' | 'storm' | 'thunderstorm' | 'fog' | 'mist' | 'wind' | 'hail' | 'heat_wave' | 'cold_snap';
-    intensity: 'light' | 'moderate' | 'heavy' | 'extreme';
-    description?: string;
-  };
-  explanation?: string;
-}
-
 // Enhanced Game Master Answer Response Schema (for player questions)
 export const GameMasterAnswerResponseSchema = {
   type: 'object' as const,

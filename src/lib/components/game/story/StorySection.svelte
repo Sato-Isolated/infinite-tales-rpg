@@ -1,6 +1,5 @@
 <script lang="ts">
 	// Import necessary components and types
-	import type { AIConfig } from '$lib';
 	import StoryProgressionWithImage, {
 		type StoryProgressionWithImageProps
 	} from '$lib/components/game/story/StoryProgressionWithImage.svelte';
@@ -34,7 +33,6 @@
 		showXLastStoryProgressions,
 		setShowXLastStoryProgressions,
 		getRenderedGameUpdates,
-		storyState,
 		isGameEnded,
 		playerCharacterIdState,
 		storyTextRef = $bindable()

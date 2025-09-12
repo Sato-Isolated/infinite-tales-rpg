@@ -3,7 +3,7 @@
 	import type { GameActionState } from '$lib/types/gameState';
 	import type { InventoryState } from '$lib/types/inventory';
 	import type { PlayerCharactersGameState } from '$lib/types/players';
-	import type { Ability, CharacterStats, NPCState } from '$lib/ai/agents/characterStatsAgent';
+	import type { Ability, CharacterStats } from '$lib/ai/agents/characterStatsAgent';
 	import type { EventEvaluation } from '$lib/ai/agents/eventAgent';
 	import type { Action } from '$lib/types/playerAction';
 	import { errorState } from '$lib/state/errorState.svelte';
@@ -65,7 +65,6 @@
 		characterName,
 		characterStatsState,
 		inventoryState,
-		storyState,
 		eventEvaluationState,
 		chosenActionState,
 		didAIProcessDiceRollActionState,

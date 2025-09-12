@@ -38,19 +38,6 @@ export const ActionResponseSchema = {
   required: ['actions']
 };
 
-export interface ActionResponse {
-  actions: Array<{
-    action: string;
-    description: string;
-    difficulty: string;
-    potential_outcomes: string[];
-    required_stats?: {
-      stat_name: string;
-      minimum_value: number;
-    };
-  }>;
-}
-
 // Single Action Response Schema for ActionAgent
 export const SingleActionResponseSchema = {
   type: 'object' as const,

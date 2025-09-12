@@ -4,7 +4,6 @@
  */
 
 import type { GameTime } from '$lib/types/gameTime';
-import type { DiceRollResult } from '$lib/game/logic/diceRollLogic';
 import { useHybridLocalStorage } from './hybrid/useHybridLocalStorage.svelte';
 
 export interface UIStateManager {
