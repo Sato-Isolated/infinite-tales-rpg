@@ -1,4 +1,3 @@
-import { LLMProvider } from '$lib/ai/llmProvider';
 import type { Story } from '$lib/ai/agents/storyAgent';
 import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import { createDefaultTime, type GameTime } from '$lib/types/gameTime';
@@ -182,11 +181,11 @@ export function getWeatherMagicModifier(gameTime: GameTime): number {
 export async function generateStoryAppropriateTime(
 	storyState: Story,
 	characterState: CharacterDescription,
-	gameSettings: GameSettings,
+	_gameSettings: GameSettings,
 	apiKey: string,
 	safetyLevel: SafetyLevel,
 	language?: string,
-	useFallbackLlm?: boolean
+	_useFallbackLlm?: boolean
 ): Promise<GameTime> {
 	console.log('generateStoryAppropriateTime called with:', {
 		storyGame: storyState.game,
@@ -198,19 +197,18 @@ export async function generateStoryAppropriateTime(
 	});
 
 	try {
-		const llm = LLMProvider.provideLLM(
-			{
-				temperature: 0.8,
-				apiKey: apiKey,
-				language: language
-			},
-			safetyLevel, // Use provided safety level parameter
-			useFallbackLlm
-		);
-
-		console.log('LLM provider created, calling generateInitialGameTime...');
+		console.log('LLM provider would be created here when generateInitialGameTime is re-implemented...');
 		// TODO: Re-implement generateInitialGameTime function
-		// const result = await generateInitialGameTime(llm, storyState, characterState, gameSettings);
+		// const llm = LLMProvider.provideLLM(
+		//   {
+		//     temperature: 0.8,
+		//     apiKey: apiKey,
+		//     language: language
+		//   },
+		//   safetyLevel,
+		//   useFallbackLlm
+		// );
+		// const result = await generateInitialGameTime(llm, storyState, characterState, _gameSettings);
 		console.log('generateInitialGameTime temporarily disabled, using default time');
 		return createDefaultTime();
 	} catch (error) {

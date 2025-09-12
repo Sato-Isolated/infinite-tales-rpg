@@ -20,7 +20,6 @@
 	import { SummaryAgent } from '$lib/ai/agents/summaryAgent';
 	import {
 		type Ability,
-		type AiLevelUp,
 		type CharacterStats,
 		CharacterStatsAgent,
 		initialCharacterStatsState,
@@ -121,9 +120,6 @@
 		false
 	);
 	let didAIProcessActionState = $state<boolean>(false);
-
-	// Prevent race conditions by ensuring only one AI operation at a time
-	let aiOperationInProgress = $state(false);
 
 	// Create modal manager after other local states
 	const modalManager = createModalManager();
@@ -687,7 +683,7 @@
 		}
 	}
 
-	async function addAdditionalStoryInput(action: Action, additionalStoryInput: string) {
+	async function addAdditionalStoryInput(_action: Action, additionalStoryInput: string) {
 		// If the game is played in campaign mode
 		// campaign additional input removed
 		return additionalStoryInput;
@@ -765,19 +761,10 @@
 		modalManager.setItemForSuggestActions(controller!.handleItemUseChosen(item));
 	};
 
-	const handleTargetedSpellsOrAbility = async (action: Action, targets: string[]) => {
-		await controller!.handleTargetedSpellsOrAbility(action, targets);
-	};
-
 	const handleCustomDiceRollClosed = () => {
 		controller!.handleCustomDiceRollClosed();
 		modalManager.setCustomDiceRollNotation('');
 		actionInputFormComponent?.clear?.();
-	};
-
-	const handleLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
-		controller!.handleLevelUpModalClosed(aiLevelUp);
-		modalManager.resetLevelUpState();
 	};
 
 	const handleSuggestItemActionClosed = (action?: Action) => {
@@ -786,10 +773,6 @@
 	};
 
 	// getCurrentCampaignChapter removed
-
-	const generateActionFromCustomInput = async (action: Action) => {
-		await controller!.generateActionFromCustomInput(action);
-	};
 
 	const handleCustomActionSubmit = async (text: string, mustGenerateCustomAction = false) => {
 		await controller!.onCustomActionSubmitted(text, mustGenerateCustomAction, customActionReceiver);
@@ -823,13 +806,6 @@
 				type: 'remove_item'
 			});
 		}
-	}
-
-	function getEventToConfirm(gamEvent: CharacterChangedInto): {
-		title: string;
-		description: string;
-	} {
-		return controller!.getEventToConfirm(gamEvent);
 	}
 
 	async function confirmCharacterChangeEvent(

@@ -124,8 +124,8 @@ export class CharacterStatsAgent {
 		storyState: Story,
 		characterState: CharacterDescription,
 		statsOverwrites: Partial<CharacterStats> | undefined = undefined,
-		isAdaptiveOverwrite: boolean = false,
-		transformInto?: string
+		_isAdaptiveOverwrite: boolean = false,
+		_transformInto?: string
 	): Promise<CharacterStats> {
 		const agentInstruction = [
 			'# Role\nYou are an expert RPG character stats designer. Create balanced, flavorful stats that match the character and the world. Prefer concise, grounded numbers over generic or inflated values.\n',

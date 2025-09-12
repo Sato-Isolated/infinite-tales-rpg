@@ -70,7 +70,7 @@ export class UndoManager {
     'gameTimeState',
     'isGameEnded'
   ] as const;
-  
+
   /**
    * Volatile UI states that should be cleaned after restoration
    */
@@ -91,7 +91,6 @@ export class UndoManager {
 
       // Enhanced logging to track snapshot timing
       const undoStack = this._loadUndoStack();
-      const lastSnapshot = undoStack[undoStack.length - 1];
 
       // Prevent duplicate snapshots for the same action
       if (undoStack.length > 0 && undoStack[0].gameActionId === currentActionId) {

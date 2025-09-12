@@ -264,16 +264,16 @@ export class ModelCapabilities {
     return model === 'gemini-2.5-flash-preview-05-20';
   }
 
-  static getMaxTemperature(model: string): number {
+  static getMaxTemperature(_model: string): number {
     // Most Gemini models support temperature up to 2.0
     return 2.0;
   }
 
-  static getDefaultTemperature(model: string): number {
+  static getDefaultTemperature(_model: string): number {
     return 1.0;
   }
 
-  static getMaxTokens(model: string): number {
+  static getMaxTokens(_model: string): number {
     // Default max tokens for most models
     return 8192;
   }

@@ -156,7 +156,7 @@ const WEATHER_TRANSITIONS: Record<WeatherType, Record<WeatherType, number>> = {
 };
 
 // Default transition probabilities for weather types not defined above
-const getDefaultTransitions = (currentType: WeatherType): Record<WeatherType, number> => {
+const getDefaultTransitions = (_currentType: WeatherType): Record<WeatherType, number> => {
 	const defaultProb = 1 / Object.keys(WEATHER_TRANSITIONS).length;
 	const result: Record<WeatherType, number> = {} as Record<WeatherType, number>;
 	

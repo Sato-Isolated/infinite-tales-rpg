@@ -14,7 +14,7 @@ describe('Combat Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock implementation
-    mockGetRandomInteger.mockImplementation((min, max) => min);
+    mockGetRandomInteger.mockImplementation((min, _max) => min);
   });
 
   afterEach(() => {

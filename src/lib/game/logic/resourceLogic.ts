@@ -124,7 +124,7 @@ export function refillResourcesFully(
 export function initializeMissingResources(
 	resources: Resources,
 	playerId: string,
-	playerCharacterName: string,
+	_playerCharacterName: string,
 	gameActionsState: GameActionState[],
 	playerCharactersGameState: PlayerCharactersGameState
 ) {
