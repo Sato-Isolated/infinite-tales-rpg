@@ -41,7 +41,8 @@
     "customGMNotesState",
     "relatedActionHistoryState",
     "apiKeyState",
-    "safetySettingsState"
+    "safetySettingsState",
+    "gameStyleState"
   ],
   "sizeThreshold": 23086,
   "analysis": {

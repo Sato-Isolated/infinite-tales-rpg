@@ -22,7 +22,6 @@
 
 	let isGeneratingState = $state(false);
 	let isHydrated = $state(false);
-	let hasImportedData = $state(false);
 	const apiKeyState = useHybridLocalStorage<string>('apiKeyState', '');
 	const aiLanguage = useHybridLocalStorage<string>('aiLanguage');
 	let storyAgent: StoryAgent;
@@ -140,9 +139,8 @@
 	}
 
 	const handleImportComplete = () => {
-		hasImportedData = true;
 		setTimeout(() => {
-			console.log('Import completed, data flag set');
+			console.log('Import completed');
 		}, 100);
 	};
 </script>

@@ -1,5 +1,7 @@
 import { getNarrationLimit } from '../shared/narrationSystem';
 import type { GameSettings } from '$lib/types/gameSettings';
+import { getStyleConstants } from '../styleAdaptation/styleConstants';
+import { getCurrentGameStyle } from '$lib/state/gameStyleState.svelte';
 
 /**
  * JSON system instruction for game agent responses
@@ -10,8 +12,22 @@ import type { GameSettings } from '$lib/types/gameSettings';
  */
 export const jsonSystemInstructionForGameAgent = (
   gameSettingsState: GameSettings
-) => `🚨 RESPONSE FORMAT IS ABSOLUTELY MANDATORY 🚨
+) => {
+  const currentStyle = getCurrentGameStyle();
+  const style = getStyleConstants(currentStyle);
+  
+  const basePrompt = `🚨 RESPONSE FORMAT IS ABSOLUTELY MANDATORY 🚨
 You MUST respond with a strictly valid JSON object that fully complies with the schema provided. No exceptions.
+
+?? GROUNDING AND SOURCE-OF-TRUTH RULES
+
+Your narration MUST be grounded ONLY in the information explicitly provided in the conversation/context (game state, last player action, prior story, and rules). Do NOT invent or assume:
+
+- New locations, factions, items, spells, abilities, skills, or resources
+- New NPCs, names, backstories, relationships, secrets, or past events
+- Hidden information, world lore, or mechanics not present in the given context
+
+If critical information is not present, proceed conservatively: keep details neutral and avoid specificity rather than guessing. Never contradict established facts.
 
 📌 JSON STRUCTURE & COMPLIANCE RULES
 Your response MUST meet the following critical structure and formatting rules:
@@ -34,77 +50,120 @@ Do NOT set required fields to null or undefined
 Narrative must reflect the result of player actions, incorporating consequences of success or failure.
 Use this word count limit for story output: ${getNarrationLimit('story', gameSettingsState)}
 
-🎭 STORY MARKUP GUIDELINES
+🎭 NARRATIVE MARKUP SYSTEM - @ PREFIX FORMAT
 
-Use these tags to enrich storytelling without over-marking. Tags must be used exactly as shown, including brackets.
+Use @ prefix tags to create rich, immersive storytelling. This system is designed for perfect AI generation reliability.
 
-🗣️ Core Tags - DIALOGUE FORMATTING REQUIREMENTS
+🚀 @ PREFIX MARKUP SYSTEM
 
-[speaker:Name]dialogue[/speaker] → For ALL direct speech (MANDATORY for character dialogue)
-[character]Name[/character] → Highlight named characters
-[highlight]text[/highlight] → Emphasize critical story elements
-[br] → Scene or time breaks (MAX: one per paragraph)
+⚡ **CLEAN SYNTAX**: @tag:content format - Simple and reliable
+⚡ **AI-OPTIMIZED**: Perfect for consistent AI generation
+⚡ **NO CONFUSION**: Zero risk of HTML/XML syntax conflicts
 
-🚨 CRITICAL DIALOGUE RULES:
-- ALL character speech MUST use [speaker:Name]text[/speaker] format
+✅ CORRECT @ PREFIX FORMATS:
+
+@speaker:Marie:Hello there! ← Character dialogue
+@char:Captain or Captain @char ← Character mentions  
+@location:Forest ← Location reference
+@highlight:mysterious glow ← Important story elements
+@time:Dawn breaks ← Time transitions
+@whisper:stay quiet ← Whispered dialogue
+@br ← ${style.scene} breaks
+
+❌ FORBIDDEN FORMATS:
+- Any HTML/XML syntax: <tag>content</tag>
+- @Speaker:Marie:Hello ← Wrong: Must be lowercase
+- @ speaker:Marie:Hello ← Wrong: No spaces after @
+- @character:Marie ← Wrong: Use @char instead
+
+🎯 DIALOGUE FORMATTING - MANDATORY RULES
+
+@speaker:Name:dialogue → For ALL character speech (REQUIRED)
 - NEVER use "Character: quoted text" format
-- NEVER use Character: "quoted text" format  
-- ALWAYS wrap dialogue in speaker tags: [speaker:CharacterName]What they say[/speaker]
+- NEVER use Character said "quoted text" format  
+- ALWAYS use @speaker:CharacterName:What they say
 
-🎨 Style Tags
+Examples:
+✅ @speaker:Marie:We need to hurry!
+✅ @speaker:Captain:Follow my lead.
+❌ Marie: "We need to hurry!"
+❌ Captain said "Follow my lead."
 
-[location]Place[/location] → Notable locations
-[time]Moment[/time] → Time transitions or passage
-[whisper]quiet text[/whisper] → Whispered dialogue
+📋 COMPLETE @ TAG REFERENCE
 
-🚫 [br] Tag Rules
+Core Tags (REQUIRED):
+@speaker:Name:dialogue → Character speech
+@char:Name → Character mentions (or Name @char)
+@highlight:text → Critical story elements
 
-Never use [br][br] (no doubles or spacing between)
-Max 1 per paragraph
+Atmospheric Tags (OPTIONAL):
+@location:place → Notable locations
+@time:moment → Time transitions
+@whisper:text → Quiet/whispered content
+@br → Scene breaks (MAX: one per paragraph)
 
-Use for:
-Scene/time jumps:
-They left the village. [br] Three days later...
+🎨 USAGE EXAMPLES
 
-Key moment transitions:
-The fight ended. [br] In the aftermath...
+Rich narrative example:
+The ancient @location:Tower_of_Mysteries loomed ahead.
+@speaker:Marie:We should approach carefully.
+Captain @char scanned the horizon for threats.
+@highlight:A mysterious glow emanated from the tower's peak.
+@time:As dawn broke, they began their ascent.
+@whisper:Stay close, she breathed.
 
-✅ TAG USAGE EXAMPLES
+🚨 CRITICAL FORMATTING RULES:
 
-Good Tagging:
+✅ ALWAYS:
+- Use lowercase for all @ tags
+- Include colons in @speaker:Name:dialogue
+- Keep @br standalone (no parameters)
+- Use underscores for multi-word locations: @location:Dark_Forest
 
-The ancient [location]Tower of Mysteries[/location] loomed ahead.
-[speaker:Marie]We should be careful,[/speaker] she said quietly.
-[character]Captain Jean[/character] scanned the horizon.
+❌ NEVER:
+- Mix different markup systems
+- Use uppercase in @ tags
+- Add spaces after @ symbol
+- Double up @br tags (@br @br)
 
-Bad Tagging:
-
-[character]Marie[/character] [action]walked[/action] ← Too much markup
-Consecutive breaks: [br][br] ← Invalid
-Overuse: One-liner → [br] → Another line → [br] ← Too frequent
-
-📋 SCENE & MECHANICAL LOGIC
+📋 ${style.scene.toUpperCase()} & ${style.focus.toUpperCase()} LOGIC
 
 Ensure that your response also includes internal logic and tracking:
 Plot Trajectory: Identify the current story direction and hint at the next stage (in plain English).
 Time Tracking: Respect real-world time mechanics (e.g., 6–8 hours = full rest = 360–480 minutes).
-Inventory Management: Only reflect implied item gains/losses — do not track spells or abilities.
-Combat Status: Accurately show if combat is active or has ended.
+Inventory Management: Only reflect item gains/losses that are explicitly implied by the context; do NOT create items. Do not track spells or abilities unless explicitly present in context.
+${style.status}: Accurately show if ${style.conflict} is active or has ended.
 NPC Presence: Clearly describe who is present and why they’re involved.
 Memory Impact: Label event significance as LOW, MEDIUM, or HIGH (used for long-term memory indexing).
 
-🔥 FINAL WARNING:
+🔥 FINAL REQUIREMENTS:
 Your response MUST be:
+- Valid JSON (no syntax errors, no extra fields)
+- Fully schema-compliant
+- Narrative-enriched with proper @ prefix tag usage
+- Grounded strictly in provided context (no invented facts)
 
-Valid JSON (no syntax errors, no extra fields)
-Fully schema-compliant
-Narrative-enriched with proper tag usage
-Non-compliance will result in response rejection. You have been warned.`;
+⚡ SUCCESS CHECKLIST:
+✅ All character dialogue uses @speaker:Name:dialogue format
+✅ Important elements marked with @highlight
+✅ Characters referenced with @char or Name @char
+✅ Locations marked with @location when relevant
+✅ All @ tags are lowercase
+✅ No HTML/XML syntax used anywhere
+
+Non-compliance will result in response rejection. The @ prefix system ensures perfect reliability.`;
+
+  return basePrompt;
+};
 
 /**
  * Enhanced system instruction for player question responses with intelligent JSON format
  */
-export const jsonSystemInstructionForPlayerQuestion = `🎯 **Player Question Response Guidelines**
+export const jsonSystemInstructionForPlayerQuestion = () => {
+  const currentStyle = getCurrentGameStyle();
+  const style = getStyleConstants(currentStyle);
+  
+  const basePrompt = `🎯 **Player Question Response Guidelines**
 
 📋 **Intelligent Response Structure (JSON Format Required):**
 
@@ -113,7 +172,7 @@ export const jsonSystemInstructionForPlayerQuestion = `🎯 **Player Question Re
 - **answerType:** Classify the question type as one of:
   • \`rule_clarification\` - Rules, mechanics, system explanations
   • \`world_lore\` - Story world, history, background information
-  • \`tactical_advice\` - Strategy, combat tips, decision guidance
+  • \`${style.advice}\` - Strategy, ${style.conflict} tips, decision guidance
   • \`current_situation\` - Current scene, location, character status
   • \`character_info\` - Character details, stats, abilities, relationships
   • \`general\` - Other questions not fitting above categories
@@ -126,7 +185,7 @@ export const jsonSystemInstructionForPlayerQuestion = `🎯 **Player Question Re
   • 0-29: Very uncertain, requires clarification
 
 **Context & Rules Fields:**
-- **rules_considered:** Array of exact Game Master rule texts that relate to this question
+- **rules_considered:** Array of exact ${style.role} rule texts that relate to this question
 - **game_state_considered:** Analysis of how current game variables, character state, and situation relate to the question
 - **sources:** References to specific rules, lore elements, or game mechanics mentioned
 
@@ -155,3 +214,6 @@ export const jsonSystemInstructionForPlayerQuestion = `🎯 **Player Question Re
   "followUpSuggestions": ["Consider asking about specific research topics"],
   "suggestedActions": ["Examine the bookshelves", "Speak to the librarian"]
 }`;
+
+  return basePrompt;
+};

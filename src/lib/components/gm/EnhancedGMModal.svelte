@@ -63,7 +63,6 @@
 	// Component state
 	let gameAgent: GameAgent;
 	let isReady = $state(false);
-	let currentQuestion = $state(initialQuestion);
 	let isGenerating = $state(false);
 	let gmHistory = $state<Array<{ question: string; answer: GameMasterAnswer; timestamp: Date }>>(
 		[]
@@ -111,11 +110,10 @@
 		}
 	});
 
-	async function handleQuestionSubmit(question: string, type?: string) {
+	async function handleQuestionSubmit(question: string, _type?: string) {
 		if (!gameAgent || isGenerating) return;
 
 		isGenerating = true;
-		currentQuestion = question;
 
 		try {
 			const summaryAgent = new SummaryAgent(gameAgent.llm);
@@ -130,7 +128,7 @@
 				relatedQuestionHistory.push(customMemoriesState.value);
 			}
 
-			const { thoughts, answer } = await gameAgent.generateAnswerForPlayerQuestion(
+			const { answer } = await gameAgent.generateAnswerForPlayerQuestion(
 				question,
 				thoughtsState.value,
 				systemInstructionsState.value,
@@ -171,7 +169,6 @@
 			});
 		} finally {
 			isGenerating = false;
-			currentQuestion = '';
 		}
 	}
 

@@ -3,6 +3,7 @@
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { navigate } from '$lib/util.svelte';
 	import { goto } from '$app/navigation';
+	import GameStyleSelector from '$lib/components/ui/GameStyleSelector.svelte';
 
 	const systemInstructionsState = useHybridLocalStorage<SystemInstructionsState>(
 		'systemInstructionsState',
@@ -39,6 +40,11 @@
 		</p>
 
 		<form class="space-y-6">
+			<!-- Game Style Selector - NEW -->
+			<fieldset class="w-full">
+				<GameStyleSelector />
+			</fieldset>
+
 			<!-- Story Agent Instruction -->
 			<fieldset class="w-full">
 				<label for="story-agent-instruction" class="mb-2 block text-base font-medium">

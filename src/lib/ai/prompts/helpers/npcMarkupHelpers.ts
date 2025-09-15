@@ -1,14 +1,14 @@
 /**
- * NPC Markup Helpers (Simplified Version)
+ * NPC Markup Helpers - @ Prefix System (v2.0)
  * 
- * Provides validation and reference generation for the simplified narrative markup system
- * without UUID dependencies. Now uses simple name-based character references.
+ * Provides validation and reference generation for the new @ prefix narrative markup system
+ * Completely avoids HTML/XML syntax confusion while maintaining backwards compatibility
  */
 
 import type { NPCState } from '$lib/ai/agents/characterStatsAgent';
 
 /**
- * Validates markup tags for known tags
+ * Validates @ prefix markup tags and legacy [tag] format
  * 
  * @param text - Text to validate  
  * @returns Validation result with errors
@@ -23,39 +23,71 @@ export function validateMarkupTags(text: string): {
   const warnings: string[] = [];
   const suggestions: string[] = [];
 
-  // Valid markup tags in simplified system
-  const VALID_TAGS = new Set([
+  // Valid @ prefix tags in new system
+  const VALID_AT_TAGS = new Set([
+    'speaker', 'char', 'highlight', 'location', 'time', 'whisper', 'br'
+  ]);
+
+  // Valid legacy tags for backwards compatibility
+  const VALID_LEGACY_TAGS = new Set([
     'speaker', 'character', 'highlight', 'location', 'time', 'whisper', 'br'
   ]);
 
-  // Check for unknown tags and case sensitivity issues
-  const tagMatches = text.match(/\[([a-zA-Z]+)(?:[:\]])/g);
-  if (tagMatches) {
-    tagMatches.forEach(match => {
+  // Check for @ prefix tags
+  const atTagMatches = text.match(/@([a-zA-Z]+)(?:[:\s]|$)/g);
+  if (atTagMatches) {
+    atTagMatches.forEach(match => {
+      const tagName = match.match(/@([a-zA-Z]+)/)?.[1];
+      if (tagName) {
+        const lowerTagName = tagName.toLowerCase();
+
+        // Check if it's a case sensitivity issue
+        if (VALID_AT_TAGS.has(lowerTagName) && tagName !== lowerTagName) {
+          errors.push(`@ tag should be lowercase: @${lowerTagName} instead of @${tagName}`);
+          suggestions.push(`Did you mean @${lowerTagName} instead of @${tagName}? (tags are case-sensitive)`);
+        }
+        // Check if it's an unknown @ tag
+        else if (!VALID_AT_TAGS.has(lowerTagName)) {
+          errors.push(`Unknown @ markup tag: @${tagName}`);
+
+          // Provide suggestions for common mistakes
+          if (lowerTagName === 'character') {
+            warnings.push('Use @char instead of @character');
+            suggestions.push('Use @char:Name or Name @char for character references');
+          } else {
+            suggestions.push(`Use @ prefix format: @${lowerTagName}:content`);
+          }
+        }
+      }
+    });
+  }
+
+  // Check for legacy [tag] format and case sensitivity issues
+  const legacyTagMatches = text.match(/\[([a-zA-Z]+)(?:[:\]])/g);
+  if (legacyTagMatches) {
+    legacyTagMatches.forEach(match => {
       const tagName = match.match(/\[([a-zA-Z]+)/)?.[1];
       if (tagName) {
         const lowerTagName = tagName.toLowerCase();
 
         // Check if it's a case sensitivity issue (valid tag but wrong case)
-        if (VALID_TAGS.has(lowerTagName) && tagName !== lowerTagName) {
-          errors.push(`Tag should be lowercase: [${lowerTagName}] instead of [${tagName}]`);
+        if (VALID_LEGACY_TAGS.has(lowerTagName) && tagName !== lowerTagName) {
+          errors.push(`Legacy tag should be lowercase: [${lowerTagName}] instead of [${tagName}]`);
           suggestions.push(`Did you mean [${lowerTagName}] instead of [${tagName}]? (tags are case-sensitive)`);
         }
-        // Check if it's an unknown tag
-        else if (!VALID_TAGS.has(lowerTagName)) {
-          errors.push(`Unknown markup tag: [${tagName}]`);
-
-          // Provide suggestions for common mistakes
-          if (lowerTagName === 'name') {
-            warnings.push('Did you mean [speaker:Name] instead of [name:Name]?');
-            suggestions.push('Use [speaker:Name] instead of [name:Name]');
-          } else if (lowerTagName === 'char') {
-            warnings.push('Did you mean [character] instead of [char]?');
-            suggestions.push('Use [character] instead of [char]');
-          }
+        // Check if it's an unknown legacy tag
+        else if (!VALID_LEGACY_TAGS.has(lowerTagName)) {
+          errors.push(`Unknown legacy markup tag: [${tagName}]`);
+          suggestions.push(`Use @ prefix format instead: @${lowerTagName}:content`);
         }
       }
     });
+  }
+
+  // Suggest migration to @ system if legacy tags are detected
+  if (legacyTagMatches && legacyTagMatches.length > 0) {
+    warnings.push('Consider using @ prefix format for better reliability');
+    suggestions.push('Example: @speaker:Name:dialogue, @char:Name, @location:Place');
   }
 
   return {
@@ -67,59 +99,67 @@ export function validateMarkupTags(text: string): {
 }
 
 /**
- * Generates markup reference guide for the simplified system
+ * Generates markup reference guide for the @ prefix system with legacy support
  * 
  * @param npcState - Optional NPC state (not used in simplified version)
  * @returns Markup reference guide as string
  */
 export function generateMarkupReferenceGuide(npcState?: NPCState): string {
-  const guide = `Complete Narrative Markup Reference Guide
+  const guide = `Complete Narrative Markup Reference Guide - @ Prefix System
 
-## Core Markup Tags (7 tags total)
+## 🚀 @ PREFIX MARKUP SYSTEM
+**Clean, AI-optimized syntax with zero confusion**
 
 ### 1. Speaker Tag
-**Usage:** [speaker:Name]dialogue[/speaker]
+**Usage:** @speaker:Name:dialogue
 **Purpose:** Mark character dialogue with speaker name
-**Example:** [speaker:Marie]Hello there![/speaker]
+**Example:** @speaker:Marie:Hello there!
 
 ### 2. Character Tag  
-**Usage:** [character]name[/character]
-**Purpose:** Reference character by name (simple name-based system)
-**Example:** [character]Marie[/character] approaches cautiously
+**Usage:** Name @char OR @char:Name
+**Purpose:** Reference character by name
+**Examples:** 
+- Marie @char approaches cautiously
+- @char:Marie approaches cautiously
 
 ### 3. Highlight Tag
-**Usage:** [highlight]important text[/highlight]  
+**Usage:** @highlight:important text
 **Purpose:** Emphasize important story elements
-**Example:** You notice [highlight]a glowing artifact[/highlight]
+**Example:** You notice @highlight:a glowing artifact
 
 ### 4. Location Tag
-**Usage:** [location]place name[/location]
+**Usage:** @location:place
 **Purpose:** Mark location references
-**Example:** You arrive at [location]the ancient temple[/location]
+**Example:** You arrive at @location:ancient_temple
 
 ### 5. Time Tag
-**Usage:** [time]time reference[/time]
+**Usage:** @time:time reference
 **Purpose:** Mark temporal transitions  
-**Example:** [time]Three hours later[/time]
+**Example:** @time:Three hours later
 
 ### 6. Whisper Tag
-**Usage:** [whisper]quiet text[/whisper]
+**Usage:** @whisper:quiet text
 **Purpose:** Mark whispered or quiet dialogue
-**Example:** [whisper]The guards are coming[/whisper]
+**Example:** @whisper:The guards are coming
 
 ### 7. Break Tag
-**Usage:** [br]
+**Usage:** @br
 **Purpose:** Major scene transitions and time jumps ONLY
-**Example:** They left the village. [br] Three days later, they reached the mountains.
-**IMPORTANT:** Maximum ONE [br] per paragraph. NEVER use consecutive [br] tags.
+**Example:** They left the village. @br @time:Three days later, they reached the mountains.
+
+## ✨ ADVANTAGES OF @ PREFIX SYSTEM:
+- ⚡ **Zero HTML confusion** - No brackets that look like HTML
+- 🎯 **AI-friendly** - Much more reliable for AI generation
+- 📏 **Compact** - Shorter syntax for cleaner text
+- 🔧 **Easy parsing** - Simple regex patterns
+- 🚀 **Future-proof** - Designed for reliability
 
 ## Important Notes:
-- Use simple character names in [character] tags, no UUIDs needed
-- All tags are case-sensitive and should be lowercase
-- [br] tags should be used sparingly - only for major story transitions
-- NEVER use multiple [br] tags together: ❌ [br][br] or [br] [br]
+- Use simple character names, no UUIDs needed
+- All @ tags are case-sensitive and should be lowercase
+- @br tags should be used sparingly - only for major story transitions
 - Unknown tags will be removed automatically
-- System auto-closes unclosed tags for better AI reliability`;
+- System auto-handles malformed tags for better AI reliability`;
 
   // Add character context if NPCs exist
   if (npcState && Object.keys(npcState).length > 0) {
@@ -128,7 +168,7 @@ export function generateMarkupReferenceGuide(npcState?: NPCState): string {
       .filter(Boolean);
 
     if (characters.length > 0) {
-      return guide + `\n\n## Available Characters:\n${characters.map(name => `- ${name}`).join('\n')}`;
+      return guide + `\n\n## Available Characters:\n${characters.map(name => `- ${name} (@char:${name} or ${name} @char)`).join('\n')}`;
     }
   }
 

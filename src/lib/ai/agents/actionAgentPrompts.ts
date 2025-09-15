@@ -1,6 +1,8 @@
 import { stringifyPretty } from '$lib/util.svelte';
 import type { GameSettings } from '$lib/types/gameSettings';
 import { getActionNarrationPrompt } from '$lib/ai/prompts/shared/narrationSystem';
+import { getStyleConstants } from '$lib/ai/prompts/styleAdaptation/styleConstants';
+import { getCurrentGameStyle } from '$lib/state/gameStyleState.svelte';
 
 // =============================================================================
 // TYPES AND ENUMS
@@ -19,15 +21,31 @@ export enum InterruptProbability {
 // =============================================================================
 
 /**
- * Base system instructions for different types of action agents
+ * Style-aware base instructions that adapt to current game style
  */
-export const BASE_RPG_ACTION_AGENT_INSTRUCTION = `You are RPG action agent, you are given a RPG story and one action the player wants to perform; Determine difficulty, resource cost etc. for this action; Consider the story, currently_present_npcs and character stats.
+
+/**
+ * Get base action agent instruction adapted for current game style
+ */
+export function getBaseActionAgentInstruction(): string {
+  const currentStyle = getCurrentGameStyle();
+  const style = getStyleConstants(currentStyle);
+  
+  return `You are ${style.gameType} action agent, you are given a ${style.gameType} story and one action the player wants to perform; Determine difficulty, resource cost etc. for this action; Consider the story, currently_present_npcs and character stats.
 Action Rules:
 - Review the character's spells_and_abilities and inventory for passive attributes that could alter the dice_roll
 - For puzzles, the player —not the character— must solve them. Offer a set of possible actions, including both correct and incorrect choices.
 - All actions must respect: physical constraints (can't fly without magic), character abilities (can't cast spells without training), available tools (can't unlock without key/skill), and environmental factors (can't swim in lava).`;
+}
 
-export const BASE_RPG_ACTIONS_GENERATOR_INSTRUCTION = `You are RPG action agent. Your task: suggest contextually appropriate actions the player character can take.
+/**
+ * Get base actions generator instruction adapted for current game style
+ */
+export function getBaseActionsGeneratorInstruction(): string {
+  const currentStyle = getCurrentGameStyle();
+  const style = getStyleConstants(currentStyle);
+  
+  return `You are ${style.gameType} action agent. Your task: suggest contextually appropriate actions the player character can take.
 
 EVALUATION CRITERIA:
 - Current story context and narrative situation
@@ -40,8 +58,16 @@ ACTION REQUIREMENTS:
 - Consider both immediate and potential long-term consequences
 - Ensure actions fit the current story context and character capabilities
 - Include both safe and risky options when appropriate`;
+}
 
-export const BASE_RPG_ITEM_ACTIONS_INSTRUCTION = `You are RPG action agent specializing in item usage. Your task: suggest specific actions the player character can take with a given item.
+/**
+ * Get base item actions instruction adapted for current game style
+ */
+export function getBaseItemActionsInstruction(): string {
+  const currentStyle = getCurrentGameStyle();
+  const style = getStyleConstants(currentStyle);
+  
+  return `You are ${style.gameType} action agent specializing in item usage. Your task: suggest specific actions the player character can take with a given item.
 
 ITEM ACTION GUIDELINES:
 - Consider the item's properties, condition, and intended use
@@ -49,6 +75,7 @@ ITEM ACTION GUIDELINES:
 - Account for character skills that might enhance item effectiveness
 - Consider story context and currently present NPCs
 - Include potential risks or limitations of item usage`;
+}
 
 // =============================================================================
 // TEMPLATE FUNCTIONS FOR DYNAMIC PROMPTS
@@ -198,7 +225,7 @@ export const buildSingleActionAgentInstructions = (
   customActionAgentInstruction?: string
 ): string[] => {
   const instructions = [
-    BASE_RPG_ACTION_AGENT_INSTRUCTION,
+    getBaseActionAgentInstruction(),
     getStorySettingInstructionTemplate(storySettings),
     getCharacterDescriptionInstructionTemplate(characterDescription),
     getInventoryInstructionTemplate(inventoryState),
@@ -235,7 +262,7 @@ export const buildActionsGeneratorAgentInstructions = (
   customActionAgentInstruction?: string
 ): string[] => {
   const instructions = [
-    BASE_RPG_ACTIONS_GENERATOR_INSTRUCTION,
+    getBaseActionsGeneratorInstruction(),
     actionRules,
     getStorySettingInstructionTemplate(storySettings),
     getCharacterDescriptionActionsTemplate(characterDescription),
@@ -275,7 +302,7 @@ export const buildItemActionsAgentInstructions = (
   customActionAgentInstruction?: string
 ): string[] => {
   const instructions = [
-    BASE_RPG_ITEM_ACTIONS_INSTRUCTION,
+    getBaseItemActionsInstruction(),
     actionRules,
     getStorySettingInstructionTemplate(storySettings),
     getCharacterDescriptionActionsTemplate(characterDescription),

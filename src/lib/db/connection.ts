@@ -4,10 +4,7 @@ import mongoose from 'mongoose';
  * MongoDB connection manager for the hybrid storage system
  */
 class MongoDBConnection {
-	private isConnected = false;
-	private connectionString: string | null = null;
-
-	/**
+        private isConnected = false;	/**
 	 * Initialize MongoDB connection
 	 */
 	async connect(connectionString?: string): Promise<void> {
@@ -31,7 +28,6 @@ class MongoDBConnection {
 			});
 
 			this.isConnected = true;
-			this.connectionString = mongoUri;
 			console.log('✅ MongoDB connected successfully');
 		} catch (error) {
 			console.warn('⚠️ MongoDB connection failed:', error);

@@ -14,6 +14,8 @@ import type { GameSettings } from '$lib/types/gameSettings';
 import type { GameActionState, GameMasterAnswer } from '$lib/types/gameState';
 import { generateEnrichedNPCContext as generateEnrichedNPCContextFromUtils } from '$lib/game/npc/contextUtils';
 import { buildHistoryMessages } from '$lib/game/messaging/historyBuilder';
+import { getStyleConstants } from '$lib/ai/prompts/styleAdaptation/styleConstants';
+import { getCurrentGameStyle } from '$lib/state/gameStyleState.svelte';
 import {
 	GameAgentResponseSchema,
 	GameMasterAnswerResponseSchema,
@@ -359,6 +361,10 @@ export class GameAgent {
 		customGmNotes?: string,
 		is_character_restrained_explanation?: string
 	): Promise<{ thoughts?: string; answer: GameMasterAnswer }> {
+		// Get style constants for consistent terminology
+		const currentGameStyle = getCurrentGameStyle();
+		const style = getStyleConstants(currentGameStyle);
+
 		// Enhanced fallback response generator
 		const createFallbackResponse = (error?: string): { thoughts?: string; answer: GameMasterAnswer } => {
 			return {
@@ -378,7 +384,7 @@ export class GameAgent {
 		};
 
 		const gameAgent = [
-			'You are an intelligent Game Master Assistant designed to help players understand the game world, rules, and current situation.\n' +
+			`You are an intelligent ${style.role} Assistant designed to help players understand the game world, rules, and current situation.\n` +
 			'Analyze the question type and provide helpful, contextual responses with appropriate confidence levels.',
 			generateEnrichedNPCContextFromUtils(npcState, characterState?.name || "CHARACTER")
 		];
@@ -391,7 +397,7 @@ export class GameAgent {
 
 		if (thoughtsState.storyThoughts) {
 			gameAgent.push(
-				'Game Master\'s Current Thoughts about Story Progression:\n' +
+				`${style.role}'s Current Thoughts about Story Progression:\n` +
 				JSON.stringify(thoughtsState)
 			);
 		}
@@ -407,12 +413,12 @@ export class GameAgent {
 			);
 		}
 
-		gameAgent.push(jsonSystemInstructionForPlayerQuestion);
+		gameAgent.push(jsonSystemInstructionForPlayerQuestion());
 
 		const userMessage =
-			'IMPORTANT: Answer this player question out-of-character as a helpful Game Master assistant.\n\n' +
+			`IMPORTANT: Answer this player question out-of-character as a helpful ${style.role} assistant.\n\n` +
 			'PLAYER QUESTION: ' + question + '\n\n' +
-			'GAME MASTER RULES AND CONTEXT:\n' +
+			`${style.role.toUpperCase()} RULES AND CONTEXT:\n` +
 			this.getGameAgentSystemInstructionsFromStates(
 				storyState,
 				characterState,

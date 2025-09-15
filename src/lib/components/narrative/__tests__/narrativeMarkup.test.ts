@@ -161,13 +161,39 @@ describe('Markup Tag Validation', () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  it('should validate new @ prefix tags', () => {
+    const text = '@speaker:Marie:Hello! @highlight:important @location:Paris';
+    const result = validateMarkupTags(text);
+
+    expect(result.isValid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('should detect unknown @ prefix tags', () => {
+    const text = '@custom:unknown and @invalid:test';
+    const result = validateMarkupTags(text);
+
+    expect(result.isValid).toBe(false);
+    expect(result.errors).toContain('Unknown @ markup tag: @custom');
+    expect(result.errors).toContain('Unknown @ markup tag: @invalid');
+  });
+
+  it('should detect case sensitivity issues in @ tags', () => {
+    const text = '@Speaker:Marie:Hello and @TIME:now';
+    const result = validateMarkupTags(text);
+
+    expect(result.isValid).toBe(false);
+    expect(result.errors).toContain('@ tag should be lowercase: @speaker instead of @Speaker');
+    expect(result.errors).toContain('@ tag should be lowercase: @time instead of @TIME');
+  });
+
   it('should detect unknown markup tags', () => {
     const text = '[custom:unknown]content[/custom] and [invalid]text[/invalid]';
     const result = validateMarkupTags(text);
 
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('Unknown markup tag: [custom]');
-    expect(result.errors).toContain('Unknown markup tag: [invalid]');
+    expect(result.errors).toContain('Unknown legacy markup tag: [custom]');
+    expect(result.errors).toContain('Unknown legacy markup tag: [invalid]');
   });
 
   it('should provide suggestions for common mistakes', () => {
@@ -176,8 +202,8 @@ describe('Markup Tag Validation', () => {
 
     expect(result.isValid).toBe(false);
     expect(result.suggestions).toBeDefined();
-    expect(result.suggestions!.some(s => s.includes('speaker:Name'))).toBe(true);
-    expect(result.suggestions!.some(s => s.includes('character'))).toBe(true);
+    expect(result.suggestions!.some(s => s.includes('@speaker:Name:dialogue'))).toBe(true);
+    expect(result.suggestions!.some(s => s.includes('@char:Name'))).toBe(true);
   });
 
   it('should detect case sensitivity issues', () => {
@@ -186,8 +212,8 @@ describe('Markup Tag Validation', () => {
 
     expect(result.isValid).toBe(false);
     // Our improved logic now correctly identifies these as case sensitivity issues, not unknown tags
-    expect(result.errors).toContain('Tag should be lowercase: [time] instead of [Time]');
-    expect(result.errors).toContain('Tag should be lowercase: [speaker] instead of [Speaker]');
+    expect(result.errors).toContain('Legacy tag should be lowercase: [time] instead of [Time]');
+    expect(result.errors).toContain('Legacy tag should be lowercase: [speaker] instead of [Speaker]');
     expect(result.suggestions!).toContain('Did you mean [time] instead of [Time]? (tags are case-sensitive)');
     expect(result.suggestions!).toContain('Did you mean [speaker] instead of [Speaker]? (tags are case-sensitive)');
   });
@@ -206,11 +232,11 @@ describe('Markup Reference Guide Generation', () => {
     const emptyNPCState: NPCState = {};
     const guide = generateMarkupReferenceGuide(emptyNPCState);
 
-    expect(guide).toContain('Complete Narrative Markup Reference Guide');
-    expect(guide).toContain('[speaker:Name]');
-    expect(guide).toContain('[highlight]');
-    // When no NPCs are available, NPC context section should not be included
-    expect(guide).not.toContain('🔸 **Available NPCs for Character Tags:**');
+    expect(guide).toContain('Complete Narrative Markup Reference Guide - @ Prefix System');
+    expect(guide).toContain('@speaker:Name:dialogue');
+    expect(guide).toContain('@highlight:');
+    expect(guide).toContain('@ PREFIX MARKUP SYSTEM');
+    expect(guide).toContain('Zero HTML confusion');
   });
 
   it('should generate markup guide with NPC context', () => {
@@ -219,7 +245,7 @@ describe('Markup Reference Guide Generation', () => {
     expect(guide).toContain('Complete Narrative Markup Reference Guide');
     expect(guide).toContain('Available Characters:');
     expect(guide).toContain('- Marie Dubois');
-    expect(guide).toContain('simple name-based system');
+    expect(guide).toContain('Zero HTML confusion');
   });
 });
 
@@ -255,7 +281,7 @@ describe('Integration Tests', () => {
 
     const tagValidation = validateMarkupTags(text);
     expect(tagValidation.isValid).toBe(false);
-    expect(tagValidation.errors).toContain('Unknown markup tag: [custom]');
+    expect(tagValidation.errors).toContain('Unknown legacy markup tag: [custom]');
   });
 });
 
@@ -339,13 +365,6 @@ describe('Edge Cases', () => {
   });
 
   it('should detect malformed markup tags missing closing tags', () => {
-    // Test the component's parsing function with malformed tags
-    const mockComponent = {
-      content: '[speaker:Fenrir][Beaucoup de petits prétentieux, cette année. Ta mère a un flair.]',
-      npcState: mockNPCState,
-      enableValidation: true
-    };
-
     // Spy on console.warn to check for malformed tag warnings
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 

@@ -9,10 +9,8 @@
 
 	let { children } = $props();
 	let activeUrl = $state('');
-	let hasSubMenu = $state(false);
 	$effect(() => {
 		activeUrl = $page.url.pathname;
-		hasSubMenu = activeUrl.includes('game/settings');
 	});
 
 	onMount(() => {

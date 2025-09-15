@@ -4,6 +4,8 @@ import type { CharacterDescription } from '$lib/ai/agents/characterAgent';
 import isEqual from 'fast-deep-equal';
 import { TROPES_CLICHE_PROMPT } from '$lib/ai/prompts/shared';
 import { StoryGenerationResponseSchema, type StoryGenerationResponse } from '$lib/ai/config/ResponseSchemas';
+import { getStyleConstants } from '$lib/ai/prompts/styleAdaptation/styleConstants';
+import { getCurrentGameStyle } from '$lib/state/gameStyleState.svelte';
 
 export type Story = typeof storyStateForPrompt;
 
@@ -110,14 +112,20 @@ export class StoryAgent {
 		overwrites = {},
 		characterDescription: CharacterDescription | undefined = undefined
 	): Promise<Story> {
-		const storyAgentInstructions = [
-			'You are RPG story agent, crafting captivating, limitless GAME experiences using BOOKS, THEME, TONALITY for CHARACTER.',
+		const currentStyle = getCurrentGameStyle();
+		const style = getStyleConstants(currentStyle);
+		
+		const baseInstructions = [
+			`You are ${style.gameType} story agent, crafting captivating, limitless GAME experiences using BOOKS, THEME, TONALITY for CHARACTER.`,
 			TROPES_CLICHE_PROMPT,
 			'',
 			storyInstructions,
 			'',
 			'Generate structured story settings with all required fields.'
 		].join('\n');
+
+		// Style is already applied through template literals above
+		const storyAgentInstructions = baseInstructions;
 
 		const storyAgent = storyAgentInstructions;
 

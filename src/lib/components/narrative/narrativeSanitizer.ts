@@ -39,7 +39,7 @@ const SELF_CONTAINED_TAGS = new Set([
 export function sanitizeNarrativeMarkup(
   input: string,
   enableNormalization: boolean = true,
-  npcState?: NPCState
+  _npcState?: NPCState
 ): string {
   if (!input) return '';
 
@@ -51,11 +51,11 @@ export function sanitizeNarrativeMarkup(
     text = text.replace(/\[\s*\/\s*([a-zA-Z]+)\s*\]/g, '[/$1]');
 
     // 2. Normalize tag case for opening and closing tags
-    text = text.replace(/\[([A-Z]+)([:\]])/gi, (match, tagName, rest) => {
+    text = text.replace(/\[([A-Z]+)([:\]])/gi, (_match, tagName, rest) => {
       return `[${tagName.toLowerCase()}${rest}`;
     });
 
-    text = text.replace(/\[\/([A-Z]+)\]/gi, (match, tagName) => {
+    text = text.replace(/\[\/([A-Z]+)\]/gi, (_match, tagName) => {
       return `[/${tagName.toLowerCase()}]`;
     });
 

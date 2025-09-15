@@ -8,6 +8,8 @@ import {
 	type SummaryResponse,
 	type RelatedHistoryResponse
 } from '$lib/ai/config/ResponseSchemas';
+import { getStyleConstants } from '$lib/ai/prompts/styleAdaptation/styleConstants';
+import { getCurrentGameStyle } from '$lib/state/gameStyleState.svelte';
 
 export type RelatedStoryHistory = {
 	relatedDetails: { storyReference: string; relevanceScore: number }[];
@@ -34,8 +36,11 @@ export class SummaryAgent {
 		if (historyMessages.length < startSummaryAtSize) {
 			return { newHistory: historyMessages, summary: '' };
 		}
-		const summaryInstructions = [
-			'You are a Summary Agent for a RPG adventure, who is responsible for summarizing the most important bits of a continuous story.',
+		const currentStyle = getCurrentGameStyle();
+		const style = getStyleConstants(currentStyle);
+		
+		const baseSummaryInstructions = [
+			`You are a Summary Agent for a ${style.gameType} ${style.experience}, who is responsible for summarizing the most important bits of a continuous story.`,
 			'Summarize the story so the most important events, which have a long term impact on the story, and characters are included.',
 			'Emphasize on the most important events, and include their details.',
 			'IMPORTANT: Preserve temporal context and chronological order in your summary. Include time references (day/night, duration, sequence) when mentioned in the story.',
@@ -57,6 +62,9 @@ export class SummaryAgent {
 			'',
 			'Generate structured summary with all required fields.'
 		].join('\n');
+
+		// Style is already applied through template literals above
+		const summaryInstructions = baseSummaryInstructions;
 
 		const agent = summaryInstructions;
 
@@ -157,6 +165,8 @@ export class SummaryAgent {
 		if (!response.relatedDetails) {
 			return { relatedDetails: [] };
 		}
-		return response;
+		// Limit the results to maxRelatedDetails to prevent overwhelming context
+		const limitedDetails = response.relatedDetails.slice(0, maxRelatedDetails);
+		return { relatedDetails: limitedDetails };
 	}
 }

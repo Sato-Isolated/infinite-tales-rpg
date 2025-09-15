@@ -9,7 +9,7 @@ import type { Story } from '$lib/ai/agents/storyAgent';
 import type { GameSettings } from '$lib/types/gameSettings';
 import { GEMINI_MODELS } from '../geminiProvider';
 import { CombatAgent } from './combatAgent';
-import { actionRules } from '$lib/ai/prompts/system';
+import { getAdaptedActionRules } from '$lib/ai/prompts/system';
 import {
 	SingleActionResponseSchema,
 	ActionsWithThoughtsResponseSchema,
@@ -172,8 +172,9 @@ export class ActionAgent {
 		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
+		const adaptedActionRules = getAdaptedActionRules();
 		const agent = buildActionsGeneratorAgentInstructions(
-			actionRules,
+			adaptedActionRules,
 			storySettingsMapped,
 			characterDescription,
 			inventoryState,
@@ -290,8 +291,9 @@ export class ActionAgent {
 		const { ['main_scenario']: _, ...storySettingsMapped } = storySettings;
 
 		const currentGameStateMapped = this.getCurrentGameStateMapped(currentGameState);
+		const adaptedActionRules = getAdaptedActionRules();
 		const agent = buildItemActionsAgentInstructions(
-			actionRules,
+			adaptedActionRules,
 			storySettingsMapped,
 			characterDescription,
 			inventoryState,

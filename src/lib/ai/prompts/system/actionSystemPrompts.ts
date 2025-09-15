@@ -2,6 +2,9 @@
  * Action agent system prompts
  */
 
+import { getStyleConstants } from '../styleAdaptation/styleConstants';
+import { getCurrentGameStyle } from '$lib/state/gameStyleState.svelte';
+
 export const actionRules = `Action Rules:
 		- Always provide at least 3 potential actions the CHARACTER can take, fitting the THEME.
 		- Actions must be branching choices for the character, not a sequence.
@@ -13,3 +16,16 @@ export const actionRules = `Action Rules:
 		- Suggest actions that make creative use of environmental features or interactions with NPCs when possible.
 		- Only suggest actions that are plausible in the current situation.
 		- Do not suggest actions that include information the players do not know, such as undiscovered secrets or future plot points`;
+
+/**
+ * Get style-adapted action rules
+ */
+export function getAdaptedActionRules(): string {
+  const currentStyle = getCurrentGameStyle();
+  const style = getStyleConstants(currentStyle);
+  
+  return actionRules
+    .replace(/CHARACTER/g, 'CHARACTER')
+    .replace(/NPCs/g, 'NPCs')
+    .replace(/attack/g, style.conflict === 'combat' ? 'attack' : 'confrontation');
+}
