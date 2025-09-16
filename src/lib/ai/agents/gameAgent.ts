@@ -243,8 +243,8 @@ export class GameAgent {
 			if (typeof newState.story === 'string') {
 				let storyText = newState.story || '';
 				
-				// Extract all dialogue segments from the story using regex
-				const speakerTagMatches = Array.from(storyText.matchAll(/\[speaker:([^\]]+)\]([^[]+)\[\/speaker\]/g));
+				// Extract all dialogue segments from the story using new XML format
+				const speakerTagMatches = Array.from(storyText.matchAll(/<speaker name="([^"]+)">([^<]+)<\/speaker>/g));
 				const colonFormatMatches = Array.from(storyText.matchAll(/(\w+):\s*[""]([^""]+)[""]|(\w+):\s*([^.\n]+)/g));
 				
 				// Track dialogue content to detect duplicates
@@ -282,7 +282,7 @@ export class GameAgent {
 					
 					// Simple fix: remove duplicate speaker tag segments
 					for (const duplicate of duplicatedDialogue) {
-						const duplicateRegex = new RegExp(`\\[speaker:[^\\]]+\\]${duplicate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\[\\/speaker\\]\\s*`, 'gi');
+						const duplicateRegex = new RegExp(`<speaker name="[^"]+">${duplicate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}<\\/speaker>\\s*`, 'gi');
 						const matches = storyText.match(duplicateRegex);
 						if (matches && matches.length > 1) {
 							// Remove all but the first occurrence
@@ -310,10 +310,10 @@ export class GameAgent {
 				for (const q of quotedSegments) {
 					// Improved dialogue detection - check for multiple formats:
 					// 1. Exact text match (basic case)
-					// 2. Speaker tag format: [speaker:Name]text[/speaker]
+					// 2. Speaker tag format: <speaker name="Name">text</speaker>
 					// 3. Character colon format: Character: "text" or Character: text
 					const hasExactText = storyText.includes(q);
-					const hasSpeakerTag = storyText.includes(`[speaker:${action.characterName}]${q}[/speaker]`);
+					const hasSpeakerTag = storyText.includes(`<speaker name="${action.characterName}">${q}</speaker>`);
 					const hasColonFormat = storyText.includes(`${action.characterName}: "${q}"`) || 
 						storyText.includes(`${action.characterName}: ${q}`) ||
 						storyText.includes(`${action.characterName}:"${q}"`);
@@ -321,7 +321,7 @@ export class GameAgent {
 					// Only inject if dialogue is truly missing in any recognizable format
 					if (!hasExactText && !hasSpeakerTag && !hasColonFormat) {
 						console.log(`🔧 Injecting missing dialogue segment: "${q}"`);
-						const injectedLine = `[speaker:${action.characterName}]${q}[/speaker]\n`;
+						const injectedLine = `<speaker name="${action.characterName}">${q}</speaker>\n`;
 						storyText = injectedLine + storyText;
 						injected = true;
 					} else {

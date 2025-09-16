@@ -50,81 +50,102 @@ Do NOT set required fields to null or undefined
 Narrative must reflect the result of player actions, incorporating consequences of success or failure.
 Use this word count limit for story output: ${getNarrationLimit('story', gameSettingsState)}
 
-🎭 NARRATIVE MARKUP SYSTEM - @ PREFIX FORMAT
+🎭 NARRATIVE MARKUP SYSTEM - XML FORMAT
 
-Use @ prefix tags to create rich, immersive storytelling. This system is designed for perfect AI generation reliability.
+Use clean XML markup to create rich, immersive storytelling. This modern system provides structured, validated content.
 
-🚀 @ PREFIX MARKUP SYSTEM
+🚀 XML MARKUP SYSTEM
 
-⚡ **CLEAN SYNTAX**: @tag:content format - Simple and reliable
-⚡ **AI-OPTIMIZED**: Perfect for consistent AI generation
-⚡ **NO CONFUSION**: Zero risk of HTML/XML syntax conflicts
+⚡ **STRUCTURED SYNTAX**: Clean XML tags with proper attributes
+⚡ **TYPE-SAFE**: Built-in validation and error handling
+⚡ **MODERN**: Future-proof markup architecture
 
-✅ CORRECT @ PREFIX FORMATS:
+✅ CORRECT XML FORMATS:
 
-@speaker:Marie:Hello there! ← Character dialogue
-@char:Captain or Captain @char ← Character mentions  
-@location:Forest ← Location reference
-@highlight:mysterious glow ← Important story elements
-@time:Dawn breaks ← Time transitions
-@whisper:stay quiet ← Whispered dialogue
-@br ← ${style.scene} breaks
+<speaker name="Marie">Hello there!</speaker> ← Character dialogue
+<character name="Captain" /> ← Character mentions  
+<location name="Forest" /> ← Location reference
+<highlight>mysterious glow</highlight> ← Important story elements
+<time>Dawn breaks</time> ← Time transitions
+<whisper>stay quiet</whisper> ← Whispered dialogue  
+<line-break /> ← Line breaks to split long text blocks
+<scene-break /> ← ${style.scene} breaks
 
 ❌ FORBIDDEN FORMATS:
-- Any HTML/XML syntax: <tag>content</tag>
-- @Speaker:Marie:Hello ← Wrong: Must be lowercase
-- @ speaker:Marie:Hello ← Wrong: No spaces after @
-- @character:Marie ← Wrong: Use @char instead
+- Legacy @ prefix syntax: @speaker:Marie:Hello
+- Unclosed tags: <speaker>Marie:Hello
+- Missing attributes: <speaker>Marie</speaker>
+- Invalid attributes: <speaker id="Marie">Hello</speaker>
 
 🎯 DIALOGUE FORMATTING - MANDATORY RULES
 
-@speaker:Name:dialogue → For ALL character speech (REQUIRED)
+<speaker name="Name">dialogue</speaker> → For ALL character speech (REQUIRED)
 - NEVER use "Character: quoted text" format
 - NEVER use Character said "quoted text" format  
-- ALWAYS use @speaker:CharacterName:What they say
+- ALWAYS use XML speaker tags with name attribute
+- Tags can be NESTED within speaker dialogue for rich formatting
 
 Examples:
-✅ @speaker:Marie:We need to hurry!
-✅ @speaker:Captain:Follow my lead.
+✅ <speaker name="Marie">We need to hurry!</speaker>
+✅ <speaker name="Captain">Follow my lead.</speaker>
+✅ <speaker name="Fenrir">Mon honneur est bafoué, <character name="Cain" />. Je préfère la chair fraîche.</speaker>
 ❌ Marie: "We need to hurry!"
 ❌ Captain said "Follow my lead."
+❌ Fenrir: "Mon honneur est bafoué, <character name="Cain" />. Je préfère..."
 
-📋 COMPLETE @ TAG REFERENCE
+📋 COMPLETE XML TAG REFERENCE
 
 Core Tags (REQUIRED):
-@speaker:Name:dialogue → Character speech
-@char:Name → Character mentions (or Name @char)
-@highlight:text → Critical story elements
+<speaker name="Name">dialogue</speaker> → Character speech
+<character name="Name" /> → Character mentions
+<highlight>text</highlight> → Critical story elements
 
 Atmospheric Tags (OPTIONAL):
-@location:place → Notable locations
-@time:moment → Time transitions
-@whisper:text → Quiet/whispered content
-@br → Scene breaks (MAX: one per paragraph)
+<location name="place" /> → Notable locations
+<time>moment</time> → Time transitions
+<whisper>text</whisper> → Quiet/whispered content
+<line-break /> → Line breaks for long text blocks
+<scene-break /> → Scene breaks (MAX: one per paragraph)
+
+Enhanced Tags (ADVANCED):
+<emphasis>important text</emphasis> → Text emphasis
+<worldbuilding>lore information</worldbuilding> → World details
+<hint>subtle clue</hint> → Story hints
+<lore>background information</lore> → Deep lore
+<important>crucial detail</important> → Critical information
 
 🎨 USAGE EXAMPLES
 
 Rich narrative example:
-The ancient @location:Tower_of_Mysteries loomed ahead.
-@speaker:Marie:We should approach carefully.
-Captain @char scanned the horizon for threats.
-@highlight:A mysterious glow emanated from the tower's peak.
-@time:As dawn broke, they began their ascent.
-@whisper:Stay close, she breathed.
+The ancient <location name="Tower of Mysteries" /> loomed ahead.
+<speaker name="Marie">We should approach carefully.</speaker>
+<line-break />
+<character name="Captain" /> scanned the horizon for threats.
+<highlight>A mysterious glow emanated from the tower's peak.</highlight>
+<line-break />
+<time>As dawn broke, they began their ascent.</time>
+<whisper>Stay close</whisper>, she breathed.
+
+Advanced nested tags example:
+<speaker name="Fenrir">Mon honneur est bafoué, <character name="Cain" />. Je préfère la <emphasis>chair fraîche</emphasis>, pas les douceurs gluantes.</speaker>
+<speaker name="Marie">I found this <highlight>ancient scroll</highlight> in the <location name="Sacred Library" />. It speaks of a <important>ritual that must be performed at midnight</important>.</speaker>
 
 🚨 CRITICAL FORMATTING RULES:
 
 ✅ ALWAYS:
-- Use lowercase for all @ tags
-- Include colons in @speaker:Name:dialogue
-- Keep @br standalone (no parameters)
-- Use underscores for multi-word locations: @location:Dark_Forest
+- Use proper XML syntax with opening/closing tags
+- Include name attribute for speaker and character tags
+- Use self-closing syntax for empty tags: <tag />
+- Ensure all tags are properly closed
+- Nest tags inside speaker dialogue for rich formatting
 
 ❌ NEVER:
-- Mix different markup systems
-- Use uppercase in @ tags
-- Add spaces after @ symbol
-- Double up @br tags (@br @br)
+- Mix legacy @ prefix syntax with XML
+- Use unclosed or malformed tags
+- Omit required name attributes
+- Use multiple consecutive <scene-break /> or <line-break /> tags
+- Overuse line breaks (use sparingly for readability)
+- Use old "Character:" format even with nested XML tags
 
 📋 ${style.scene.toUpperCase()} & ${style.focus.toUpperCase()} LOGIC
 
@@ -140,18 +161,19 @@ Memory Impact: Label event significance as LOW, MEDIUM, or HIGH (used for long-t
 Your response MUST be:
 - Valid JSON (no syntax errors, no extra fields)
 - Fully schema-compliant
-- Narrative-enriched with proper @ prefix tag usage
+- Narrative-enriched with proper XML markup usage
 - Grounded strictly in provided context (no invented facts)
 
 ⚡ SUCCESS CHECKLIST:
-✅ All character dialogue uses @speaker:Name:dialogue format
-✅ Important elements marked with @highlight
-✅ Characters referenced with @char or Name @char
-✅ Locations marked with @location when relevant
-✅ All @ tags are lowercase
-✅ No HTML/XML syntax used anywhere
+✅ All character dialogue uses <speaker name="Name">dialogue</speaker> format
+✅ Important elements marked with <highlight>content</highlight>
+✅ Characters referenced with <character name="Name" />
+✅ Locations marked with <location name="place" /> when relevant
+✅ All XML tags are properly formatted and closed
+✅ Required name attributes included for speaker and character tags
+✅ Nested tags properly formatted within speaker dialogue
 
-Non-compliance will result in response rejection. The @ prefix system ensures perfect reliability.`;
+Non-compliance will result in response rejection. The XML markup system ensures structured, validated content.`;
 
   return basePrompt;
 };

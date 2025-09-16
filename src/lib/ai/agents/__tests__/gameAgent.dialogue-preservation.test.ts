@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 // Note: This test intentionally uses French strings (quotes and paraphrase)
 // to verify quoted dialogue preservation. Do not translate these fixtures.
 import { GameAgent } from '../gameAgent';
@@ -6,7 +6,7 @@ import type { Action } from '$lib/types/playerAction';
 
 // Minimal fake LLM that attempts to paraphrase, to verify our enforcement injects the exact quote
 class FakeLLM {
-  async generateContentStream(req: any, onStory: (c: string, b: boolean) => void, onThought: (c: string, b: boolean) => void) {
+  async generateContentStream(_req: any, onStory: (c: string, b: boolean) => void, _onThought: (c: string, b: boolean) => void) {
     // Try to paraphrase the dialogue deliberately
     const paraphrased = 'Il murmura que la situation était décevante.';
     const content = {
@@ -56,8 +56,8 @@ describe('GameAgent quoted dialogue preservation', () => {
 
     // Must contain the exact quoted string without alteration
     expect(newState.story).toContain('hmm pour l\'instant c\'est decevant');
-    // And should include it in a [speaker] block that we inject if missing
-    expect(newState.story).toContain('[speaker:Player]');
+    // And should include it in a speaker tag that we inject if missing
+    expect(newState.story).toContain('<speaker name="Player">');
   });
 });
 
