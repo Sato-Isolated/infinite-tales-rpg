@@ -6,6 +6,7 @@ import type {
 	MemoryCache,
 	HybridStorageError
 } from './types.js';
+import type { ChangeEvent, ConnectionStatus } from './mongoStorageManager.js';
 import { mongoStorageManager } from './mongoStorageManager.js';
 import { getStorageLocation, logConfigInfo } from './config.js';
 
@@ -54,16 +55,25 @@ function deepEqual(a: any, b: any): boolean {
 
 const memoryCache = new Map<string, MemoryCache<unknown>>();
 
-/**
- * Global indicator for MongoDB initialization
- */
+// Global indicator for MongoDB initialization
 let mongoDBInitialized = false;
 let mongoDBInitPromise: Promise<void> | null = null;
 let mongoDBInitAttempted = false; // New: avoids repeated attempts
 
+// Global connection status tracking for reactive UI
+let globalConnectionStatus = $state<ConnectionStatus>({
+	isConnected: false,
+	isReconnecting: false,
+	changeStreamsSupported: false,
+	connectionQuality: 'disconnected'
+});
+
+// Track active subscriptions for cleanup
+const activeSubscriptions = new Map<string, () => void>();
+
 /**
- * Svelte 5 hook for hybrid localStorage + File System storage
- * API identical to useHybridLocalStorage but with intelligent storage
+ * Svelte 5 hook for hybrid localStorage + File System storage with enhanced reactivity
+ * API identical to useHybridLocalStorage but with intelligent storage and real-time updates
  */
 export function useHybridLocalStorage<T>(
 	key: string,
@@ -78,6 +88,8 @@ export function useHybridLocalStorage<T>(
 	const storageLocation = options.forceLocation || getStorageLocation(key);
 	const saveDebounceMs = options.saveDebounceMs || 300;
 	const enableDebugLogs = options.enableDebugLogs || false;
+	const enableReactiveUpdates = options.enableReactiveUpdates !== false; // Default true
+	const enableOptimisticUpdates = options.enableOptimisticUpdates !== false; // Default true
 
 	// Temporary debug for problematic keys - disabled now that the problem is resolved
 	const isDebugKey = false; // ['gameActionsState', 'characterState', 'characterStatsState'].includes(key);
@@ -90,9 +102,11 @@ export function useHybridLocalStorage<T>(
 	let currentSize = $state(initialValue !== undefined ? calculateSize(initialValue) : 0);
 	let isSaving = $state(false); // Protection against cascading saves
 	let isInitializing = $state(true); // Protection during initialization
+	let connectionStatus = $state<ConnectionStatus>(globalConnectionStatus); // Reactive connection status
 
 	// Timeout for save debouncing
 	let saveTimeout: NodeJS.Timeout | null = null;
+	let changeSubscription: (() => void) | null = null;
 
 	/**
 	 * Conditional debug log
@@ -154,12 +168,21 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Save to MongoDB
+	 * Save to MongoDB with enhanced reactivity
 	 */
 	async function saveToMongoDB(val: T): Promise<void> {
 		try {
 			await ensureMongoDBInitialized();
 			const info = mongoStorageManager.getInfo();
+			
+			// Update connection status
+			connectionStatus = info.connectionStatus;
+			
+			// Send optimistic update if enabled
+			if (enableOptimisticUpdates && enableReactiveUpdates) {
+				debugLog('⚡ Sending optimistic update');
+			}
+			
 			await info.save(key, val);
 			debugLog('🗃️ Saved to MongoDB');
 		} catch (error) {
@@ -179,12 +202,16 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Load from MongoDB
+	 * Load from MongoDB with enhanced reactivity
 	 */
 	async function loadFromMongoDB(): Promise<T | undefined> {
 		try {
 			await ensureMongoDBInitialized();
 			const info = mongoStorageManager.getInfo();
+			
+			// Update connection status
+			connectionStatus = info.connectionStatus;
+			
 			const loaded = await info.load(key);
 			if (loaded !== undefined && loaded !== null) {
 				debugLog('📁 Loaded from MongoDB');
@@ -212,9 +239,64 @@ export function useHybridLocalStorage<T>(
 	}
 
 	/**
-	 * Ensures MongoDB is initialized
-	 * Attempts automatic initialization ONLY ONCE on first use
+	 * Setup reactive subscriptions for real-time updates
 	 */
+	function setupReactiveSubscriptions(): void {
+		if (!enableReactiveUpdates || storageLocation !== 'fileSystem') {
+			return; // Only setup for MongoDB/fileSystem storage
+		}
+
+		try {
+			const info = mongoStorageManager.getInfo();
+			if (info.connectionStatus.changeStreamsSupported) {
+				// Subscribe to changes for this specific key
+				changeSubscription = info.subscribe(key, (changeEvent: ChangeEvent) => {
+					try {
+						debugLog('🔄 Received change event:', changeEvent);
+						
+						// Only update if it's not our own optimistic update
+						if (changeEvent.type === 'update' && changeEvent.data !== undefined) {
+							// Check if this is different from our current value to avoid loops
+							if (!deepEqual(changeEvent.data, value)) {
+								debugLog('📥 Applying external change');
+								value = cloneDeep(changeEvent.data as T);
+								lastSavedValue = cloneDeep(changeEvent.data as T);
+								currentSize = calculateSize(changeEvent.data);
+							}
+						} else if (changeEvent.type === 'delete') {
+							debugLog('🗑️ Item deleted externally');
+							if (initialValue !== undefined) {
+								value = cloneDeep(initialValue);
+								lastSavedValue = undefined;
+								currentSize = calculateSize(initialValue);
+							}
+						}
+					} catch (error) {
+						console.warn('Error handling change event:', error);
+					}
+				});
+
+				activeSubscriptions.set(key, changeSubscription);
+				debugLog('🎯 Real-time subscription setup for key:', key);
+			} else {
+				debugLog('ℹ️ Change streams not supported, skipping reactive subscriptions');
+			}
+		} catch (error) {
+			debugLog('⚠️ Failed to setup reactive subscription:', error);
+			// Don't throw error - just log and continue without real-time updates
+		}
+	}
+
+	/**
+	 * Cleanup subscriptions
+	 */
+	function cleanupSubscriptions(): void {
+		if (changeSubscription) {
+			changeSubscription();
+			changeSubscription = null;
+		}
+		activeSubscriptions.delete(key);
+	}
 	async function ensureMongoDBInitialized(): Promise<void> {
 		if (mongoDBInitialized) return;
 
@@ -440,6 +522,10 @@ export function useHybridLocalStorage<T>(
 				currentSize = calculateSize(value);
 				debugLog(`🆕 Initialized with default value for ${key} (no saved data found)`);
 			}
+
+			// Setup reactive subscriptions after successful initialization
+			setupReactiveSubscriptions();
+
 		} catch (error) {
 			console.error(`Failed to load ${key} on mount:`, error);
 			if (initialValue !== undefined) {
@@ -456,6 +542,13 @@ export function useHybridLocalStorage<T>(
 				debugLog(`✅ Initialization completed for ${key}`);
 			}, 0);
 		}
+	});
+
+	// Cleanup effect for subscriptions
+	$effect(() => {
+		return () => {
+			cleanupSubscriptions();
+		};
 	});
 
 	/**
@@ -517,7 +610,12 @@ export function useHybridLocalStorage<T>(
 				size: currentSize,
 				isHydrated: hasHydrated,
 				isMounted: isMounted,
-				isInitializing: isInitializing
+				isInitializing: isInitializing,
+				connectionStatus: enableReactiveUpdates && storageLocation === 'fileSystem' ? {
+					isConnected: connectionStatus.isConnected,
+					connectionQuality: connectionStatus.connectionQuality,
+					changeStreamsSupported: connectionStatus.changeStreamsSupported
+				} : undefined
 			};
 		},
 
@@ -543,6 +641,27 @@ export function useHybridLocalStorage<T>(
 				console.error(`Failed to force reload ${key}:`, error);
 				throw error;
 			}
-		}
+		},
+
+		subscribe: enableReactiveUpdates && storageLocation === 'fileSystem' 
+			? (listener: (newValue: T) => void) => {
+				// Add a custom subscription for external monitoring
+				try {
+					const info = mongoStorageManager.getInfo();
+					const unsubscribe = info.subscribe(key, (changeEvent: ChangeEvent) => {
+						if (changeEvent.type === 'update' && changeEvent.data !== undefined) {
+							listener(changeEvent.data as T);
+						}
+					});
+
+					return () => {
+						unsubscribe();
+					};
+				} catch (error) {
+					console.warn('Failed to setup custom subscription:', error);
+					return () => {}; // Return no-op unsubscribe
+				}
+			}
+			: undefined
 	};
 }

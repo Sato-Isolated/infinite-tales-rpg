@@ -70,11 +70,18 @@ export interface UseHybridLocalStorageReturn<T> {
 		isHydrated: boolean;
 		isMounted: boolean;
 		isInitializing: boolean;
+		connectionStatus?: {
+			isConnected: boolean;
+			connectionQuality: 'excellent' | 'good' | 'poor' | 'disconnected';
+			changeStreamsSupported: boolean;
+		};
 	};
 	/** Force a manual save */
 	forceSave(): Promise<void>;
 	/** Force a reload from storage */
 	forceReload(): Promise<void>;
+	/** Subscribe to external changes (for real-time updates) */
+	subscribe?(listener: (newValue: T) => void): () => void;
 }
 
 export interface HybridStorageOptions {
@@ -86,6 +93,10 @@ export interface HybridStorageOptions {
 	saveDebounceMs?: number;
 	/** Enable debug logs */
 	enableDebugLogs?: boolean;
+	/** Enable real-time reactive updates from MongoDB changes */
+	enableReactiveUpdates?: boolean;
+	/** Enable optimistic updates for better UX */
+	enableOptimisticUpdates?: boolean;
 }
 
 export interface HybridStorageError extends Error {
