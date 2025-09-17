@@ -64,7 +64,7 @@ describe('StoryAgent', () => {
 			expect(result).toEqual(sampleStory);
 		});
 
-		// Test Case 2: Generation with text input (simulating PDF text)
+		// Test Case 2: Generation with text input (simulating user-provided text)
 		it('should generate story settings with main_scenario from text input', async () => {
 			const sampleText = 'A brave knight ventures into a dark forest to find a lost artifact.';
 			const storyFromText: Story = {
@@ -118,7 +118,7 @@ describe('StoryAgent', () => {
 			expect(result).toEqual(storyWithChar);
 		});
 
-		// Test Case 4: Generation with both PDF text and character description
+		// Test Case 4: Generation with both text input and character description
 		it('should generate story settings with text input and character description', async () => {
 			const sampleText = 'A group of heroes must prevent a magical cataclysm.';
 			const sampleCharacter: CharacterDescription = {

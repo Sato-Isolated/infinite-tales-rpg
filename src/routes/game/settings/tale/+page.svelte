@@ -9,7 +9,7 @@
 	import LoadingModal from '$lib/components/ui/loading/LoadingModal.svelte';
 	import { useHybridLocalStorage } from '$lib/state/hybrid/useHybridLocalStorage.svelte';
 	import { LLMProvider } from '$lib/ai/llmProvider';
-	import { getRowsForTextarea, navigate, loadPDF, handleError } from '$lib/util.svelte';
+	import { getRowsForTextarea, navigate } from '$lib/util.svelte';
 	import isEqual from 'fast-deep-equal';
 	import ImportExportSaveGame from '$lib/components/ui/data/ImportExportSaveGame.svelte';
 	import { type CharacterDescription, initialCharacterState } from '$lib/ai/agents/characterAgent';
@@ -28,7 +28,6 @@
 
 	const storyState = useHybridLocalStorage<Story>('storyState', { ...initialStoryState });
 	const textAreaRowsDerived = $derived(getRowsForTextarea(storyState.value));
-	// Allow dynamic keys like 'gameBook' used during PDF import
 	let storyStateOverwrites: Partial<Story> & Record<string, any> = $state({});
 	const storyKeys = Object.keys(storyStateForPrompt) as Array<keyof Story>;
 	const characterState = useHybridLocalStorage<CharacterDescription>('characterState', {
@@ -113,31 +112,6 @@
 		}
 	}
 
-	function onUploadClicked() {
-		const fileInput = document.createElement('input');
-		fileInput.type = 'file';
-		fileInput.accept = 'application/pdf';
-		fileInput.click();
-		fileInput.addEventListener('change', function (event) {
-			const target = event.target as HTMLInputElement;
-			const file = target?.files?.[0];
-			if (file) {
-				const reader = new FileReader();
-				reader.onload = async () => {
-					try {
-						const text = await loadPDF(file);
-						storyStateOverwrites = { ...storyStateOverwrites, gameBook: text };
-						await onRandomize();
-					} catch (error) {
-						console.error('Failed to load PDF:', error);
-						handleError('Failed to load PDF file. Please try again.');
-					}
-				};
-				reader.readAsArrayBuffer(file);
-			}
-		});
-	}
-
 	const handleImportComplete = () => {
 		setTimeout(() => {
 			console.log('Import completed');
@@ -180,14 +154,6 @@
 			onclick={onRandomize}
 		>
 			Randomize All
-		</button>
-		<button
-			type="button"
-			class="btn btn-neutral btn-md m-auto w-1/2"
-			onclick={onUploadClicked}
-			disabled={isGeneratingState}
-		>
-			Generate Tale from PDF
 		</button>
 		<button
 			class="btn btn-neutral btn-md m-auto w-1/2"

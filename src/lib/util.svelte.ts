@@ -2,9 +2,6 @@ import { errorState } from './state/errorState.svelte';
 import { hybridStorageConfig } from './state/hybrid/config';
 import { mongoStorageManager } from './state/hybrid/mongoStorageManager';
 import isPlainObject from 'lodash.isplainobject';
-// Type-only import to avoid loading pdfjs in Node test environment
-import type * as pdfjs from 'pdfjs-dist';
-import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import type { Action } from '$lib/types/playerAction';
 import type { NpcID } from '$lib/ai/agents/characterStatsAgent';
 
@@ -340,48 +337,6 @@ export const importJsonFromFile = (callback: (data: unknown) => void) => {
 		fileInput.remove();
 	}, 1000);
 };
-
-let worker: pdfjs.PDFWorker | undefined;
-
-export async function loadPDF(file: File) {
-	// Ensure this only runs in the browser
-	if (typeof window === 'undefined') {
-		throw new Error('loadPDF is only available in the browser environment');
-	}
-	const pdfjs = await import('pdfjs-dist');
-	if (!worker) {
-		worker = new pdfjs.PDFWorker({
-			port: new Worker(new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url), {
-				type: 'module'
-			}) as unknown as null
-		});
-	}
-	const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer(), worker }).promise;
-	const maxPages = pdf._pdfInfo.numPages;
-	const countPromises: Array<Promise<string>> = []; // collecting all page promises
-	for (let j = 1; j <= maxPages; j++) {
-		const page = pdf.getPage(j);
-
-		countPromises.push(
-			page.then(function (page) {
-				// add page promise
-				const textContent = page.getTextContent();
-				return textContent.then(function (text) {
-					// return content promise
-					return text.items
-						.map(function (s) {
-							return (s as TextItem).str;
-						})
-						.join(''); // value page text
-				});
-			})
-		);
-	}
-	// Wait for all pages and join text
-	return Promise.all(countPromises).then(function (texts) {
-		return texts.join('\n');
-	});
-}
 
 export function getRowsForTextarea(object: Record<string, any>) {
 	const mappedRows: Record<string, any> = {};
