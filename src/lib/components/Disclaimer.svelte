@@ -25,9 +25,6 @@
 		<span class="mt-2"
 			>Adhere to the <a class="link" target="_blank" href="https://ai.google.dev/gemini-api/terms"
 				>Google Gemini Terms</a
-			>
-			and the
-			<a class="link" target="_blank" href="https://pollinations.ai/terms">Pollinations Terms</a
 			></span
 		>
 		<span class="mt-2 font-semibold">Age Restriction</span>

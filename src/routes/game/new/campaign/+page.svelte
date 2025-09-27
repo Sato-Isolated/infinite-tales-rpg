@@ -163,7 +163,6 @@
 	const overwriteTaleWithCampaignSettings = (currentChapter: CampaignChapter, taleState: Story) => {
 		if (taleState) {
 			taleState.adventure_and_main_event = stringifyPretty(currentChapter);
-			taleState.general_image_prompt = campaignState.value.general_image_prompt;
 			taleState.character_simple_description = campaignState.value.character_simple_description;
 			taleState.world_details = campaignState.value.world_details;
 			taleState.game = campaignState.value.game;
@@ -370,7 +369,7 @@
 																							}
 																							campaignStateOverwrites[stateValue][chapterNumber][
 																								chapterProperty
-																							][plotPoint][plotPointProperty] = evt.target?.value;
+																							][plotPoint][plotPointProperty] = (evt.target as HTMLTextAreaElement)?.value || '';
 																						}}
 																						class="textarea textarea-bordered textarea-md mt-2 w-full"
 																					>
@@ -458,7 +457,7 @@
 																	}
 																	campaignStateOverwrites[stateValue][chapterNumber][
 																		chapterProperty
-																	] = evt.target?.value;
+																	] = (evt.target as HTMLTextAreaElement)?.value || '';
 																}}
 																class="textarea textarea-bordered textarea-md mt-2 w-full"
 															>
@@ -529,7 +528,7 @@
 				<button
 					class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 					onclick={() => {
-						campaignState.resetProperty(stateValue);
+						campaignState.resetProperty(stateValue as keyof Campaign);
 						delete campaignStateOverwrites[stateValue];
 					}}
 				>

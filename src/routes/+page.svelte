@@ -95,13 +95,6 @@
 			>, the game is run by this prompt!
 		</p>
 		<p class="mb-2">
-			The amazing image generation is done by <a
-				class="link"
-				href="https://pollinations.ai/"
-				target="_blank">pollinations.ai</a
-			>
-		</p>
-		<p class="mb-2">
 			The cool dice rolling feature is developed here <a
 				class="link"
 				href="https://github.com/3d-dice/dice-box"

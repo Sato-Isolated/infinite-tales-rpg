@@ -66,7 +66,6 @@
 	import { type Campaign, CampaignAgent, type CampaignChapter } from '$lib/ai/agents/campaignAgent';
 	import { ActionAgent, type TruthOracleResult } from '$lib/ai/agents/actionAgent';
 	import LoadingIcon from '$lib/components/LoadingIcon.svelte';
-	import TTSComponent from '$lib/components/TTSComponent.svelte';
 	import { applyLevelUp, getXPNeededForLevel } from './levelLogic';
 	import LevelUpModal from '$lib/components/interaction_modals/LevelUpModal.svelte';
 	import { migrateIfApplicable } from '$lib/state/versionMigration';
@@ -101,21 +100,20 @@
 		getCharacterTechnicalId,
 		addCharacterToPlayerCharactersIdToNamesMap
 	} from './characterLogic';
-	import { getDiceRollPromptAddition } from '$lib/components/interaction_modals/dice/diceRollLogic';
+	import { getDiceRollPromptAddition, type DiceRollResult } from '$lib/components/interaction_modals/dice/diceRollLogic';
 	import NewAbilitiesConfirmatonModal from '$lib/components/interaction_modals/character/NewAbilitiesConfirmatonModal.svelte';
 	import SimpleDiceRoller from '$lib/components/interaction_modals/dice/SimpleDiceRoller.svelte';
-	import StoryProgressionWithImage, {
-		type StoryProgressionWithImageProps
-	} from '$lib/components/StoryProgressionWithImage.svelte';
-	import { ImagePromptAgent } from '$lib/ai/agents/imagePromptAgent';
+	import StoryProgression, {
+		type StoryProgressionProps
+	} from '$lib/components/StoryProgression.svelte';
 	import UtilityModal from '$lib/components/interaction_modals/UtilityModal.svelte';
 	// eslint-disable-next-line svelte/valid-compile
-	let diceRollDialog,
-		useSpellsAbilitiesModal,
-		useItemsModal,
-		utilityModal,
-		actionsDiv,
-		customActionInput;
+	let diceRollDialog = $state<HTMLDialogElement>(),
+		useSpellsAbilitiesModal = $state<HTMLDialogElement>(),
+		useItemsModal = $state<HTMLDialogElement>(),
+		utilityModal = $state<HTMLDialogElement>(),
+		actionsDiv = $state<HTMLDivElement>(),
+		customActionInput = $state<HTMLInputElement>();
 
 	//ai state
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
@@ -128,7 +126,6 @@
 	let isAiGeneratingState = $state(false);
 	let didAIProcessDiceRollActionState = useLocalStorage<boolean>('didAIProcessDiceRollAction');
 	let didAIProcessActionState = $state<boolean>(true);
-	let imagePromptAgent: ImagePromptAgent;
 	let gameAgent: GameAgent,
 		summaryAgent: SummaryAgent,
 		characterAgent: CharacterAgent,
@@ -216,19 +213,15 @@
 			.concat(gameLogic.renderInventoryUpdate($state.snapshot(gameState.inventory_update)));
 
 	let showXLastStoryPrgressions = $state<number>(0);
-	const latestStoryProgressionState = $derived<StoryProgressionWithImageProps>({
+	const latestStoryProgressionState = $derived<StoryProgressionProps>({
 		story: storyChunkState || currentGameActionState.story,
 		gameUpdates: storyChunkState
 			? []
 			: getRenderedGameUpdates(currentGameActionState, playerCharacterIdState),
-		imagePrompt: storyChunkState
-			? ''
-			: [currentGameActionState.image_prompt, storyState.value.general_image_prompt].join(' '),
 		stream_finished: !storyChunkState
 	});
 	let latestStoryProgressionTextComponent = $state<HTMLElement | undefined>();
 
-	let actionsTextForTTS: string = $state('');
 	//TODO const lastCombatSinceXActions: number = $derived(
 	//	gameActionsState.value && (gameActionsState.value.length - (gameActionsState.value.findLastIndex(state => state.is_character_in_combat ) + 1))
 	//);
@@ -253,7 +246,6 @@
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 	let useDynamicCombat = useLocalStorage('useDynamicCombat', false);
 	let gameSettingsState = useLocalStorage<GameSettings>('gameSettingsState', defaultGameSettings());
-	const ttsVoiceState = useLocalStorage<string>('ttsVoice');
 
 	onMount(async () => {
 		// TODO for some reason does not work, as its also shown on custom action despite everything being loaded already
@@ -281,9 +273,6 @@
 		actionAgent = new ActionAgent(llm);
 		eventAgent = new EventAgent(llm);
 		characterAgent = new CharacterAgent(llm);
-
-		// image prompt generator
-		imagePromptAgent = new ImagePromptAgent(llm);
 
 		migrateStates();
 		const currentCharacterName = characterState.value.name;
@@ -336,7 +325,7 @@
 			);
 		gameActionsState.value = updatedGameActionsState;
 		playerCharactersGameState = updatedPlayerCharactersGameState;
-		tick().then(() => customActionInput.scrollIntoView(false));
+		tick().then(() => customActionInput?.scrollIntoView(false));
 		if (characterActionsState.value.length === 0) {
 			const { thoughts, actions } = await actionAgent.generateActions(
 				currentGameActionState,
@@ -485,17 +474,17 @@
 	function openDiceRollDialog(waitForFunction?: Promise<void>) {
 		//TODO showModal can not be used because it hides the dice roll
 		didAIProcessDiceRollActionState.value = false;
-		diceRollDialog.show();
-		diceRollDialog.addEventListener('close', function sendWithManuallyRolled() {
-			diceRollDialog.removeEventListener('close', sendWithManuallyRolled);
-			const result = diceRollDialog.returnValue;
+		diceRollDialog?.show();
+		diceRollDialog?.addEventListener('close', function sendWithManuallyRolled() {
+			diceRollDialog?.removeEventListener('close', sendWithManuallyRolled);
+			const result = diceRollDialog?.returnValue;
 
 			const skillName = getSkillIfApplicable(characterStatsState.value, chosenActionState.value);
-			if (skillName) {
-				skillsProgressionForCurrentActionState = getSkillProgressionForDiceRoll(result);
+			if (skillName && result) {
+				skillsProgressionForCurrentActionState = getSkillProgressionForDiceRoll(result as DiceRollResult);
 			}
 
-			const dice_roll_addition_text = getDiceRollPromptAddition(result);
+			const dice_roll_addition_text = getDiceRollPromptAddition(result as DiceRollResult);
 			sendAction(chosenActionState.value, false, dice_roll_addition_text, false, waitForFunction);
 		});
 	}
@@ -536,7 +525,7 @@
 			additionalStoryInputState.value += costString;
 			await sendAction(chosenActionState.value, true);
 		}
-		customActionInput.value = '';
+		if (customActionInput) customActionInput.value = '';
 		customActionImpossibleReasonState = undefined;
 	}
 
@@ -752,7 +741,7 @@
 			additionalStoryInput,
 			gameSettingsState.value.randomEventsHandling,
 			currentGameActionState.is_character_in_combat,
-			diceRollDialog.returnValue //TODO better way to pass the result ?, its string here
+			diceRollDialog?.returnValue as DiceRollResult //TODO better way to pass the result ?, its string here
 		);
 		if (!additionalStoryInput.includes('sudo')) {
 			additionalStoryInput +=
@@ -826,7 +815,7 @@
 			historyMessagesState.value,
 			storyState.value,
 			characterState.value,
-			playerCharactersGameState[playerCharacterIdState],
+			playerCharactersGameState,
 			inventoryState.value,
 			relatedHistory,
 			gameSettingsState.value,
@@ -834,21 +823,6 @@
 		);
 
 		if (newState.story) {
-			newState.image_prompt = '';
-			try {
-				newState.image_prompt = await imagePromptAgent.generateImagePrompt(
-					getLatestStoryMessages(),
-					newState.story,
-					characterState.value.name,
-					currentGameActionState.image_prompt!
-				);
-				if (!newState.image_prompt) {
-					newState.image_prompt = 'big letters showing ERROR GENERATING IMAGE PROMPT';
-				}
-			} catch (e) {
-				console.warn('Failed to generate image prompt', e);
-				newState.image_prompt = 'big letters showing ERROR GENERATING IMAGE PROMPT';
-			}
 			checkForNewNPCs(newState);
 			npcLogic.addNPCNamesToState(newState.currently_present_npcs, npcState.value);
 			// If combat provided a specific stat update, use it.
@@ -1093,10 +1067,6 @@
 			actions.forEach((action) =>
 				addActionButton(action, state.is_character_in_combat, 'ai-gen-action')
 			);
-			actionsTextForTTS =
-				Array.from(document.querySelectorAll('.ai-gen-action'))
-					.map((elm) => elm.textContent || ' ')
-					.join(' ') || ' ';
 		}
 	}
 
@@ -1216,7 +1186,7 @@
 	};
 	const onCustomDiceRollClosed = () => {
 		customDiceRollNotation = '';
-		customActionInput.value = '';
+		if (customActionInput) customActionInput.value = '';
 	};
 	const onLevelUpModalClosed = (aiLevelUp: AiLevelUp) => {
 		if (aiLevelUp) {
@@ -1341,7 +1311,7 @@
 		gmAnswerStateAsContext?: GameMasterAnswer
 	) => {
 		if (closedByPlayer) {
-			customActionInput.value = '';
+			if (customActionInput) customActionInput.value = '';
 		}
 		if (gmAnswerStateAsContext) {
 			const context = '\nGM Context:\n' + stringifyPretty(gmAnswerStateAsContext);
@@ -1651,7 +1621,6 @@
 		playerName={characterState.value.name}
 		resources={playerCharactersGameState[playerCharacterIdState]}
 		abilities={characterStatsState.value?.spells_and_abilities}
-		storyImagePrompt={storyState.value.general_image_prompt}
 		targets={currentGameActionState.currently_present_npcs}
 		onclose={onTargetedSpellsOrAbility}
 	></UseSpellsAbilitiesModal>
@@ -1660,7 +1629,6 @@
 		{onDeleteItem}
 		playerName={characterState.value.name}
 		inventoryState={inventoryState.value}
-		storyImagePrompt={storyState.value.general_image_prompt}
 		oncrafting={(craftingPrompt) => {
 			if (craftingPrompt) {
 				onCustomActionSubmitted(craftingPrompt, true);
@@ -1680,7 +1648,7 @@
 		<LevelUpModal onclose={onLevelUpModalClosed} />
 	{/if}
 	<UtilityModal
-		bind:dialogRef={utilityModal}
+		bind:dialogRef={utilityModal as HTMLDialogElement}
 		is_character_in_combat={currentGameActionState.is_character_in_combat}
 		actions={utilityPlayerActions}
 		onclose={(action) => {
@@ -1705,9 +1673,8 @@
 		</button>
 		{#if currentGameActionState?.story}
 			{#each !latestStoryProgressionState.stream_finished ? [currentGameActionState] : gameActionsState.value.slice(-2 + showXLastStoryPrgressions * -1, -1) as gameActionState (gameActionState.id)}
-				<StoryProgressionWithImage
+				<StoryProgression
 					story={gameActionState.story}
-					imagePrompt="{gameActionState.image_prompt} {storyState.value.general_image_prompt}"
 					gameUpdates={getRenderedGameUpdates(gameActionState, playerCharacterIdState)}
 				/>
 				{#if gameActionState['fallbackUsed']}
@@ -1715,10 +1682,9 @@
 				{/if}
 			{/each}
 		{/if}
-		<StoryProgressionWithImage
+		<StoryProgression
 			bind:storyTextRef={latestStoryProgressionTextComponent}
 			story={latestStoryProgressionState.story}
-			imagePrompt={latestStoryProgressionState.imagePrompt}
 			gameUpdates={latestStoryProgressionState.gameUpdates}
 			stream_finished={latestStoryProgressionState.stream_finished}
 		/>
@@ -1726,19 +1692,10 @@
 			<small class="text-sm text-red-500"> For this action the fallback LLM was used.</small>
 		{/if}
 		{#if isGameEnded.value}
-			<StoryProgressionWithImage story={gameLogic.getGameEndedMessage()} />
+			<StoryProgression story={gameLogic.getGameEndedMessage()} />
 		{/if}
 	</div>
 
-	{#if !aiConfigState.value?.disableAudioState && actionsTextForTTS}
-		<div class="mt-4 flex">
-			<TTSComponent
-				text={actionsTextForTTS}
-				voice={ttsVoiceState.value}
-				hidden={characterActionsState.value?.length === 0}
-			></TTSComponent>
-		</div>
-	{/if}
 	<div id="actions" bind:this={actionsDiv} class="mt-2 p-4 pb-0 pt-0"></div>
 	{#if Object.keys(currentGameActionState).length !== 0}
 		{#if !isGameEnded.value}
@@ -1790,21 +1747,21 @@
 				{/if}
 				<button
 					onclick={() => {
-						useSpellsAbilitiesModal.showModal();
+						useSpellsAbilitiesModal?.showModal();
 					}}
 					class="text-md btn btn-primary w-full"
 					>Spells & Abilities
 				</button>
 				<button
 					onclick={() => {
-						useItemsModal.showModal();
+						useItemsModal?.showModal();
 					}}
 					class="text-md btn btn-primary mt-3 w-full"
 					>Inventory
 				</button>
 				<button
 					onclick={() => {
-						utilityModal.showModal();
+						utilityModal?.showModal();
 					}}
 					class="text-md btn btn-primary mt-3 w-full"
 					>Utility
@@ -1828,7 +1785,7 @@
 					placeholder={getCustomActionPlaceholder(customActionReceiver)}
 				/>
 				<button
-					onclick={() => onCustomActionSubmitted(customActionInput.value)}
+					onclick={() => onCustomActionSubmitted(customActionInput?.value || '')}
 					class="btn btn-neutral w-full lg:w-1/4"
 					id="submit-button"
 					>Submit

@@ -39,7 +39,6 @@ describe('StoryAgent', () => {
 			world_details: 'A realm of magic and monsters.',
 			adventure_and_main_event: 'A quest to defeat the Lich King.',
 			character_simple_description: 'A brave hero.',
-			general_image_prompt: 'fantasy medieval battle',
 			theme: 'High Fantasy',
 			tonality: 'Epic'
 		};

@@ -24,26 +24,21 @@
 	import type { CharacterChangedInto, EventEvaluation } from '$lib/ai/agents/eventAgent';
 	import type { PlayerCharactersIdToNamesMap } from '$lib/ai/agents/gameAgent';
 	import AiGenerationSettings from '$lib/components/interaction_modals/settings/AiGenerationSettings.svelte';
-	import OutputFeaturesModal from '$lib/components/interaction_modals/settings/OutputFeaturesModal.svelte';
 	import SystemPromptsModal from '$lib/components/interaction_modals/settings/SystemPromptsModal.svelte';
 
 	const apiKeyState = useLocalStorage<string>('apiKeyState');
 	const aiLanguage = useLocalStorage<string>('aiLanguage');
 	//TODO migrate all AI settings into this object to avoid too many vars in local storage
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState', {
-		disableAudioState: false,
-		disableImagesState: false,
 		useFallbackLlmState: false
 	});
 	let showGenerationSettingsModal = $state<boolean>(false);
-	let showOutputFeaturesModal = $state<boolean>(false);
 	let showSystemPromptsModal = $state<boolean>(false);
 
 	const gameActionsState = useLocalStorage('gameActionsState', []);
 	const historyMessagesState = useLocalStorage('historyMessagesState', []);
 	const characterState = useLocalStorage('characterState', initialCharacterState);
 	const inventoryState = useLocalStorage('inventoryState', {});
-	const characterImageState = useLocalStorage('characterImageState');
 	const characterStatsState = useLocalStorage('characterStatsState', initialCharacterStatsState);
 	const npcState = useLocalStorage('npcState', []);
 	const storyState = useLocalStorage('storyState', initialStoryState);
@@ -110,7 +105,6 @@
 		historyMessagesState.reset();
 		gameActionsState.reset();
 		characterState.reset();
-		characterImageState.reset();
 		characterStatsState.reset();
 		storyState.reset();
 		isGameEnded.reset();
@@ -158,8 +152,8 @@
 						{
 							level: 1,
 							resources: {
-								HP: { max_value: 0, game_ends_when_zero: true },
-								MP: { max_value: 0, game_ends_when_zero: false }
+								HP: { max_value: 0, start_value: 0, game_ends_when_zero: true },
+								MP: { max_value: 0, start_value: 0, game_ends_when_zero: false }
 							}
 						},
 						true
@@ -175,7 +169,7 @@
 			isGeneratingState = false;
 		} catch (e) {
 			isGeneratingState = false;
-			handleError(e);
+			handleError(String(e));
 		}
 	}
 
@@ -251,15 +245,6 @@
 		onclick={() => (showGenerationSettingsModal = true)}
 	>
 		Generation Settings
-	</button>
-	{#if showOutputFeaturesModal}
-		<OutputFeaturesModal onclose={() => (showOutputFeaturesModal = false)} />
-	{/if}
-	<button
-		class="btn btn-neutral m-auto mt-5 w-1/2"
-		onclick={() => (showOutputFeaturesModal = true)}
-	>
-		Output Features
 	</button>
 	{#if showSystemPromptsModal}
 		<SystemPromptsModal onclose={() => (showSystemPromptsModal = false)} />

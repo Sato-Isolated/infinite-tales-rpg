@@ -88,7 +88,6 @@ export type GameActionState = {
 	currentPlotPoint: string;
 	nextPlotPoint: string;
 	story: string;
-	image_prompt: string;
 	inventory_update: Array<InventoryUpdate>;
 	stats_update: Array<StatsUpdate>;
 	is_character_in_combat: boolean;
@@ -176,7 +175,7 @@ export class GameAgent {
 		historyMessages: Array<LLMMessage>,
 		storyState: Story,
 		characterState: CharacterDescription,
-		playerCharactersGameState: ResourcesWithCurrentValue,
+		playerCharactersGameState: PlayerCharactersGameState,
 		inventoryState: InventoryState,
 		relatedHistory: string[],
 		gameSettings: GameSettings,
@@ -400,10 +399,6 @@ export class GameAgent {
 		};
 	}
 
-	static getItemImagePrompt(item_id: string, item: Item, storyImagePrompt: string): string {
-		return `${storyImagePrompt} RPG game icon ${item_id} ${item.description}`;
-	}
-
 	static getPromptForGameMasterNotes = (notes: Array<string>) => {
 		if (!notes || notes.length === 0) {
 			return '';
@@ -507,7 +502,6 @@ const jsonSystemInstructionForGameAgent = (gameSettingsState: GameSettings) => `
   "plotPointAdvancingNudgeExplanation": "VALUE MUST BE ALWAYS IN ENGLISH; Explain what could happen next to advance the story towards NEXT_PLOT_ID according to ADVENTURE_AND_MAIN_EVENT; Include brief explanation of NEXT_PLOT_ID; Format "CURRENT_PLOT_ID: {plotId}; NEXT_PLOT_ID: {currentPlotId + 1}; {Reasoning}",
   "story": "depending on If The Action Is A Success Or Failure progress the story further with appropriate consequences. ${!gameSettingsState.detailedNarrationLength ? storyWordLimit : ''} For character speech use single quotes. Format the narration using HTML tags for easier reading.",
   "story_memory_explanation": "Explanation if story progression has Long-term Impact: Remember events that significantly influence character arcs, plot direction, or the game world in ways that persist or resurface later; Format: {explanation} LONG_TERM_IMPACT: LOW, MEDIUM, HIGH",
-  "image_prompt": "Based on the most recent events, generate a a prompt for an image AI, describing the current scene. My character must never be described or shown. Instead, focus entirely on what I see: the environment, objects, and any NPCs. When describing an NPC, never use their name; instead, describe them by their gender and a consistent set of key visual features. Your prompt must weave together the scene's main focus, the setting, the artistic style and mood, the precise lighting and color, and a cinematic composition to vividly capture this specific moment.",
   "xpGainedExplanation": "Explain why or why nor the CHARACTER gains xp in this situation", 
   ${jsonStoryCharacterStatusPart()},
   "is_character_in_combat": true if CHARACTER is in active combat else false,

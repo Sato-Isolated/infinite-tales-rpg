@@ -6,7 +6,6 @@
 		initialCharacterState
 	} from '$lib/ai/agents/characterAgent';
 	import LoadingModal from '$lib/components/LoadingModal.svelte';
-	import AIGeneratedImage from '$lib/components/AIGeneratedImage.svelte';
 	import { useLocalStorage } from '$lib/state/useLocalStorage.svelte';
 	import { getRowsForTextarea, navigate } from '$lib/util.svelte';
 	import isEqual from 'lodash.isequal';
@@ -33,7 +32,6 @@
 	const textAreaRowsDerived = $derived(getRowsForTextarea(characterState.value));
 
 	let characterStateOverwrites: Partial<CharacterDescription> = $state({});
-	let resetImageState = $state(false);
 	const aiConfigState = useLocalStorage<AIConfig>('aiConfigState');
 	const playerCharactersIdToNamesMapState = useLocalStorage<PlayerCharactersIdToNamesMap>(
 		'playerCharactersIdToNamesMapState',
@@ -76,7 +74,6 @@
 		);
 		if (newState) {
 			characterState.value = newState;
-			resetImageState = true;
 		}
 		isGeneratingState = false;
 	};
@@ -91,9 +88,6 @@
 		);
 		if (newState) {
 			characterState.value[stateValue] = newState[stateValue];
-			if (stateValue === 'appearance') {
-				resetImageState = true;
-			}
 		}
 		isGeneratingState = false;
 	};
@@ -133,7 +127,6 @@
 		onclick={() => {
 			characterState.reset();
 			characterStateOverwrites = {};
-			resetImageState = true;
 		}}
 	>
 		Clear All
@@ -198,24 +191,12 @@
 		<button
 			class="btn btn-neutral m-auto mt-2 w-3/4 capitalize sm:w-1/2"
 			onclick={() => {
-				characterState.resetProperty(stateValue);
+				characterState.resetProperty(stateValue as keyof CharacterDescription);
 				delete characterStateOverwrites[stateValue];
-				if (stateValue === 'appearance') {
-					resetImageState = true;
-				}
 			}}
 		>
 			Clear {stateValue.replaceAll('_', ' ')}
 		</button>
-		{#if !aiConfigState.value?.disableImagesState && stateValue === 'appearance'}
-			<div class="m-auto flex w-full flex-col">
-				<AIGeneratedImage
-					storageKey="characterImageState"
-					{resetImageState}
-					imagePrompt="{storyState.value.general_image_prompt} {characterState.value.appearance}"
-				/>
-			</div>
-		{/if}
 	{/each}
 	<button
 		class="btn btn-primary m-auto w-3/4 sm:w-1/2"

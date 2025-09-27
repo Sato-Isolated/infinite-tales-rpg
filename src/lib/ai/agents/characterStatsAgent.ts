@@ -12,10 +12,9 @@ export type Ability = {
 		resource_key: string | undefined;
 		cost: number;
 	};
-	image_prompt: string;
 };
 export const abilityFormatForPrompt =
-	'{"name": string, "effect": "Clearly state the effect caused. If causing damage include the dice notation like 1d6+2 or 2d4", "resource_cost": if no cost null else { "resource_key": "the resource to pay for this action; one of character_stats.resources", "cost": number}, "image_prompt": short prompt for an image ai that generates an RPG game icon}';
+	'{"name": string, "effect": "Clearly state the effect caused. If causing damage include the dice notation like 1d6+2 or 2d4", "resource_cost": if no cost null else { "resource_key": "the resource to pay for this action; one of character_stats.resources", "cost": number}}';
 
 export type Resource = { max_value: number; start_value: number; game_ends_when_zero: boolean };
 
@@ -303,12 +302,5 @@ export class CharacterStatsAgent {
 			response = [response];
 		}
 		return response.map(this.mapAbility) as Ability[];
-	}
-
-	static getSpellImagePrompt(ability?: Ability, storyImagePrompt?: string): string {
-		if (!ability) {
-			return '';
-		}
-		return (storyImagePrompt || '') + ' RPG game icon ' + (ability.image_prompt || ability.name);
 	}
 }
